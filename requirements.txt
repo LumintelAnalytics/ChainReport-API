@@ -2,3 +2,5 @@ fastapi
 uvicorn
 pydantic
 aiofiles
+python-dotenv
+pydantic-settings

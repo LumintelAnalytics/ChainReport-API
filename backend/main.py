@@ -1,10 +1,10 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from fastapi import FastAPI
 from app.core.config import settings
 from app.api.v1.routes import router as v1_router
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 

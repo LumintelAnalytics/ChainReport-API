@@ -1,5 +1,5 @@
-from app.models.report_models import ReportRequest, ReportResponse
-from app.utils.id_generator import generate_report_id
+from backend.app.models.report_models import ReportRequest, ReportResponse
+from backend.app.utils.id_generator import generate_report_id
 from typing import Dict
 
 # In-memory storage for reports (to be replaced with persistent storage)
@@ -15,3 +15,10 @@ async def generate_report(request: ReportRequest) -> ReportResponse:
         "report_id": report_id
     }
     return ReportResponse(report_id=report_id, status="processing")
+
+async def save_report_data(report_id: str, data: Dict):
+    if report_id in in_memory_reports:
+        in_memory_reports[report_id].update(data)
+    else:
+        # Handle case where report_id does not exist, or log a warning
+        print(f"Warning: Report ID {report_id} not found for saving data.")

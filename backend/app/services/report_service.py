@@ -1,6 +1,9 @@
+import logging
 from backend.app.models.report_models import ReportRequest, ReportResponse
 from backend.app.utils.id_generator import generate_report_id
 from typing import Dict
+
+logger = logging.getLogger(__name__)
 
 # In-memory storage for reports (to be replaced with persistent storage)
 in_memory_reports: Dict[str, Dict] = {}
@@ -21,4 +24,4 @@ async def save_report_data(report_id: str, data: Dict):
         in_memory_reports[report_id].update(data)
     else:
         # Handle case where report_id does not exist, or log a warning
-        print(f"Warning: Report ID {report_id} not found for saving data.")
+        logger.warning("Report ID %s not found for saving data.", report_id)

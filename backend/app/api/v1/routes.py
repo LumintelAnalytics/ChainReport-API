@@ -1,8 +1,11 @@
-from fastapi import APIRouter
+import logging
+from fastapi import APIRouter, HTTPException
 from backend.app.models.report_models import ReportRequest, ReportResponse
-from backend.app.services.report_service import generate_report
+from backend.app.services.report_service import generate_report, in_memory_reports
 from backend.app.core.orchestrator import orchestrator
 import asyncio
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -29,6 +32,19 @@ async def read_root():
 async def generate_report_endpoint(request: ReportRequest):
     report_response = await generate_report(request)
     report_id = report_response.report_id
-    # Execute agents concurrently
-    await orchestrator.execute_agents_concurrently(report_id, request.token_id)
+    # Execute agents concurrently in a background task
+    task = asyncio.create_task(orchestrator.execute_agents_concurrently(report_id, request.token_id))
+    def _on_done(t: asyncio.Task):
+        try:
+            t.result()
+        except Exception as e:
+            logger.exception('Background orchestration failed for %s: %s', report_id, e)
+            # Optionally update report status to failed here as well
+    task.add_done_callback(_on_done)
     return report_response
+
+@router.get('/report/{report_id}/status')
+async def get_report_status(report_id: str):
+    if report_id not in in_memory_reports:
+        raise HTTPException(status_code=404, detail='Report not found')
+    return in_memory_reports[report_id]

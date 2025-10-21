@@ -1,6 +1,6 @@
 
 import asyncio
-from typing import Any, List, Union
+from typing import Any, Dict, List, Protocol, Union
 
 class AIAgent(Protocol):
     async def execute(self, *args: Any, **kwargs: Any) -> Any:

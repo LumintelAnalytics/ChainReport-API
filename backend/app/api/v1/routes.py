@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, HTTPException
 from backend.app.models.report_models import ReportRequest, ReportResponse
-from backend.app.services.report_service import generate_report, in_memory_reports
+from backend.app.services.report_service import generate_report, in_memory_reports, get_report_status_from_memory
 from backend.app.core.orchestrator import orchestrator
 import asyncio
 
@@ -43,8 +43,9 @@ async def generate_report_endpoint(request: ReportRequest):
     task.add_done_callback(_on_done)
     return report_response
 
-@router.get('/report/{report_id}/status')
+@router.get("/report/{report_id}/status")
 async def get_report_status(report_id: str):
-    if report_id not in in_memory_reports:
-        raise HTTPException(status_code=404, detail='Report not found')
-    return in_memory_reports[report_id]
+    report = get_report_status_from_memory(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return {"report_id": report_id, "status": report["status"]}

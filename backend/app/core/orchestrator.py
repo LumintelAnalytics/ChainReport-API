@@ -24,18 +24,19 @@ class AIOrchestrator:
         self.agents[name] = agent_func
 
     async def execute_agents(self, report_id: str, token_id: str) -> Dict[str, Any]:
-        tasks = {name: agent_func(report_id, token_id) for name, agent_func in self.agents.items()}
+        tasks = {name: asyncio.create_task(agent_func(report_id, token_id)) for name, agent_func in self.agents.items()}
         results = {}
-        has_failed_agent = False
 
         for name, task in tasks.items():
             try:
-                result = await task
+                result = await asyncio.wait_for(task, timeout=10) # Added timeout
                 results[name] = {"status": "completed", "data": result}
+            except asyncio.TimeoutError: # Handle timeout specifically
+                logger.exception("Agent %s timed out for report %s", name, report_id)
+                results[name] = {"status": "failed", "error": "Agent timed out"}
             except Exception as e:
-                logger.exception("Agent %s failed for report %s: %s", name, report_id, e)
+                logger.exception("Agent %s failed for report %s", name, report_id)
                 results[name] = {"status": "failed", "error": str(e)}
-                has_failed_agent = True
         return results
 
     def aggregate_results(self, results: Dict[str, Any]) -> Dict[str, Any]:

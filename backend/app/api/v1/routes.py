@@ -43,7 +43,7 @@ async def generate_report_endpoint(request: ReportRequest):
     task.add_done_callback(_on_done)
     return report_response
 
-@router.get("/report/{report_id}/status")
+@router.get("/reports/{report_id}/status")
 async def get_report_status(report_id: str):
     report = get_report_status_from_memory(report_id)
     if not report:

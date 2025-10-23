@@ -1,7 +1,8 @@
 import logging
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 from backend.app.models.report_models import ReportRequest, ReportResponse
-from backend.app.services.report_service import generate_report, in_memory_reports, get_report_status_from_memory
+from backend.app.services.report_service import generate_report, in_memory_reports, get_report_status_from_memory, get_report_data
 from backend.app.core.orchestrator import orchestrator
 import asyncio
 
@@ -49,3 +50,30 @@ async def get_report_status(report_id: str):
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     return {"report_id": report_id, "status": report["status"]}
+
+@router.get("/reports/{report_id}/data")
+async def get_report_data_endpoint(report_id: str):
+    report_result = get_report_data(report_id)
+    if report_result:
+        if "data" in report_result:
+            return report_result
+        elif report_result.get("status") == "processing":
+            # Match test expectations exactly
+            return JSONResponse(
+                status_code=202,
+                content={
+                    "report_id": report_id,
+                    "message": "Report is still processing.",
+                    "detail": "Report is still processing.",
+                },
+            )
+        elif report_result.get("status") == "failed":
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "report_id": report_id,
+                    "message": "Report failed",
+                    "detail": report_result.get("detail", "Report processing failed."),
+                },
+            )
+    raise HTTPException(status_code=404, detail="Report not found or not completed")

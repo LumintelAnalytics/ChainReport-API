@@ -52,12 +52,10 @@ async def get_report_status(report_id: str):
 
 @router.get("/reports/{report_id}/data")
 async def get_report_data_endpoint(report_id: str):
-    report_data = get_report_data(report_id)
-    if report_data:
-        return report_data
-    
-    report_status = get_report_status_from_memory(report_id)
-    if report_status and report_status.get("status") == "processing":
-        raise HTTPException(status_code=202, detail="Report is still processing.")
-    
+    report_result = get_report_data(report_id)
+    if report_result:
+        if "data" in report_result:
+            return report_result
+        elif report_result.get("status") == "processing":
+            raise HTTPException(status_code=202, detail="Report is still processing.")
     raise HTTPException(status_code=404, detail="Report not found or not completed")

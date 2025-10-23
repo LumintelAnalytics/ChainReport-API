@@ -31,9 +31,11 @@ def get_report_status_from_memory(report_id: str) -> Dict | None:
 
 def get_report_data(report_id: str) -> Dict | None:
     report = in_memory_reports.get(report_id)
-    if report:
-        if report.get("status") == "completed":
-            return {"report_id": report_id, "data": report.get("agent_results")}
-        else:
-            return {"report_id": report_id, "status": report.get("status")}
-    return None
+    if not report:
+        return None
+    if report.get("status") == "completed":
+        return {
+            "report_id": report_id,
+            "data": {"agent_results": report.get("agent_results", {})},
+        }
+    return {"report_id": report_id, "status": report.get("status")}

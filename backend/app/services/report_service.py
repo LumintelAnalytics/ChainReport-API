@@ -25,3 +25,6 @@ async def save_report_data(report_id: str, data: Dict):
     else:
         # Handle case where report_id does not exist, or log a warning
         logger.warning("Report ID %s not found for saving data.", report_id)
+
+def get_report_status_from_memory(report_id: str) -> Dict | None:
+    return in_memory_reports.get(report_id)

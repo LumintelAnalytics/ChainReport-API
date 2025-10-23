@@ -28,3 +28,9 @@ async def save_report_data(report_id: str, data: Dict):
 
 def get_report_status_from_memory(report_id: str) -> Dict | None:
     return in_memory_reports.get(report_id)
+
+def get_report_data(report_id: str) -> Dict | None:
+    report = in_memory_reports.get(report_id)
+    if report and report.get("status") == "completed":
+        return {"report_id": report_id, "data": report.get("agent_results")}
+    return None

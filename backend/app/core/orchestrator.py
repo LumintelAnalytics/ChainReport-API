@@ -74,14 +74,15 @@ orchestrator = Orchestrator()
 
 async def set_report_status(report_id: str, status_info: Dict[str, Any]) -> bool:
     """
-    Sets the status of a report in in_memory_reports, preventing overwrites of terminal statuses.
+    Upserts the status of a report in in_memory_reports, preventing overwrites of terminal statuses.
+    Creates the entry if it does not exist.
     """
     if report_id not in in_memory_reports:
-        logger.warning("Report ID %s not found in in_memory_reports.", report_id)
-        return False
+        in_memory_reports[report_id] = {"report_id": report_id}
+        logger.info("Created new report entry for %s", report_id)
 
     current_status = in_memory_reports[report_id].get("status")
-    if current_status in ("failed", "cancelled", "partial_success"):
+    if current_status in ("failed", "cancelled", "partial_success", "completed"):
         logger.info("Not overwriting terminal status for %s: %s", report_id, current_status)
         return False
 

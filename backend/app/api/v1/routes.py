@@ -40,15 +40,16 @@ async def run_report_pipeline(report_id: str, token_id: str):
 
     # 2) Finalize processing if orchestrator didn't mark terminal error
     current = await get_status(report_id)
-    if current and current.get('status') in ('failed', 'cancelled', 'partial_success'):
+    if current and current.get('status') in ('failed', 'cancelled', 'partial_success', 'completed'):
         logger.info('Report %s already in terminal state: %s', report_id, current.get('status'))
         return
 
     try:
         await process_report(report_id, token_id)
-    except Exception as e:
-        logger.exception('process_report failed for %s: %s', report_id, e)
-        await set_report_status(report_id, {'status': 'failed', 'reason': str(e)})
+    except Exception as exc:
+        reason = str(exc)
+        logger.exception('process_report failed for %s', report_id)
+        await set_report_status(report_id, {'status': 'failed', 'reason': reason})
 
 @router.post("/report/generate", response_model=ReportResponse)
 async def generate_report_endpoint(request: ReportRequest, background_tasks: BackgroundTasks):

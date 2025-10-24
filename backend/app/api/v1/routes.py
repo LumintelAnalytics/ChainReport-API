@@ -62,8 +62,6 @@ async def get_report_data_endpoint(report_id: str):
             return JSONResponse(
                 status_code=202,
                 content={
-                    "report_id": report_id,
-                    "message": "Report is still processing.",
                     "detail": "Report is still processing.",
                 },
             )

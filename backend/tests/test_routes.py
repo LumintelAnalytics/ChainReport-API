@@ -4,8 +4,6 @@ from fastapi.testclient import TestClient
 from backend.main import app
 from backend.app.services.report_service import in_memory_reports
 from backend.app.core.orchestrator import orchestrator
-from backend.app.services import report_processor
-from backend.app.services.report_processor import report_status, report_status_lock, get_report_status
 
 import pytest_asyncio
 import anyio
@@ -16,13 +14,7 @@ def clear_in_memory_reports():
     yield
     in_memory_reports.clear()
 
-@pytest_asyncio.fixture(autouse=True)
-async def clear_report_processor_status():
-    async with report_status_lock:
-        report_status.clear()
-    yield
-    async with report_status_lock:
-        report_status.clear()
+
 
 @pytest_asyncio.fixture
 async def client():
@@ -42,19 +34,17 @@ async def test_get_report_data_endpoint_processing(client: TestClient):
     orchestrator.register_agent("AgentTwo", mock_sleep_agent)
 
     try:
-        # Generate a report to get a report_id
-        response = client.post("/api/v1/report/generate", json={
-            "token_id": "test_token",
-            "parameters": {"param1": "value1"}
-        })
-        assert response.status_code == 200
-        report_id = response.json()["report_id"]
+        await asyncio.sleep(0.1)  # Allow background tasks to start
+        response = client.post("/reports/generate-report", json=request_payload)
+        assert response.status_code == 202
 
-        response = client.get(f"/api/v1/reports/{report_id}/status")
-        assert response.status_code == 200
-        response = client.get(f"/api/v1/reports/{report_id}/status")
-        assert response.status_code == 200
-        assert response.json() == {"report_id": report_id, "status": "partial_success"}
+        # Allow agents to run and orchestrator to update status
+        await asyncio.sleep(15)  # Sufficient time for agents (10s) and processing (5s)
+
+        # Now, check the status, expecting partial_success due to agent timeouts
+        status_response = client.get(f"/reports/{report_id}/status")
+        assert status_response.status_code == 200
+        assert status_response.json()["status"] == "partial_success"
     finally:
         # Restore original dummy agents
         orchestrator.register_agent("AgentOne", original_dummy_agent_one)
@@ -87,4 +77,4 @@ async def test_get_report_data_endpoint_completed(client: TestClient):
 async def test_get_report_data_endpoint_not_found(client: TestClient):
     response = client.get("/api/v1/reports/non_existent_report/data")
     assert response.status_code == 404
-    assert response.json() == {"detail": "Report not found or not completed"}
+    assert response.json() == {"detail": "Report not found"}

@@ -62,15 +62,34 @@ class Orchestrator(AIOrchestrator):
         if any(result["status"] == "failed" for result in agent_results.values()):
             overall_status = "partial_success"
 
-        # Update in_memory_reports
-        if report_id in in_memory_reports:
-            in_memory_reports[report_id].update({
-                "status": overall_status,
-                "agent_results": aggregated_data["agent_results"]
-            })
-        else:
-            logger.warning("Report ID %s not found in in_memory_reports during orchestration.", report_id)
+        # Update in_memory_reports using the new adapter
+        await set_report_status(report_id, {
+            "status": overall_status,
+            "agent_results": aggregated_data["agent_results"]
+        })
 
         return aggregated_data
 
 orchestrator = Orchestrator()
+
+async def set_report_status(report_id: str, status_info: Dict[str, Any]) -> bool:
+    """
+    Sets the status of a report in in_memory_reports, preventing overwrites of terminal statuses.
+    """
+    if report_id not in in_memory_reports:
+        logger.warning("Report ID %s not found in in_memory_reports.", report_id)
+        return False
+
+    current_status = in_memory_reports[report_id].get("status")
+    if current_status in ("failed", "cancelled", "partial_success"):
+        logger.info("Not overwriting terminal status for %s: %s", report_id, current_status)
+        return False
+
+    in_memory_reports[report_id].update(status_info)
+    return True
+
+async def get_report_status(report_id: str) -> Dict[str, Any] | None:
+    """
+    Retrieves the status of a report from in_memory_reports.
+    """
+    return in_memory_reports.get(report_id)

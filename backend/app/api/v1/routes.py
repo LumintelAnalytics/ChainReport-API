@@ -1,9 +1,9 @@
 import logging
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from backend.app.models.report_models import ReportRequest, ReportResponse
-from backend.app.services.report_service import generate_report, in_memory_reports, get_report_status_from_memory, get_report_data
+from backend.app.core.orchestrator import orchestrator, set_report_status, get_report_status
 from backend.app.services.report_processor import process_report
-from backend.app.core.orchestrator import orchestrator
+from backend.app.services.report_service import get_report_data, in_memory_reports
 import asyncio
 
 logger = logging.getLogger(__name__)
@@ -29,14 +29,33 @@ orchestrator.register_agent("AgentTwo", dummy_agent_two)
 async def read_root():
     return {"message": "Welcome to API v1"}
 
+async def run_report_pipeline(report_id: str, token_id: str):
+    # 1) Orchestrate agents and handle errors
+    try:
+        await orchestrator.execute_agents_concurrently(report_id, token_id)
+    except Exception as e:
+        logger.exception('Orchestrator failed for %s: %s', report_id, e)
+        await set_report_status(report_id, {'status': 'failed', 'reason': str(e)})
+        return
+
+    # 2) Finalize processing if orchestrator didn't mark terminal error
+    current = await get_report_status(report_id)
+    if current and current.get('status') in ('failed', 'cancelled', 'partial_success'):
+        logger.info('Report %s already in terminal state: %s', report_id, current.get('status'))
+        return
+
+    try:
+        await process_report(report_id, token_id)
+    except Exception as e:
+        logger.exception('process_report failed for %s: %s', report_id, e)
+        await set_report_status(report_id, {'status': 'failed', 'reason': str(e)})
+
 @router.post("/report/generate", response_model=ReportResponse)
 async def generate_report_endpoint(request: ReportRequest, background_tasks: BackgroundTasks):
     report_response = await generate_report(request)
     report_id = report_response.report_id
     # Trigger the report processing as a background task
-    background_tasks.add_task(process_report, report_id, request.token_id)
-    # Execute agents concurrently in a background task
-    background_tasks.add_task(orchestrator.execute_agents_concurrently, report_id, request.token_id)
+    background_tasks.add_task(run_report_pipeline, report_id, request.token_id)
     return report_response
 
 @router.get("/reports/{report_id}/status")
@@ -48,12 +67,18 @@ async def get_report_status(report_id: str):
 
 @router.get("/reports/{report_id}/data")
 async def get_report_data_endpoint(report_id: str):
-    report_data = get_report_data(report_id)
-    if report_data:
-        return report_data
-    
-    report_status = get_report_status_from_memory(report_id)
-    if report_status and report_status.get("status") == "processing":
-        raise HTTPException(status_code=202, detail="Report is still processing.")
-    
-    raise HTTPException(status_code=404, detail="Report not found or not completed")
+    data = get_report_data(report_id)
+    if data:
+        return data
+
+    status_info = await get_report_status(report_id)
+    if status_info is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    status = status_info.get("status")
+    if status == "processing":
+        raise HTTPException(status_code=202, detail="Report is still processing")
+    elif status in ["partial_success", "failed", "cancelled"]:
+        raise HTTPException(status_code=422, detail=f"Report {status}, data not available")
+    else:
+        raise HTTPException(status_code=500, detail=f"Unexpected report status: {status}")

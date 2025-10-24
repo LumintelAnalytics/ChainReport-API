@@ -52,7 +52,9 @@ async def test_get_report_data_endpoint_processing(client: TestClient):
 
         response = client.get(f"/api/v1/reports/{report_id}/status")
         assert response.status_code == 200
-        assert response.json() == {"report_id": report_id, "status": "processing"}
+        response = client.get(f"/api/v1/reports/{report_id}/status")
+        assert response.status_code == 200
+        assert response.json() == {"report_id": report_id, "status": "partial_success"}
     finally:
         # Restore original dummy agents
         orchestrator.register_agent("AgentOne", original_dummy_agent_one)

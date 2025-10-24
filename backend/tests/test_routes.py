@@ -6,7 +6,10 @@ from backend.app.services.report_service import in_memory_reports
 from backend.app.core.orchestrator import orchestrator
 import pytest_asyncio
 import anyio
+<<<<<<< HEAD
 import functools
+=======
+>>>>>>> 745e0c8 (feat: Add endpoint to retrieve final report data)
 
 @pytest_asyncio.fixture(autouse=True)
 def clear_in_memory_reports():
@@ -21,10 +24,21 @@ async def client():
 
 @pytest.mark.asyncio
 async def test_get_report_data_endpoint_processing(client: TestClient):
+<<<<<<< HEAD
     response = await anyio.to_thread.run_sync(functools.partial(client.post, "/api/v1/report/generate", json={
         "token_id": "test_token",
         "parameters": {"param1": "value1"}
     }))
+=======
+    # Generate a report to get a report_id
+    response = await anyio.to_thread.run_sync(client.post, "/api/v1/report/generate", kwargs={
+        "json": {
+            "token_id": "test_token",
+            "parameters": {"param1": "value1"}
+        }
+    })
+    assert response.status_code == 200
+>>>>>>> 745e0c8 (feat: Add endpoint to retrieve final report data)
     report_id = response.json()["report_id"]
 
     # Immediately request data, should be processing
@@ -35,10 +49,19 @@ async def test_get_report_data_endpoint_processing(client: TestClient):
 @pytest.mark.asyncio
 async def test_get_report_data_endpoint_completed(client: TestClient):
     # Generate a report
+<<<<<<< HEAD
     response = await anyio.to_thread.run_sync(functools.partial(client.post, "/api/v1/report/generate", json={
         "token_id": "test_token",
         "parameters": {"param1": "value1"}
     }))
+=======
+    response = await anyio.to_thread.run_sync(client.post, "/api/v1/report/generate", kwargs={
+        "json": {
+            "token_id": "test_token",
+            "parameters": {"param1": "value1"}
+        }
+    })
+>>>>>>> 745e0c8 (feat: Add endpoint to retrieve final report data)
     assert response.status_code == 200
     report_id = response.json()["report_id"]
 

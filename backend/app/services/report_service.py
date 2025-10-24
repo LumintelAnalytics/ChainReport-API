@@ -31,6 +31,7 @@ def get_report_status_from_memory(report_id: str) -> Dict | None:
 
 def get_report_data(report_id: str) -> Dict | None:
     report = in_memory_reports.get(report_id)
+<<<<<<< HEAD
     if not report:
         return None
     if report.get("status") == "completed":
@@ -39,3 +40,8 @@ def get_report_data(report_id: str) -> Dict | None:
             "data": {"agent_results": report.get("agent_results", {})},
         }
     return {"report_id": report_id, "status": report.get("status")}
+=======
+    if report and report.get("status") == "completed":
+        return {"report_id": report_id, "data": report.get("agent_results")}
+    return None
+>>>>>>> 745e0c8 (feat: Add endpoint to retrieve final report data)

@@ -3,7 +3,6 @@ import asyncio
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from backend.app.models.report_models import ReportRequest, ReportResponse
 from backend.app.core.orchestrator import orchestrator, set_report_status, get_report_status as get_status
-from backend.app.services.report_processor import process_report
 from backend.app.services.report_service import generate_report, get_report_data
 
 logger = logging.getLogger(__name__)
@@ -34,23 +33,12 @@ async def run_report_pipeline(report_id: str, token_id: str):
     try:
         await orchestrator.execute_agents_concurrently(report_id, token_id)
     except Exception as e:
-        logger.exception('Orchestrator failed for %s: %s', report_id, e)
+        logger.exception('Orchestrator failed for %s', report_id)
         await set_report_status(report_id, {'status': 'failed', 'reason': str(e)})
         return
 
-    # 2) Finalize processing if orchestrator didn't mark terminal error
-    current = await get_status(report_id)
-    if current and current.get('status') in ('failed', 'cancelled', 'partial_success', 'completed'):
-        logger.info('Report %s already in terminal state: %s', report_id, current.get('status'))
-        return
-
-    try:
-        await process_report(report_id, token_id)
-    except Exception as exc:
-        reason = str(exc)
-        logger.exception('process_report failed for %s', report_id)
-        await set_report_status(report_id, {'status': 'failed', 'reason': reason})
-
+    # The orchestrator sets the terminal status, so there's nothing to do after it.
+    return
 @router.post("/report/generate", response_model=ReportResponse)
 async def generate_report_endpoint(request: ReportRequest, background_tasks: BackgroundTasks):
     report_response = await generate_report(request)

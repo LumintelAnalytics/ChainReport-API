@@ -1,14 +1,13 @@
 import pytest
 import asyncio
-from backend.app.services.report_processor import process_report, report_status, report_status_lock, get_report_status
+from backend.app.services.report_processor import process_report
+from backend.app.core.orchestrator import set_report_status, get_report_status, in_memory_reports
 
 @pytest.fixture(autouse=True)
 async def clear_report_status():
-    async with report_status_lock:
-        report_status.clear()
+    in_memory_reports.clear()
     yield
-    async with report_status_lock:
-        report_status.clear()
+    in_memory_reports.clear()
 
 @pytest.mark.asyncio
 async def test_process_report_success():
@@ -18,9 +17,9 @@ async def test_process_report_success():
     result = await process_report(report_id, token_id)
     assert result is True
     
-    async with report_status_lock:
-        assert report_status[report_id]["status"] == "completed"
-        assert report_status[report_id]["token_id"] == token_id
+    status = await get_report_status(report_id)
+    assert status["status"] == "completed"
+    assert status["token_id"] == token_id
 
 @pytest.mark.asyncio
 async def test_process_report_already_processing():
@@ -50,8 +49,8 @@ async def test_process_report_cancellation():
     with pytest.raises(asyncio.CancelledError):
         await task
 
-    async with report_status_lock:
-        assert report_status[report_id]["status"] == "cancelled"
+    status = await get_report_status(report_id)
+    assert status["status"] == "cancelled"
 
 @pytest.mark.asyncio
 async def test_process_report_exception_handling():
@@ -67,8 +66,8 @@ async def test_process_report_exception_handling():
     with pytest.raises(Exception, match="Simulated processing error"):
         await process_report(report_id, token_id)
 
-    async with report_status_lock:
-        assert report_status[report_id]["status"] == "failed"
+    status = await get_report_status(report_id)
+    assert status["status"] == "failed"
     
     asyncio.sleep = original_sleep # Restore original sleep
 
@@ -77,8 +76,7 @@ async def test_get_report_status():
     report_id = "test_report_5"
     token_id = "test_token_5"
 
-    async with report_status_lock:
-        report_status[report_id] = {"status": "initial", "token_id": token_id}
+    await set_report_status(report_id, {"status": "initial", "token_id": token_id})
     
     status = await get_report_status(report_id)
     assert status == {"status": "initial", "token_id": token_id}
@@ -98,8 +96,10 @@ async def test_concurrent_different_reports():
 
     await asyncio.gather(task1, task2)
 
-    async with report_status_lock:
-        assert report_status[report_id_1]["status"] == "completed"
-        assert report_status[report_id_2]["status"] == "completed"
-        assert report_status[report_id_1]["token_id"] == token_id_1
-        assert report_status[report_id_2]["token_id"] == token_id_2
+    status1 = await get_report_status(report_id_1)
+    status2 = await get_report_status(report_id_2)
+
+    assert status1["status"] == "completed"
+    assert status2["status"] == "completed"
+    assert status1["token_id"] == token_id_1
+    assert status2["token_id"] == token_id_2

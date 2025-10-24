@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from backend.app.core.orchestrator import set_report_status, get_report_status
 
 logger = logging.getLogger(__name__)
@@ -28,9 +29,9 @@ async def process_report(report_id: str, token_id: str) -> bool:
         logger.info("Report %s completed.", report_id)
         return True
     except asyncio.CancelledError:
-        await set_report_status(report_id, {"status": "cancelled"})
+        await set_report_status(report_id, {"status": "cancelled", "reason": "processing cancelled"})
         raise
-    except Exception:
-        await set_report_status(report_id, {"status": "failed"})
+    except Exception as e:
+        await set_report_status(report_id, {"status": "failed", "reason": str(e)})
         logger.exception("Report %s failed.", report_id)
         raise

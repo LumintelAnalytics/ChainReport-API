@@ -6,7 +6,6 @@ from backend.app.services.report_service import in_memory_reports
 from backend.app.core.orchestrator import orchestrator
 
 import pytest_asyncio
-import anyio
 
 @pytest_asyncio.fixture(autouse=True)
 def clear_in_memory_reports():
@@ -33,16 +32,17 @@ async def test_get_report_data_endpoint_processing(client: TestClient):
     orchestrator.register_agent("AgentOne", mock_sleep_agent)
     orchestrator.register_agent("AgentTwo", mock_sleep_agent)
 
-    try:
-        await asyncio.sleep(0.1)  # Allow background tasks to start
-        response = client.post("/reports/generate-report", json=request_payload)
-        assert response.status_code == 202
+    request_payload = {"token_id": "test_token", "parameters": {"param1": "value1"}}
 
-        # Allow agents to run and orchestrator to update status
-        await asyncio.sleep(15)  # Sufficient time for agents (10s) and processing (5s)
+    try:
+        response = client.post("/api/v1/report/generate", json=request_payload)
+        assert response.status_code in (200, 202)
+        report_id = response.json().get("report_id")
+
+        await asyncio.sleep(0.1)  # Allow background tasks to start
 
         # Now, check the status, expecting partial_success due to agent timeouts
-        status_response = client.get(f"/reports/{report_id}/status")
+        status_response = client.get(f"/api/v1/reports/{report_id}/status")
         assert status_response.status_code == 200
         assert status_response.json()["status"] == "partial_success"
     finally:

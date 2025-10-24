@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Callable, Dict, Any, List
+from typing import Callable, Dict, Any
 from backend.app.services.report_service import in_memory_reports
 
 logger = logging.getLogger(__name__)

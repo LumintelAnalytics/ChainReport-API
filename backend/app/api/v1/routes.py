@@ -1,10 +1,10 @@
 import logging
+import asyncio
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from backend.app.models.report_models import ReportRequest, ReportResponse
-from backend.app.core.orchestrator import orchestrator, set_report_status, get_report_status
+from backend.app.core.orchestrator import orchestrator, set_report_status, get_report_status as get_status
 from backend.app.services.report_processor import process_report
-from backend.app.services.report_service import get_report_data, in_memory_reports
-import asyncio
+from backend.app.services.report_service import generate_report, get_report_data
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ async def run_report_pipeline(report_id: str, token_id: str):
         return
 
     # 2) Finalize processing if orchestrator didn't mark terminal error
-    current = await get_report_status(report_id)
+    current = await get_status(report_id)
     if current and current.get('status') in ('failed', 'cancelled', 'partial_success'):
         logger.info('Report %s already in terminal state: %s', report_id, current.get('status'))
         return
@@ -59,11 +59,11 @@ async def generate_report_endpoint(request: ReportRequest, background_tasks: Bac
     return report_response
 
 @router.get("/reports/{report_id}/status")
-async def get_report_status(report_id: str):
-    report = get_report_status_from_memory(report_id)
-    if not report:
+async def get_report_status_endpoint(report_id: str):
+    status_info = await get_status(report_id)
+    if not status_info:
         raise HTTPException(status_code=404, detail="Report not found")
-    return {"report_id": report_id, "status": report["status"]}
+    return {"report_id": report_id, "status": status_info.get("status")}
 
 @router.get("/reports/{report_id}/data")
 async def get_report_data_endpoint(report_id: str):
@@ -71,7 +71,7 @@ async def get_report_data_endpoint(report_id: str):
     if data:
         return data
 
-    status_info = await get_report_status(report_id)
+    status_info = await get_status(report_id)
     if status_info is None:
         raise HTTPException(status_code=404, detail="Report not found")
 

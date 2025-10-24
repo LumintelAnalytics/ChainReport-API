@@ -53,7 +53,6 @@ async def get_report_status(report_id: str):
 
 @router.get("/reports/{report_id}/data")
 async def get_report_data_endpoint(report_id: str):
-<<<<<<< HEAD
     report_result = get_report_data(report_id)
     if report_result:
         if "data" in report_result:
@@ -63,8 +62,6 @@ async def get_report_data_endpoint(report_id: str):
             return JSONResponse(
                 status_code=202,
                 content={
-                    "report_id": report_id,
-                    "message": "Report is still processing.",
                     "detail": "Report is still processing.",
                 },
             )
@@ -77,14 +74,4 @@ async def get_report_data_endpoint(report_id: str):
                     "detail": report_result.get("detail", "Report processing failed."),
                 },
             )
-=======
-    report_data = get_report_data(report_id)
-    if report_data:
-        return report_data
-    
-    report_status = get_report_status_from_memory(report_id)
-    if report_status and report_status.get("status") == "processing":
-        raise HTTPException(status_code=202, detail="Report is still processing.")
-    
->>>>>>> 745e0c8 (feat: Add endpoint to retrieve final report data)
     raise HTTPException(status_code=404, detail="Report not found or not completed")

@@ -5,6 +5,14 @@ from backend.app.services.report_service import in_memory_reports
 
 logger = logging.getLogger(__name__)
 
+async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
+    """
+    A dummy agent for testing purposes.
+    """
+    logger.info("Dummy agent received report_id: %s, token_id: %s", report_id, token_id)
+    await asyncio.sleep(1)  # Simulate some async work
+    return {"dummy_data": f"Processed by dummy agent for {report_id}"}
+
 class AIOrchestrator:
     """
     Base class for coordinating multiple AI agents.
@@ -12,7 +20,7 @@ class AIOrchestrator:
     """
 
     def __init__(self):
-        self.agents: Dict[str, Callable] = {}
+        self._agents: Dict[str, Callable] = {}
 
     def register_agent(self, name: str, agent_func: Callable):
         """
@@ -21,10 +29,18 @@ class AIOrchestrator:
             name (str): The name of the agent.
             agent_func (Callable): The asynchronous function representing the agent.
         """
-        self.agents[name] = agent_func
+        self._agents[name] = agent_func
+
+    def get_agents(self) -> Dict[str, Callable]:
+        """
+        Returns the dictionary of registered AI agents.
+        Returns:
+            Dict[str, Callable]: A dictionary where keys are agent names and values are agent functions.
+        """
+        return self._agents
 
     async def execute_agents(self, report_id: str, token_id: str) -> Dict[str, Any]:
-        tasks = {name: asyncio.create_task(agent_func(report_id, token_id)) for name, agent_func in self.agents.items()}
+        tasks = {name: asyncio.create_task(agent_func(report_id, token_id)) for name, agent_func in self._agents.items()}
         results = {}
 
         for name, task in tasks.items():
@@ -74,3 +90,4 @@ class Orchestrator(AIOrchestrator):
         return aggregated_data
 
 orchestrator = Orchestrator()
+orchestrator.register_agent("dummy_agent", dummy_agent)

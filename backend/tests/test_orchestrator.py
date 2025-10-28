@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock
 from backend.app.core.orchestrator import Orchestrator, create_orchestrator
 from backend.app.services.report_service import in_memory_reports
-from typing import Callable, Dict
+
 
 @pytest.fixture(autouse=True)
 def clear_in_memory_reports():
@@ -77,5 +77,5 @@ def test_create_orchestrator_no_dummy_by_default():
 def test_create_orchestrator_with_dummy():
     orch = create_orchestrator(register_dummy=True)
     assert 'dummy_agent' in orch.get_agents()
-    # Ensure it's a callable
-    assert isinstance(orch.get_agents()['dummy_agent'], Callable)
+    # Ensure it's callable
+    assert callable(orch.get_agents()['dummy_agent'])

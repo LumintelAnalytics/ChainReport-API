@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock
-from backend.app.core.orchestrator import Orchestrator
+from backend.app.core.orchestrator import Orchestrator, create_orchestrator
 from backend.app.services.report_service import in_memory_reports
+
 
 @pytest.fixture(autouse=True)
 def clear_in_memory_reports():
@@ -60,3 +61,21 @@ async def test_execute_agents_concurrently_with_failure():
     assert in_memory_reports[report_id]["agent_results"]["AgentFailing"]["status"] == "failed"
     assert "error" in in_memory_reports[report_id]["agent_results"]["AgentFailing"]
     assert "Agent failed" in in_memory_reports[report_id]["agent_results"]["AgentFailing"]["error"]
+
+def test_get_agents_returns_copy():
+    orch = Orchestrator()
+    def func(): pass
+    orch.register_agent('a', func)
+    got = orch.get_agents()
+    got.clear()
+    assert 'a' in orch.get_agents()
+
+def test_create_orchestrator_no_dummy_by_default():
+    orch = create_orchestrator()
+    assert 'dummy_agent' not in orch.get_agents()
+
+def test_create_orchestrator_with_dummy():
+    orch = create_orchestrator(register_dummy=True)
+    assert 'dummy_agent' in orch.get_agents()
+    # Ensure it's callable
+    assert callable(orch.get_agents()['dummy_agent'])

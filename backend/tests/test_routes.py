@@ -18,7 +18,10 @@ async def client():
         yield tc
 
 @pytest.mark.asyncio
-async def test_get_report_data_endpoint_processing(client: TestClient):
+async def test_get_report_data_endpoint_processing(client: TestClient, mocker):
+    # Mock the background task to prevent it from completing during the test
+    mocker.patch("backend.app.core.orchestrator.Orchestrator.execute_agents_concurrently", new_callable=mocker.AsyncMock)
+
     response = await anyio.to_thread.run_sync(
         functools.partial(
             client.post,
@@ -28,6 +31,8 @@ async def test_get_report_data_endpoint_processing(client: TestClient):
     )
     assert response.status_code == 200
     report_id = response.json()["report_id"]
+
+    # No need for anyio.sleep here, as the background task is mocked to not complete
 
     # Immediately request data, should be processing
     response = await anyio.to_thread.run_sync(client.get, f"/api/v1/reports/{report_id}/data")

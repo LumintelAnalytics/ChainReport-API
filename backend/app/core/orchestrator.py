@@ -37,7 +37,7 @@ class AIOrchestrator:
         Returns:
             Dict[str, Callable]: A dictionary where keys are agent names and values are agent functions.
         """
-        return self._agents
+        return self._agents.copy()
 
     async def execute_agents(self, report_id: str, token_id: str) -> Dict[str, Any]:
         tasks = {name: asyncio.create_task(agent_func(report_id, token_id)) for name, agent_func in self._agents.items()}
@@ -68,6 +68,7 @@ class AIOrchestrator:
 class Orchestrator(AIOrchestrator):
     """
     Concrete implementation of AIOrchestrator.
+    Instances of Orchestrator should be created using the `create_orchestrator` factory function.
     """
     async def execute_agents_concurrently(self, report_id: str, token_id: str) -> Dict[str, Any]:
         agent_results = await self.execute_agents(report_id, token_id)
@@ -89,5 +90,17 @@ class Orchestrator(AIOrchestrator):
 
         return aggregated_data
 
-orchestrator = Orchestrator()
-orchestrator.register_agent("dummy_agent", dummy_agent)
+def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
+    """
+    Factory function to create and configure an Orchestrator instance.
+
+    Args:
+        register_dummy (bool): If True, a 'dummy_agent' will be registered with the orchestrator.
+
+    Returns:
+        Orchestrator: A new instance of the Orchestrator.
+    """
+    orch = Orchestrator()
+    if register_dummy:
+        orch.register_agent('dummy_agent', dummy_agent)
+    return orch

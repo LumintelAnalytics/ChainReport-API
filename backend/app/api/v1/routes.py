@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from backend.app.models.report_models import ReportRequest, ReportResponse
 from backend.app.services.report_service import generate_report, in_memory_reports, get_report_status_from_memory, get_report_data
-from backend.app.core.orchestrator import orchestrator
+from backend.app.core.orchestrator import create_orchestrator
 import asyncio
 
 
@@ -23,8 +23,9 @@ async def dummy_agent_two(report_id: str, token_id: str) -> dict:
     return {"agent_two_data": "data_from_agent_two"}
 
 # Register agents
-orchestrator.register_agent("AgentOne", dummy_agent_one)
-orchestrator.register_agent("AgentTwo", dummy_agent_two)
+orchestrator_instance = create_orchestrator()
+orchestrator_instance.register_agent("AgentOne", dummy_agent_one)
+orchestrator_instance.register_agent("AgentTwo", dummy_agent_two)
 
 @router.get("/")
 async def read_root():
@@ -35,7 +36,7 @@ async def generate_report_endpoint(request: ReportRequest, background_tasks: Bac
     report_response = await generate_report(request)
     report_id = report_response.report_id
     # Execute agents concurrently in a background task
-    background_tasks.add_task(orchestrator.execute_agents_concurrently, report_id, request.token_id)
+    background_tasks.add_task(orchestrator_instance.execute_agents_concurrently, report_id, request.token_id)
     return report_response
 
 @router.get("/reports/{report_id}/status")

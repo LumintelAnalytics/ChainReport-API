@@ -1,15 +1,13 @@
 import asyncio
-import logging
 from typing import Callable, Dict, Any, List
 from backend.app.services.report_service import in_memory_reports
-
-logger = logging.getLogger(__name__)
+from backend.app.core.logger import orchestrator_logger
 
 async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
     """
     A dummy agent for testing purposes.
     """
-    logger.info("Dummy agent received report_id: %s, token_id: %s", report_id, token_id)
+    orchestrator_logger.info("Dummy agent received report_id: %s, token_id: %s", report_id, token_id)
     await asyncio.sleep(1)  # Simulate some async work
     return {"dummy_data": f"Processed by dummy agent for {report_id}"}
 
@@ -23,6 +21,7 @@ class AIOrchestrator:
         self._agents: Dict[str, Callable] = {}
 
     def register_agent(self, name: str, agent_func: Callable):
+        orchestrator_logger.info(f"Registering agent: {name}")
         """
         Registers an AI agent with the orchestrator.
         Args:
@@ -40,6 +39,7 @@ class AIOrchestrator:
         return self._agents.copy()
 
     async def execute_agents(self, report_id: str, token_id: str) -> Dict[str, Any]:
+        orchestrator_logger.info(f"Executing agents for report_id: {report_id}, token_id: {token_id}")
         tasks = {name: asyncio.create_task(agent_func(report_id, token_id)) for name, agent_func in self._agents.items()}
         results = {}
 
@@ -47,15 +47,17 @@ class AIOrchestrator:
             try:
                 result = await asyncio.wait_for(task, timeout=10) # Added timeout
                 results[name] = {"status": "completed", "data": result}
+                orchestrator_logger.info(f"Agent {name} completed for report {report_id}.")
             except asyncio.TimeoutError: # Handle timeout specifically
-                logger.exception("Agent %s timed out for report %s", name, report_id)
+                orchestrator_logger.exception("Agent %s timed out for report %s", name, report_id)
                 results[name] = {"status": "failed", "error": "Agent timed out"}
             except Exception as e:
-                logger.exception("Agent %s failed for report %s", name, report_id)
+                orchestrator_logger.exception("Agent %s failed for report %s", name, report_id)
                 results[name] = {"status": "failed", "error": str(e)}
         return results
 
     def aggregate_results(self, results: Dict[str, Any]) -> Dict[str, Any]:
+        orchestrator_logger.info("Aggregating results from executed agents.")
         """
         Aggregates the results from the executed AI agents.
         Args:
@@ -71,6 +73,7 @@ class Orchestrator(AIOrchestrator):
     Instances of Orchestrator should be created using the `create_orchestrator` factory function.
     """
     async def execute_agents_concurrently(self, report_id: str, token_id: str) -> Dict[str, Any]:
+        orchestrator_logger.info(f"Executing agents concurrently for report_id: {report_id}, token_id: {token_id}")
         agent_results = await self.execute_agents(report_id, token_id)
         aggregated_data = self.aggregate_results(agent_results)
 
@@ -78,6 +81,7 @@ class Orchestrator(AIOrchestrator):
         overall_status = "completed"
         if any(result["status"] == "failed" for result in agent_results.values()):
             overall_status = "partial_success"
+            orchestrator_logger.warning(f"Report {report_id} completed with partial success due to agent failures.")
 
         # Update in_memory_reports
         if report_id in in_memory_reports:
@@ -85,8 +89,9 @@ class Orchestrator(AIOrchestrator):
                 "status": overall_status,
                 "agent_results": aggregated_data["agent_results"]
             })
+            orchestrator_logger.info(f"Report {report_id} status updated to {overall_status}.")
         else:
-            logger.warning("Report ID %s not found in in_memory_reports during orchestration.", report_id)
+            orchestrator_logger.warning("Report ID %s not found in in_memory_reports during orchestration.", report_id)
 
         return aggregated_data
 

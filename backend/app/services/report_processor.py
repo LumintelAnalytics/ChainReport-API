@@ -4,7 +4,7 @@ from backend.app.core.orchestrator import AIOrchestrator
 from backend.app.services.agents.price_agent import run as price_agent_run
 from backend.app.services.agents.trend_agent import run as trend_agent_run
 from backend.app.services.agents.volume_agent import run as volume_agent_run
-from backend.app.core.storage import save_report_data, set_report_status, get_report_status
+from backend.app.core.storage import save_report_data, set_report_status, try_set_processing
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ async def process_report(report_id: str, token_id: str) -> bool:
     """
 
 
-    if not storage.try_set_processing(report_id):
+    if not try_set_processing(report_id):
         logger.info("Report %s is already being processed, skipping.", report_id)
         raise ValueError(f"Report {report_id} is already being processed")
 
@@ -47,5 +47,5 @@ async def process_report(report_id: str, token_id: str) -> bool:
         raise
     except Exception:
         logger.exception("Error processing report %s for token %s", report_id, token_id)
-        storage.set_report_status(report_id, "failed")
+        set_report_status(report_id, "failed")
         raise

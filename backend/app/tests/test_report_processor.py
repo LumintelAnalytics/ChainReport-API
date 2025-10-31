@@ -1,5 +1,6 @@
 import pytest
 import threading
+import asyncio
 from unittest.mock import patch
 
 from backend.app.services.report_processor import process_report
@@ -9,20 +10,21 @@ from backend.app.core import storage
 def clear_report_store():
     storage.REPORT_STORE.clear()
 
-def test_process_report_success():
+@pytest.mark.asyncio
+async def test_process_report_success():
     report_id = "test_report_1"
     token_id = "test_token_1"
     
     # Mock the agents to prevent actual external calls
-    with patch('backend.app.services.agents.price_agent.PriceAgent.get_price') as mock_get_price:
-        with patch('backend.app.services.agents.volume_agent.VolumeAgent.get_volume') as mock_get_volume:
-            with patch('backend.app.services.agents.trend_agent.TrendAgent.get_trend') as mock_get_trend:
+    with patch('backend.app.services.report_processor.price_agent_run') as mock_price_agent_run:
+        with patch('backend.app.services.report_processor.volume_agent_run') as mock_volume_agent_run:
+            with patch('backend.app.services.report_processor.trend_agent_run') as mock_trend_agent_run:
         
-                mock_get_price.return_value = 100.0
-                mock_get_volume.return_value = 1000.0
-                mock_get_trend.return_value = "up"
+                mock_price_agent_run.return_value = {"price": 100.0, "token_id": token_id, "report_id": report_id}
+                mock_volume_agent_run.return_value = {"volume": 1000.0, "token_id": token_id, "report_id": report_id}
+                mock_trend_agent_run.return_value = {"trend": "up", "token_id": token_id, "report_id": report_id}
 
-                process_report(report_id, token_id)
+                await process_report(report_id, token_id)
 
                 assert storage.get_report_status(report_id) == "completed"
                 report_data = storage.REPORT_STORE[report_id]["data"]
@@ -30,24 +32,26 @@ def test_process_report_success():
                 assert report_data["volume"] == 1000.0
                 assert report_data["trend"] == "up"
 
-def test_process_report_already_processing():
+@pytest.mark.asyncio
+async def test_process_report_already_processing():
     report_id = "test_report_2"
     token_id = "test_token_2"
     storage.set_report_status(report_id, "processing")
 
     with pytest.raises(ValueError, match=f"Report {report_id} is already being processed"):
-        process_report(report_id, token_id)
+        await process_report(report_id, token_id)
     
     assert storage.get_report_status(report_id) == "processing"
 
-def test_process_report_failure_sets_failed_status():
+@pytest.mark.asyncio
+async def test_process_report_failure_sets_failed_status():
     report_id = "test_report_3"
     token_id = "test_token_3"
 
-    with patch('backend.app.services.agents.price_agent.PriceAgent.get_price') as mock_get_price:
-        mock_get_price.side_effect = Exception("Agent error")
+    with patch('backend.app.services.report_processor.price_agent_run') as mock_price_agent_run:
+        mock_price_agent_run.side_effect = Exception("Agent error")
         with pytest.raises(Exception, match="Agent error"):
-            process_report(report_id, token_id)
+            await process_report(report_id, token_id)
     
     assert storage.get_report_status(report_id) == "failed"
 
@@ -79,10 +83,10 @@ def test_concurrent_processing_only_one_succeeds():
         nonlocal processed_count, exception_count
         try:
             # Mock the agents to prevent actual external calls
-            with patch('backend.app.services.agents.price_agent.PriceAgent.get_price', return_value=100.0):
-                with patch('backend.app.services.agents.volume_agent.VolumeAgent.get_volume', return_value=1000.0):
-                    with patch('backend.app.services.agents.trend_agent.TrendAgent.get_trend', return_value="up"):
-                        process_report(report_id, token_id)
+            with patch('backend.app.services.report_processor.price_agent_run', return_value={"price": 100.0, "token_id": token_id, "report_id": report_id}):
+                with patch('backend.app.services.report_processor.volume_agent_run', return_value={"volume": 1000.0, "token_id": token_id, "report_id": report_id}):
+                    with patch('backend.app.services.report_processor.trend_agent_run', return_value={"trend": "up", "token_id": token_id, "report_id": report_id}):
+                        asyncio.run(process_report(report_id, token_id))
             processed_count += 1
         except ValueError as e:
             if "already being processed" in str(e):

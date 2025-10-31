@@ -49,4 +49,4 @@ async def process_report(report_id: str, token_id: str) -> bool:
     except Exception as e:
         set_report_status(report_id, "failed")
         logger.exception("Report %s failed.", report_id)
-        raise e
+        raise

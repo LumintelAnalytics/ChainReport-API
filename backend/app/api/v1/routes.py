@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import JSONResponse
 from backend.app.models.report_models import ReportRequest, ReportResponse
 from backend.app.services.report_service import generate_report, in_memory_reports, get_report_status_from_memory, get_report_data
 from backend.app.core.orchestrator import create_orchestrator
 from backend.app.core.logger import api_logger
+from backend.app.core.exceptions import ReportNotFoundException, AgentExecutionException
 import asyncio
 
 router = APIRouter()
@@ -28,13 +29,23 @@ orchestrator_instance.register_agent("AgentTwo", dummy_agent_two)
 async def read_root():
     return {"message": "Welcome to API v1"}
 
+async def _run_agents_in_background(report_id: str, token_id: str):
+    try:
+        await orchestrator_instance.execute_agents_concurrently(report_id, token_id)
+    except Exception as e:
+        api_logger.error(f"Agent execution failed for report {report_id}: {e}")
+        # Here you might want to update the report status to 'failed' in in_memory_reports
+        # For now, we'll just log it.
+        if report_id in in_memory_reports:
+            in_memory_reports[report_id]["status"] = "failed"
+            in_memory_reports[report_id]["detail"] = f"Agent execution failed: {e}"
+
 @router.post("/report/generate", response_model=ReportResponse)
 async def generate_report_endpoint(request: ReportRequest, background_tasks: BackgroundTasks):
     api_logger.info(f"Received report generation request for token_id: {request.token_id}")
     report_response = await generate_report(request)
     report_id = report_response.report_id
-    # Execute agents concurrently in a background task
-    background_tasks.add_task(orchestrator_instance.execute_agents_concurrently, report_id, request.token_id)
+    background_tasks.add_task(_run_agents_in_background, report_id, request.token_id)
     return report_response
 
 @router.get("/reports/{report_id}/status")
@@ -43,7 +54,7 @@ async def get_report_status(report_id: str):
     report = get_report_status_from_memory(report_id)
     if not report:
         api_logger.error(f"Report with id {report_id} not found for status request.")
-        raise HTTPException(status_code=404, detail="Report not found")
+        raise ReportNotFoundException(detail="Report not found")
     return {"report_id": report_id, "status": report["status"]}
 
 @router.get("/reports/{report_id}/data")
@@ -74,4 +85,4 @@ async def get_report_data_endpoint(report_id: str):
                 },
             )
     api_logger.error(f"Report with id {report_id} not found or not completed for data request.")
-    raise HTTPException(status_code=404, detail="Report not found or not completed")
+    raise ReportNotFoundException(detail="Report not found or not completed")

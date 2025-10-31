@@ -1,15 +1,14 @@
 import asyncio
 import logging
+from backend.app.core.orchestrator import AIOrchestrator
+from backend.app.services.agents.price_agent import run as price_agent_run
+from backend.app.services.agents.trend_agent import run as trend_agent_run
+from backend.app.services.agents.volume_agent import run as volume_agent_run
+from backend.app.core.storage import save_report_data, set_report_status, try_set_processing
 
 logger = logging.getLogger(__name__)
 
-# In a real application, this would be a more robust shared state management system (e.g., Redis, a database, or a dedicated in-memory store with proper locking).
-# For now, a simple dictionary will simulate the state.
-# NOTE: This in-memory lock is only suitable for single-process deployments.
-# For multi-process or distributed deployments, consider using an external store
-# like Redis or a database with appropriate distributed locking mechanisms.
-report_status = {}
-report_status_lock = asyncio.Lock()
+
 
 async def process_report(report_id: str, token_id: str) -> bool:
     """
@@ -22,36 +21,31 @@ async def process_report(report_id: str, token_id: str) -> bool:
     Returns:
         True on success.
     """
-    # Mark processing under lock
-    async with report_status_lock:
-        if report_id in report_status:
-            raise ValueError(f"Report {report_id} is already being processed")
-        report_status[report_id] = {"status": "processing", "token_id": token_id}
+
+
+    if not try_set_processing(report_id):
+        logger.info("Report %s is already being processed, skipping.", report_id)
+        raise ValueError(f"Report {report_id} is already being processed")
 
     logger.info("Processing report %s for token %s", report_id, token_id)
-
     try:
-        await asyncio.sleep(5)  # Simulate work
-        async with report_status_lock:
-            if report_id in report_status and isinstance(report_status[report_id], dict):
-                report_status[report_id]["status"] = "completed"
+        orchestrator = AIOrchestrator()
+        orchestrator.register_agent("price_agent", price_agent_run)
+        orchestrator.register_agent("trend_agent", trend_agent_run)
+        orchestrator.register_agent("volume_agent", volume_agent_run)
+
+        agent_results = await orchestrator.execute_agents(report_id, token_id)
+        combined_report_data = orchestrator.aggregate_results(agent_results)
+
+        save_report_data(report_id, combined_report_data)
+        set_report_status(report_id, "completed")
+
         logger.info("Report %s completed.", report_id)
         return True
     except asyncio.CancelledError:
-        async with report_status_lock:
-            if report_id in report_status:
-                report_status[report_id]["status"] = "cancelled"
+        set_report_status(report_id, "cancelled")
         raise
     except Exception:
-        async with report_status_lock:
-            if report_id in report_status:
-                report_status[report_id]["status"] = "failed"
-        logger.exception("Report %s failed.", report_id)
+        logger.exception("Error processing report %s for token %s", report_id, token_id)
+        set_report_status(report_id, "failed")
         raise
-
-async def get_report_status(report_id: str):
-    """
-    Retrieves the status of a report.
-    """
-    async with report_status_lock:
-        return report_status.get(report_id)

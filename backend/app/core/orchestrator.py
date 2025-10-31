@@ -54,6 +54,7 @@ class AIOrchestrator:
             except Exception as e:
                 orchestrator_logger.exception("Agent %s failed for report %s", name, report_id)
                 results[name] = {"status": "failed", "error": str(e)}
+                raise # Re-raise the exception
         return results
 
     def aggregate_results(self, results: Dict[str, Any]) -> Dict[str, Any]:
@@ -65,7 +66,11 @@ class AIOrchestrator:
         Returns:
             The aggregated result.
         """
-        return {"agent_results": results}
+        aggregated_data = {}
+        for agent_name, agent_result in results.items():
+            if agent_result["status"] == "completed" and "data" in agent_result:
+                aggregated_data.update(agent_result["data"])
+        return aggregated_data
 
 class Orchestrator(AIOrchestrator):
     """

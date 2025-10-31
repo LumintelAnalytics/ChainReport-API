@@ -23,11 +23,10 @@ async def process_report(report_id: str, token_id: str) -> bool:
     """
 
 
-    # Check if report is already processing using the storage module
-    if get_report_status(report_id) == "processing":
+    if not storage.try_set_processing(report_id):
+        logger.info("Report %s is already being processed, skipping.", report_id)
         raise ValueError(f"Report {report_id} is already being processed")
 
-    set_report_status(report_id, "processing")
     logger.info("Processing report %s for token %s", report_id, token_id)
     try:
         orchestrator = AIOrchestrator()
@@ -46,7 +45,7 @@ async def process_report(report_id: str, token_id: str) -> bool:
     except asyncio.CancelledError:
         set_report_status(report_id, "cancelled")
         raise
-    except Exception as e:
-        set_report_status(report_id, "failed")
-        logger.exception("Report %s failed.", report_id)
+    except Exception:
+        logger.exception("Error processing report %s for token %s", report_id, token_id)
+        storage.set_report_status(report_id, "failed")
         raise

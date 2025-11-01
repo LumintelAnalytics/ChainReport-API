@@ -92,7 +92,7 @@ class Orchestrator(AIOrchestrator):
         if report_id in in_memory_reports:
             in_memory_reports[report_id].update({
                 "status": overall_status,
-                "agent_results": aggregated_data["agent_results"]
+                "data": aggregated_data
             })
             orchestrator_logger.info(f"Report {report_id} status updated to {overall_status}.")
         else:

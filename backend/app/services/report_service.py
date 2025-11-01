@@ -40,7 +40,7 @@ def get_report_data(report_id: str) -> Dict | None:
         services_logger.info(f"Report {report_id} is completed, returning data.")
         return {
             "report_id": report_id,
-            "data": {"agent_results": report.get("agent_results", {})},
+            "data": report.get("data", {}),
         }
     services_logger.info(f"Report {report_id} is in status: {report.get("status")}, returning status only.")
     return {"report_id": report_id, "status": report.get("status")}

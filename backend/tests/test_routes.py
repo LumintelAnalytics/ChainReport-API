@@ -67,11 +67,10 @@ async def test_get_report_data_endpoint_completed(client: TestClient):
     assert response.status_code == 200
     assert data["report_id"] == report_id
     assert "data" in data
-    assert "agent_results" in data["data"]
-    assert "AgentOne" in data["data"]["agent_results"]
-    assert "AgentTwo" in data["data"]["agent_results"]
-    assert data["data"]["agent_results"]["AgentOne"]["status"] == "completed"
-    assert data["data"]["agent_results"]["AgentTwo"]["status"] == "completed"
+    assert "AgentOne" in data["data"]
+    assert "AgentTwo" in data["data"]
+    assert data["data"]["AgentOne"]["status"] == "completed"
+    assert data["data"]["AgentTwo"]["status"] == "completed"
 
 @pytest.mark.asyncio
 async def test_get_report_data_endpoint_not_found(client: TestClient):

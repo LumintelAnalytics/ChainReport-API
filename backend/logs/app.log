@@ -795,3 +795,47 @@ Exception: Agent error
 2025-10-31 08:09:14,290 - orchestrator - INFO - Agent trend_agent completed for report concurrent_report.
 2025-10-31 08:09:14,290 - orchestrator - INFO - Agent volume_agent completed for report concurrent_report.
 2025-10-31 08:09:14,290 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-01 21:26:56,892 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-01 21:26:56,893 - orchestrator - INFO - Registering agent: AgentTwo
+2025-11-01 21:27:01,723 - api - INFO - Received report generation request for token_id: test_token_123
+2025-11-01 21:27:01,723 - services - INFO - Generating new report for token_id: test_token_123
+2025-11-01 21:27:01,725 - orchestrator - INFO - Executing agents concurrently for report_id: d4083ec6-8fc7-4965-947d-cfd3cc4a64c0, token_id: test_token_123
+2025-11-01 21:27:01,725 - orchestrator - INFO - Executing agents for report_id: d4083ec6-8fc7-4965-947d-cfd3cc4a64c0, token_id: test_token_123
+2025-11-01 21:27:03,726 - orchestrator - INFO - Agent AgentOne completed for report d4083ec6-8fc7-4965-947d-cfd3cc4a64c0.
+2025-11-01 21:27:03,726 - orchestrator - INFO - Agent AgentTwo completed for report d4083ec6-8fc7-4965-947d-cfd3cc4a64c0.
+2025-11-01 21:27:03,726 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-01 21:27:03,726 - api - ERROR - Agent execution failed for report d4083ec6-8fc7-4965-947d-cfd3cc4a64c0: 'agent_results'
+2025-11-01 21:27:03,941 - api - INFO - Received status request for report_id: d4083ec6-8fc7-4965-947d-cfd3cc4a64c0
+2025-11-01 21:27:03,941 - services - INFO - Retrieving status for report_id: d4083ec6-8fc7-4965-947d-cfd3cc4a64c0 from memory.
+2025-11-01 21:27:39,469 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-01 21:27:39,469 - orchestrator - INFO - Registering agent: AgentTwo
+2025-11-01 21:27:41,868 - api - INFO - Received report generation request for token_id: test_token_456
+2025-11-01 21:27:41,868 - services - INFO - Generating new report for token_id: test_token_456
+2025-11-01 21:27:41,869 - orchestrator - INFO - Executing agents concurrently for report_id: b239724f-186b-43f5-a449-0abf256378c1, token_id: test_token_456
+2025-11-01 21:27:41,869 - orchestrator - INFO - Executing agents for report_id: b239724f-186b-43f5-a449-0abf256378c1, token_id: test_token_456
+2025-11-01 21:27:43,870 - orchestrator - INFO - Agent AgentOne completed for report b239724f-186b-43f5-a449-0abf256378c1.
+2025-11-01 21:27:43,870 - orchestrator - INFO - Agent AgentTwo completed for report b239724f-186b-43f5-a449-0abf256378c1.
+2025-11-01 21:27:43,870 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-01 21:27:43,870 - orchestrator - INFO - Report b239724f-186b-43f5-a449-0abf256378c1 status updated to completed.
+2025-11-01 21:27:45,880 - api - INFO - Received status request for report_id: b239724f-186b-43f5-a449-0abf256378c1
+2025-11-01 21:27:45,880 - services - INFO - Retrieving status for report_id: b239724f-186b-43f5-a449-0abf256378c1 from memory.
+2025-11-01 21:28:43,489 - api - INFO - Received data request for report_id: b239724f-186b-43f5-a449-0abf256378c1
+2025-11-01 21:28:43,489 - services - INFO - Attempting to retrieve data for report_id: b239724f-186b-43f5-a449-0abf256378c1
+2025-11-01 21:28:43,489 - services - INFO - Report b239724f-186b-43f5-a449-0abf256378c1 is completed, returning data.
+2025-11-01 21:28:43,489 - api - INFO - Returning data for report_id: b239724f-186b-43f5-a449-0abf256378c1
+2025-11-01 21:29:38,002 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-01 21:29:38,002 - orchestrator - INFO - Registering agent: AgentTwo
+2025-11-01 21:29:40,126 - api - INFO - Received report generation request for token_id: test_token_789
+2025-11-01 21:29:40,126 - services - INFO - Generating new report for token_id: test_token_789
+2025-11-01 21:29:40,127 - orchestrator - INFO - Executing agents concurrently for report_id: 6211fd05-c8eb-4c44-ba07-0f3633eba131, token_id: test_token_789
+2025-11-01 21:29:40,127 - orchestrator - INFO - Executing agents for report_id: 6211fd05-c8eb-4c44-ba07-0f3633eba131, token_id: test_token_789
+2025-11-01 21:29:42,128 - orchestrator - INFO - Agent AgentOne completed for report 6211fd05-c8eb-4c44-ba07-0f3633eba131.
+2025-11-01 21:29:42,128 - orchestrator - INFO - Agent AgentTwo completed for report 6211fd05-c8eb-4c44-ba07-0f3633eba131.
+2025-11-01 21:29:42,128 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-01 21:29:42,128 - orchestrator - INFO - Report 6211fd05-c8eb-4c44-ba07-0f3633eba131 status updated to completed.
+2025-11-01 21:29:42,544 - api - INFO - Received status request for report_id: 6211fd05-c8eb-4c44-ba07-0f3633eba131
+2025-11-01 21:29:42,544 - services - INFO - Retrieving status for report_id: 6211fd05-c8eb-4c44-ba07-0f3633eba131 from memory.
+2025-11-01 21:30:56,326 - api - INFO - Received data request for report_id: 6211fd05-c8eb-4c44-ba07-0f3633eba131
+2025-11-01 21:30:56,326 - services - INFO - Attempting to retrieve data for report_id: 6211fd05-c8eb-4c44-ba07-0f3633eba131
+2025-11-01 21:30:56,326 - services - INFO - Report 6211fd05-c8eb-4c44-ba07-0f3633eba131 is completed, returning data.
+2025-11-01 21:30:56,326 - api - INFO - Returning data for report_id: 6211fd05-c8eb-4c44-ba07-0f3633eba131

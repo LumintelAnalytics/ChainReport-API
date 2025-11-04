@@ -1,7 +1,8 @@
 import asyncio
-from typing import Callable, Dict, Any, List
+from typing import Callable, Dict, Any
 from backend.app.services.report_service import in_memory_reports
 from backend.app.core.logger import orchestrator_logger
+from backend.app.services.agents.onchain_agent import fetch_onchain_metrics, fetch_tokenomics
 
 async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
     """
@@ -113,4 +114,23 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
     orch = Orchestrator()
     if register_dummy:
         orch.register_agent('dummy_agent', dummy_agent)
+
+    async def onchain_metrics_wrapper(report_id: str, token_id: str) -> Dict[str, Any]:
+        # In a real scenario, you would derive the URL and params based on report_id and token_id
+        # For now, using placeholder values
+        url = "https://api.example.com/onchain_metrics"
+        params = {"token_id": token_id, "report_id": report_id}
+        orchestrator_logger.info(f"Calling fetch_onchain_metrics for report_id: {report_id}, token_id: {token_id}")
+        return await fetch_onchain_metrics(url=url, params=params)
+
+    async def tokenomics_wrapper(report_id: str, token_id: str) -> Dict[str, Any]:
+        # In a real scenario, you would derive the URL and params based on report_id and token_id
+        # For now, using placeholder values
+        url = "https://api.example.com/tokenomics"
+        params = {"token_id": token_id}
+        orchestrator_logger.info(f"Calling fetch_tokenomics for report_id: {report_id}, token_id: {token_id}")
+        return await fetch_tokenomics(url=url, params=params)
+
+    orch.register_agent('onchain_metrics_agent', onchain_metrics_wrapper)
+    orch.register_agent('tokenomics_agent', tokenomics_wrapper)
     return orch

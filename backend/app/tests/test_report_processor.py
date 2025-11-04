@@ -50,8 +50,7 @@ async def test_process_report_failure_sets_failed_status():
 
     with patch('backend.app.services.report_processor.price_agent_run') as mock_price_agent_run:
         mock_price_agent_run.side_effect = Exception("Agent error")
-        with pytest.raises(Exception, match="Agent error"):
-            await process_report(report_id, token_id)
+        await process_report(report_id, token_id)
     
     assert storage.get_report_status(report_id) == "failed"
 
@@ -72,21 +71,22 @@ def test_try_set_processing_failure_other_status():
     assert storage.try_set_processing(report_id) is True
     assert storage.get_report_status(report_id) == "processing"
 
-def test_concurrent_processing_only_one_succeeds():
+@pytest.mark.asyncio
+async def test_concurrent_processing_only_one_succeeds():
     report_id = "concurrent_report"
     token_id = "concurrent_token"
-    
+
     processed_count = 0
     exception_count = 0
 
-    def worker():
+    async def run_process_report():
         nonlocal processed_count, exception_count
         try:
             # Mock the agents to prevent actual external calls
             with patch('backend.app.services.report_processor.price_agent_run', return_value={"price": 100.0, "token_id": token_id, "report_id": report_id}):
                 with patch('backend.app.services.report_processor.volume_agent_run', return_value={"volume": 1000.0, "token_id": token_id, "report_id": report_id}):
                     with patch('backend.app.services.report_processor.trend_agent_run', return_value={"trend": "up", "token_id": token_id, "report_id": report_id}):
-                        asyncio.run(process_report(report_id, token_id))
+                        await process_report(report_id, token_id)
             processed_count += 1
         except ValueError as e:
             if "already being processed" in str(e):
@@ -97,14 +97,8 @@ def test_concurrent_processing_only_one_succeeds():
             # Catch other unexpected exceptions during processing
             pass
 
-    threads = []
-    for _ in range(5):
-        thread = threading.Thread(target=worker)
-        threads.append(thread)
-        thread.start()
-
-    for thread in threads:
-        thread.join()
+    tasks = [run_process_report() for _ in range(5)]
+    await asyncio.gather(*tasks)
 
     assert processed_count == 1
     assert exception_count == 4

@@ -73,6 +73,8 @@ DATABASE_URL=postgresql://user:password@localhost:5432/chainreport
 REDIS_URL=redis://localhost:6379
 AI_MODEL_PATH=./models/gpt-agent
 SECRET_KEY=your_secret_key
+ONCHAIN_METRICS_URL=https://api.example.com/onchain_metrics # Example: URL for on-chain metrics API
+TOKENOMICS_URL=https://api.example.com/tokenomics # Example: URL for tokenomics API
 ```
 
 **Contribution Guidelines:**

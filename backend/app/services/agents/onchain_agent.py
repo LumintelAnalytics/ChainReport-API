@@ -29,7 +29,7 @@ class OnchainAgentHTTPError(OnchainAgentException):
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception_type((httpx.TimeoutException, httpx.RequestError, OnchainAgentHTTPError)),
+    retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
 async def fetch_onchain_metrics(url: str, params: dict = None) -> dict:
@@ -74,7 +74,7 @@ async def fetch_onchain_metrics(url: str, params: dict = None) -> dict:
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception_type((httpx.TimeoutException, httpx.RequestError, OnchainAgentHTTPError)),
+    retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
 async def fetch_tokenomics(url: str, params: dict = None) -> dict:

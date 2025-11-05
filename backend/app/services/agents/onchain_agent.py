@@ -1,6 +1,9 @@
+import asyncio
 import httpx
 import logging
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +32,7 @@ class OnchainAgentHTTPError(OnchainAgentException):
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, httpx.TimeoutException, httpx.RequestError)),
+    retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, OnchainAgentException, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
 async def fetch_onchain_metrics(url: str, params: dict = None) -> dict:
@@ -52,11 +55,12 @@ async def fetch_onchain_metrics(url: str, params: dict = None) -> dict:
     if params is None:
         params = {}
 
-    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS) as client:
+    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:
             logger.info(f"Fetching on-chain metrics from: {url} with params: {params}")
             response = await client.get(url, params=params)
             response.raise_for_status()  # Raise an exception for 4xx/5xx responses
+            await asyncio.sleep(settings.REQUEST_DELAY_SECONDS)
             return response.json()
         except httpx.TimeoutException as e:
             logger.error(f"Timeout fetching on-chain metrics from {url}: {e}")
@@ -74,7 +78,7 @@ async def fetch_onchain_metrics(url: str, params: dict = None) -> dict:
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, httpx.TimeoutException, httpx.RequestError)),
+    retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, OnchainAgentException, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
 async def fetch_tokenomics(url: str, params: dict = None) -> dict:
@@ -97,11 +101,12 @@ async def fetch_tokenomics(url: str, params: dict = None) -> dict:
     if params is None:
         params = {}
 
-    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS) as client:
+    async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:
             logger.info(f"Fetching tokenomics data from: {url} with params: {params}")
             response = await client.get(url, params=params)
             response.raise_for_status()
+            await asyncio.sleep(settings.REQUEST_DELAY_SECONDS)
             return response.json()
         except httpx.TimeoutException as e:
             logger.error(f"Timeout fetching tokenomics data from {url}: {e}")

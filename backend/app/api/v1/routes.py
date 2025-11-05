@@ -4,7 +4,7 @@ from backend.app.models.report_models import ReportRequest, ReportResponse
 from backend.app.services.report_service import generate_report, in_memory_reports, get_report_status_from_memory, get_report_data
 from backend.app.core.orchestrator import create_orchestrator
 from backend.app.core.logger import api_logger
-from backend.app.core.exceptions import ReportNotFoundException, AgentExecutionException
+from backend.app.core.exceptions import ReportNotFoundException
 import asyncio
 
 router = APIRouter()

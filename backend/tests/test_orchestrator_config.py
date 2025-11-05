@@ -1,8 +1,7 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from backend.app.core.orchestrator import create_orchestrator
 from backend.app.core.config import settings
-import logging
 
 @pytest.fixture(autouse=True)
 def reset_settings():

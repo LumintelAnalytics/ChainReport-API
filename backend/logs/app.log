@@ -1906,3 +1906,71 @@ Exception: Agent failed
 2025-11-05 21:27:13,442 - services - WARNING - Report with id non_existent_report not found when attempting to retrieve data.
 2025-11-05 21:27:13,442 - api - ERROR - Report with id non_existent_report not found or not completed for data request.
 2025-11-05 21:27:13,442 - api - ERROR - ReportNotFoundException: Report not found or not completed
+2025-11-05 22:13:59,026 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-05 22:13:59,026 - orchestrator - WARNING - Onchain metrics agent will not be registered due to invalid configuration.
+2025-11-05 22:13:59,026 - orchestrator - WARNING - Configuration Error: TOKENOMICS_URL is missing. Skipping agent registration.
+2025-11-05 22:13:59,026 - orchestrator - WARNING - Tokenomics agent will not be registered due to invalid configuration.
+2025-11-05 22:13:59,026 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-05 22:13:59,026 - orchestrator - INFO - Registering agent: AgentTwo
+2025-11-05 22:13:59,037 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-05 22:13:59,037 - orchestrator - INFO - Registering agent: AgentTwo
+2025-11-05 22:13:59,037 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_id_success, token_id: test_token_id
+2025-11-05 22:13:59,037 - orchestrator - INFO - Executing agents for report_id: test_report_id_success, token_id: test_token_id
+2025-11-05 22:13:59,037 - orchestrator - INFO - Agent AgentOne completed for report test_report_id_success.
+2025-11-05 22:13:59,037 - orchestrator - INFO - Agent AgentTwo completed for report test_report_id_success.
+2025-11-05 22:13:59,037 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-05 22:13:59,037 - orchestrator - INFO - Report test_report_id_success status updated to completed.
+2025-11-05 22:13:59,040 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-05 22:13:59,040 - orchestrator - INFO - Registering agent: AgentFailing
+2025-11-05 22:13:59,040 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_id_failure, token_id: test_token_id
+2025-11-05 22:13:59,040 - orchestrator - INFO - Executing agents for report_id: test_report_id_failure, token_id: test_token_id
+2025-11-05 22:13:59,040 - orchestrator - INFO - Agent AgentOne completed for report test_report_id_failure.
+2025-11-05 22:13:59,040 - orchestrator - ERROR - Agent AgentFailing failed for report test_report_id_failure
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/core/orchestrator.py", line 51, in execute_agents
+    result = await asyncio.wait_for(task, timeout=10) # Added timeout
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/asyncio/tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    raise effect
+Exception: Agent failed
+2025-11-05 22:13:59,042 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-05 22:13:59,042 - orchestrator - WARNING - Report test_report_id_failure completed with partial success due to agent failures.
+2025-11-05 22:13:59,042 - orchestrator - INFO - Report test_report_id_failure status updated to partial_success.
+2025-11-05 22:13:59,043 - orchestrator - INFO - Registering agent: a
+2025-11-05 22:13:59,044 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-05 22:13:59,044 - orchestrator - WARNING - Onchain metrics agent will not be registered due to invalid configuration.
+2025-11-05 22:13:59,044 - orchestrator - WARNING - Configuration Error: TOKENOMICS_URL is missing. Skipping agent registration.
+2025-11-05 22:13:59,044 - orchestrator - WARNING - Tokenomics agent will not be registered due to invalid configuration.
+2025-11-05 22:13:59,045 - orchestrator - INFO - Registering agent: dummy_agent
+2025-11-05 22:13:59,045 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-05 22:13:59,045 - orchestrator - WARNING - Onchain metrics agent will not be registered due to invalid configuration.
+2025-11-05 22:13:59,045 - orchestrator - WARNING - Configuration Error: TOKENOMICS_URL is missing. Skipping agent registration.
+2025-11-05 22:13:59,045 - orchestrator - WARNING - Tokenomics agent will not be registered due to invalid configuration.
+2025-11-05 22:13:59,077 - api - INFO - Received report generation request for token_id: test_token
+2025-11-05 22:13:59,078 - services - INFO - Generating new report for token_id: test_token
+2025-11-05 22:13:59,080 - api - INFO - Received data request for report_id: e21892f2-0505-4c58-a239-97e1b1816e31
+2025-11-05 22:13:59,080 - services - INFO - Attempting to retrieve data for report_id: e21892f2-0505-4c58-a239-97e1b1816e31
+2025-11-05 22:13:59,080 - services - INFO - Report e21892f2-0505-4c58-a239-97e1b1816e31 is in status: processing, returning status only.
+2025-11-05 22:13:59,080 - api - WARNING - Report e21892f2-0505-4c58-a239-97e1b1816e31 is still processing.
+2025-11-05 22:13:59,088 - api - INFO - Received report generation request for token_id: test_token
+2025-11-05 22:13:59,088 - services - INFO - Generating new report for token_id: test_token
+2025-11-05 22:13:59,088 - orchestrator - INFO - Executing agents concurrently for report_id: 6a308dc6-3c74-4869-bc90-8da800c2ffef, token_id: test_token
+2025-11-05 22:13:59,088 - orchestrator - INFO - Executing agents for report_id: 6a308dc6-3c74-4869-bc90-8da800c2ffef, token_id: test_token
+2025-11-05 22:14:01,090 - orchestrator - INFO - Agent AgentOne completed for report 6a308dc6-3c74-4869-bc90-8da800c2ffef.
+2025-11-05 22:14:01,091 - orchestrator - INFO - Agent AgentTwo completed for report 6a308dc6-3c74-4869-bc90-8da800c2ffef.
+2025-11-05 22:14:01,091 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-05 22:14:01,091 - orchestrator - INFO - Report 6a308dc6-3c74-4869-bc90-8da800c2ffef status updated to completed.
+2025-11-05 22:14:01,093 - api - INFO - Received status request for report_id: 6a308dc6-3c74-4869-bc90-8da800c2ffef
+2025-11-05 22:14:01,093 - services - INFO - Retrieving status for report_id: 6a308dc6-3c74-4869-bc90-8da800c2ffef from memory.
+2025-11-05 22:14:01,095 - api - INFO - Received data request for report_id: 6a308dc6-3c74-4869-bc90-8da800c2ffef
+2025-11-05 22:14:01,095 - services - INFO - Attempting to retrieve data for report_id: 6a308dc6-3c74-4869-bc90-8da800c2ffef
+2025-11-05 22:14:01,095 - services - INFO - Report 6a308dc6-3c74-4869-bc90-8da800c2ffef is completed, returning data.
+2025-11-05 22:14:01,095 - api - INFO - Returning data for report_id: 6a308dc6-3c74-4869-bc90-8da800c2ffef
+2025-11-05 22:14:01,103 - api - INFO - Received data request for report_id: non_existent_report
+2025-11-05 22:14:01,103 - services - INFO - Attempting to retrieve data for report_id: non_existent_report
+2025-11-05 22:14:01,103 - services - WARNING - Report with id non_existent_report not found when attempting to retrieve data.
+2025-11-05 22:14:01,103 - api - ERROR - Report with id non_existent_report not found or not completed for data request.
+2025-11-05 22:14:01,103 - api - ERROR - ReportNotFoundException: Report not found or not completed

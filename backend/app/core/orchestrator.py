@@ -1,7 +1,10 @@
 import asyncio
-from typing import Callable, Dict, Any, List
+from typing import Callable, Dict, Any
+from urllib.parse import urlparse
 from backend.app.services.report_service import in_memory_reports
 from backend.app.core.logger import orchestrator_logger
+from backend.app.services.agents.onchain_agent import fetch_onchain_metrics, fetch_tokenomics
+from backend.app.core.config import settings
 
 async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
     """
@@ -54,7 +57,6 @@ class AIOrchestrator:
             except Exception as e:
                 orchestrator_logger.exception("Agent %s failed for report %s", name, report_id)
                 results[name] = {"status": "failed", "error": str(e)}
-                raise # Re-raise the exception
         return results
 
     def aggregate_results(self, results: Dict[str, Any]) -> Dict[str, Any]:
@@ -110,7 +112,42 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
     Returns:
         Orchestrator: A new instance of the Orchestrator.
     """
+    def _is_valid_url(url: str | None, url_name: str) -> bool:
+        if not url:
+            orchestrator_logger.warning(f"Configuration Error: {url_name} is missing. Skipping agent registration.")
+            return False
+        parsed_url = urlparse(url)
+        if not parsed_url.scheme or not parsed_url.netloc or parsed_url.scheme not in ("http", "https"):
+            orchestrator_logger.warning(
+                f"Configuration Error: {url_name} ('{url}') is not a valid HTTP/HTTPS URL. Skipping agent registration."
+            )
+            return False
+        return True
+
     orch = Orchestrator()
     if register_dummy:
         orch.register_agent('dummy_agent', dummy_agent)
+
+    # Configure and register onchain_metrics_agent
+    onchain_metrics_url = settings.ONCHAIN_METRICS_URL
+    if _is_valid_url(onchain_metrics_url, "ONCHAIN_METRICS_URL"):
+        async def onchain_metrics_wrapper(report_id: str, token_id: str) -> Dict[str, Any]:
+            params = {"token_id": token_id, "report_id": report_id}
+            orchestrator_logger.info(f"Calling fetch_onchain_metrics for report_id: {report_id}, token_id: {token_id} with URL: {onchain_metrics_url}")
+            return await fetch_onchain_metrics(url=onchain_metrics_url, params=params)
+        orch.register_agent('onchain_metrics_agent', onchain_metrics_wrapper)
+    else:
+        orchestrator_logger.warning("Onchain metrics agent will not be registered due to invalid configuration.")
+
+    # Configure and register tokenomics_agent
+    tokenomics_url = settings.TOKENOMICS_URL
+    if _is_valid_url(tokenomics_url, "TOKENOMICS_URL"):
+        async def tokenomics_wrapper(report_id: str, token_id: str) -> Dict[str, Any]:
+            params = {"token_id": token_id}
+            orchestrator_logger.info(f"Calling fetch_tokenomics for report_id: {report_id}, token_id: {token_id} with URL: {tokenomics_url}")
+            return await fetch_tokenomics(url=tokenomics_url, params=params)
+        orch.register_agent('tokenomics_agent', tokenomics_wrapper)
+    else:
+        orchestrator_logger.warning("Tokenomics agent will not be registered due to invalid configuration.")
+
     return orch

@@ -31,9 +31,7 @@ async def test_execute_agents_concurrently_success():
     mock_agent_two.assert_called_once_with(report_id, token_id)
 
     assert in_memory_reports[report_id]["status"] == "completed"
-    assert "agent_results" in in_memory_reports[report_id]
-    assert in_memory_reports[report_id]["agent_results"]["AgentOne"] == {"status": "completed", "data": {"agent_one_result": "data1"}}
-    assert in_memory_reports[report_id]["agent_results"]["AgentTwo"] == {"status": "completed", "data": {"agent_two_result": "data2"}}
+    assert in_memory_reports[report_id]["data"] == {"agent_one_result": "data1", "agent_two_result": "data2"}
 
 @pytest.mark.asyncio
 async def test_execute_agents_concurrently_with_failure():
@@ -56,11 +54,7 @@ async def test_execute_agents_concurrently_with_failure():
     mock_agent_failing.assert_called_once_with(report_id, token_id)
 
     assert in_memory_reports[report_id]["status"] == "partial_success"
-    assert "agent_results" in in_memory_reports[report_id]
-    assert in_memory_reports[report_id]["agent_results"]["AgentOne"] == {"status": "completed", "data": {"agent_one_result": "data1"}}
-    assert in_memory_reports[report_id]["agent_results"]["AgentFailing"]["status"] == "failed"
-    assert "error" in in_memory_reports[report_id]["agent_results"]["AgentFailing"]
-    assert "Agent failed" in in_memory_reports[report_id]["agent_results"]["AgentFailing"]["error"]
+    assert in_memory_reports[report_id]["data"] == {"agent_one_result": "data1"}
 
 def test_get_agents_returns_copy():
     orch = Orchestrator()

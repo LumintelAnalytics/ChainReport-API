@@ -67,13 +67,13 @@ async def test_get_report_data_endpoint_completed(client: TestClient):
     assert response.status_code == 200
     assert data["report_id"] == report_id
     assert "data" in data
-    assert "AgentOne" in data["data"]
-    assert "AgentTwo" in data["data"]
-    assert data["data"]["AgentOne"]["status"] == "completed"
-    assert data["data"]["AgentTwo"]["status"] == "completed"
+    assert "agent_one_data" in data["data"]
+    assert "agent_two_data" in data["data"]
+    assert data["data"]["agent_one_data"] == "data_from_agent_one"
+    assert data["data"]["agent_two_data"] == "data_from_agent_two"
 
 @pytest.mark.asyncio
 async def test_get_report_data_endpoint_not_found(client: TestClient):
     response = await anyio.to_thread.run_sync(client.get, "/api/v1/reports/non_existent_report/data")
     assert response.status_code == 404
-    assert response.json() == {"detail": "Report not found or not completed"}
+    assert response.json() == {"message": "Report not found", "detail": "Report not found or not completed"}

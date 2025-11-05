@@ -6,3 +6,5 @@ python-dotenv
 pydantic-settings
 httpx
 textblob
+beautifulsoup4
+requests

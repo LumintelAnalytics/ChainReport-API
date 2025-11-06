@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 from backend.app.services.report_service import in_memory_reports
 from backend.app.core.logger import orchestrator_logger
 from backend.app.services.agents.onchain_agent import fetch_onchain_metrics, fetch_tokenomics
+from backend.app.services.agents.social_sentiment_agent import SocialSentimentAgent
 from backend.app.core.config import settings
 
 async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
@@ -172,5 +173,30 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
         orch.register_agent('onchain_data_agent', onchain_data_agent)
     else:
         orchestrator_logger.warning("Onchain Data Agent will not be registered due to invalid configuration.")
+
+    # Configure and register Social Sentiment Agent
+    async def social_sentiment_agent_func(report_id: str, token_id: str) -> Dict[str, Any]:
+        orchestrator_logger.info(f"Calling Social Sentiment Agent for report_id: {report_id}, token_id: {token_id}")
+        agent = SocialSentimentAgent()
+        social_sentiment_data = {}
+        try:
+            social_data = await asyncio.wait_for(agent.fetch_social_data(token_id), timeout=settings.AGENT_TIMEOUT - 1)
+            sentiment_report = await asyncio.wait_for(agent.analyze_sentiment(social_data), timeout=settings.AGENT_TIMEOUT - 1)
+            social_sentiment_data = {
+                "social_sentiment": {
+                    "overall_sentiment": sentiment_report.get("overall_sentiment"),
+                    "score": sentiment_report.get("score"),
+                    "summary": sentiment_report.get("details") # Storing details as summary for now
+                }
+            }
+            orchestrator_logger.info(f"Social Sentiment Agent completed for report {report_id}.")
+        except asyncio.TimeoutError:
+            orchestrator_logger.error("Social Sentiment Agent timed out for report %s", report_id)
+            social_sentiment_data = {"social_sentiment": {"error": "Agent timed out"}}
+        except Exception as e:
+            orchestrator_logger.exception("Social Sentiment Agent failed for report %s", report_id)
+            social_sentiment_data = {"social_sentiment": {"error": str(e)}}
+        return social_sentiment_data
+    orch.register_agent('social_sentiment_agent', social_sentiment_agent_func)
 
     return orch

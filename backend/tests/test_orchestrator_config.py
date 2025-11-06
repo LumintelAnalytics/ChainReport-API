@@ -29,6 +29,11 @@ async def test_create_orchestrator_with_valid_urls():
 @pytest.mark.asyncio
 async def test_create_orchestrator_with_missing_onchain_url():
     with patch('backend.app.core.orchestrator.orchestrator_logger') as mock_logger:
+        settings.ONCHAIN_METRICS_URL = None
+        settings.TOKENOMICS_URL = "https://valid.com/tokenomics"
+
+        orchestrator = create_orchestrator()
+
         agents = orchestrator.get_agents()
         assert 'onchain_data_agent' not in agents
         assert mock_logger.warning.call_count == 2
@@ -108,5 +113,5 @@ async def test_create_orchestrator_with_no_urls():
             "Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration."
         )
         mock_logger.warning.assert_any_call(
-            "Configuration Error: TOKENOMICS_URL is missing. Skipping agent registration."
+            "Onchain Data Agent will not be registered due to invalid configuration."
         )

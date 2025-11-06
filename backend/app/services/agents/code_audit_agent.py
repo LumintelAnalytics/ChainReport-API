@@ -96,11 +96,13 @@ class CodeAuditAgent:
             else:
                 repo_data['latest_release'] = 'N/A'
 
-            # Fetch issues count
-            issues_resp = await self.client.get(f"{base_url}/issues?state=all&per_page=1", headers=headers)
-            issues_resp.raise_for_status()
-            link_header = issues_resp.headers.get('link') or issues_resp.headers.get('Link')
-            repo_data['issues_count'] = parse_link_header(link_header, len(issues_resp.json()))
+            # Fetch issues count using GitHub Search API to avoid double-counting PRs
+            search_query = urllib.parse.quote_plus(f"repo:{owner}/{repo}+type:issue")
+            search_issues_url = f"https://api.github.com/search/issues?q={search_query}&per_page=1"
+            issues_search_resp = await self.client.get(search_issues_url, headers=headers)
+            issues_search_resp.raise_for_status()
+            issues_search_data = issues_search_resp.json()
+            repo_data['issues_count'] = issues_search_data.get('total_count', 0)
 
             # Fetch pull requests count
             pulls_resp = await self.client.get(f"{base_url}/pulls?state=all&per_page=1", headers=headers)

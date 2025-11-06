@@ -1,11 +1,13 @@
 import pytest
+import pytest_asyncio
 import respx
 from httpx import Response
 from backend.app.services.agents.code_audit_agent import CodeAuditAgent, CodeMetrics, AuditSummary, CodeAuditResult
 
-@pytest.fixture
-def code_audit_agent():
-    return CodeAuditAgent()
+@pytest_asyncio.fixture
+async def code_audit_agent():
+    async with CodeAuditAgent() as agent:
+        yield agent
 
 @pytest.mark.asyncio
 async def test_fetch_github_repo_metrics(code_audit_agent):
@@ -15,16 +17,15 @@ async def test_fetch_github_repo_metrics(code_audit_agent):
 
     with respx.mock:
         # Mock commits count
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/commits?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/commits?per_page=1&page=10>; rel="last"'}))
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/commits?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/commits?per_page=1&page=10>; rel="last"'}, json=[]))
         # Mock contributors count
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/contributors?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/contributors?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/contributors?per_page=1&page=5>; rel="last"'}))
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/contributors?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/contributors?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/contributors?per_page=1&page=5>; rel="last"'}, json=[]))
         # Mock latest release
         respx.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest").mock(return_value=Response(200, json={'tag_name': 'v1.0.0'}))
         # Mock issues count
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/issues?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/issues?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/issues?state=all&per_page=1&page=20>; rel="last"'}))
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/issues?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/issues?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/issues?state=all&per_page=1&page=20>; rel="last"'}, json=[]))
         # Mock pull requests count
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=15>; rel="last"'}))
-
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=15>; rel="last"'}, json=[]))
         metrics = await code_audit_agent.fetch_repo_metrics(repo_url)
 
         assert metrics.repo_url == repo_url
@@ -41,16 +42,15 @@ async def test_fetch_gitlab_repo_metrics(code_audit_agent):
 
     with respx.mock:
         # Mock commits count
-        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/commits?per_page=1").mock(return_value=Response(200, headers={'x-total': '1000'}))
+        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/commits?per_page=1").mock(return_value=Response(200, headers={'x-total': '1000'}, json=[]))
         # Mock contributors count
-        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/contributors?per_page=1").mock(return_value=Response(200, headers={'x-total': '50'}))
+        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/contributors?per_page=1").mock(return_value=Response(200, headers={'x-total': '50'}, json=[]))
         # Mock latest release (tags)
         respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/tags?per_page=1").mock(return_value=Response(200, json=[{'name': 'v13.0.0'}]))
         # Mock issues count
-        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/issues?scope=all&per_page=1").mock(return_value=Response(200, headers={'x-total': '200'}))
+        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/issues?scope=all&per_page=1").mock(return_value=Response(200, headers={'x-total': '200'}, json=[]))
         # Mock merge requests count
-        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/merge_requests?scope=all&per_page=1").mock(return_value=Response(200, headers={'x-total': '150'}))
-
+        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/merge_requests?scope=all&per_page=1").mock(return_value=Response(200, headers={'x-total': '150'}, json=[]))
         metrics = await code_audit_agent.fetch_repo_metrics(repo_url)
 
         assert metrics.repo_url == repo_url

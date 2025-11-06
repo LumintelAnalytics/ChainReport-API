@@ -48,7 +48,7 @@ class AIOrchestrator:
 
         for name, task in tasks.items():
             try:
-                result = await asyncio.wait_for(task, timeout=10) # Added timeout
+                result = await asyncio.wait_for(task, timeout=settings.AGENT_TIMEOUT) # Added timeout
                 results[name] = {"status": "completed", "data": result}
                 orchestrator_logger.info(f"Agent {name} completed for report {report_id}.")
             except asyncio.TimeoutError: # Handle timeout specifically
@@ -128,26 +128,49 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
     if register_dummy:
         orch.register_agent('dummy_agent', dummy_agent)
 
-    # Configure and register onchain_metrics_agent
+    # Configure and register Onchain Data Agent
     onchain_metrics_url = settings.ONCHAIN_METRICS_URL
-    if _is_valid_url(onchain_metrics_url, "ONCHAIN_METRICS_URL"):
-        async def onchain_metrics_wrapper(report_id: str, token_id: str) -> Dict[str, Any]:
-            params = {"token_id": token_id, "report_id": report_id}
-            orchestrator_logger.info(f"Calling fetch_onchain_metrics for report_id: {report_id}, token_id: {token_id} with URL: {onchain_metrics_url}")
-            return await fetch_onchain_metrics(url=onchain_metrics_url, params=params)
-        orch.register_agent('onchain_metrics_agent', onchain_metrics_wrapper)
-    else:
-        orchestrator_logger.warning("Onchain metrics agent will not be registered due to invalid configuration.")
-
-    # Configure and register tokenomics_agent
     tokenomics_url = settings.TOKENOMICS_URL
-    if _is_valid_url(tokenomics_url, "TOKENOMICS_URL"):
-        async def tokenomics_wrapper(report_id: str, token_id: str) -> Dict[str, Any]:
-            params = {"token_id": token_id}
-            orchestrator_logger.info(f"Calling fetch_tokenomics for report_id: {report_id}, token_id: {token_id} with URL: {tokenomics_url}")
-            return await fetch_tokenomics(url=tokenomics_url, params=params)
-        orch.register_agent('tokenomics_agent', tokenomics_wrapper)
+
+    if _is_valid_url(onchain_metrics_url, "ONCHAIN_METRICS_URL") and _is_valid_url(tokenomics_url, "TOKENOMICS_URL"):
+        async def onchain_data_agent(report_id: str, token_id: str) -> Dict[str, Any]:
+            orchestrator_logger.info(f"Calling Onchain Data Agent for report_id: {report_id}, token_id: {token_id}")
+            onchain_metrics_params = {"token_id": token_id, "report_id": report_id}
+            tokenomics_params = {"token_id": token_id}
+
+            onchain_metrics_task = asyncio.create_task(fetch_onchain_metrics(url=onchain_metrics_url, params=onchain_metrics_params))
+            tokenomics_task = asyncio.create_task(fetch_tokenomics(url=tokenomics_url, params=tokenomics_params))
+
+            onchain_metrics_result = {}
+            tokenomics_result = {}
+
+            onchain_metrics_result, tokenomics_result = await asyncio.gather(
+                asyncio.wait_for(onchain_metrics_task, timeout=settings.AGENT_TIMEOUT - 1),
+                asyncio.wait_for(tokenomics_task, timeout=settings.AGENT_TIMEOUT - 1),
+                return_exceptions=True  # This will allow us to handle exceptions for each task individually
+            )
+
+            # Handle individual task results and exceptions
+            if isinstance(onchain_metrics_result, asyncio.TimeoutError):
+                orchestrator_logger.error("Onchain metrics fetch timed out for report %s", report_id)
+                onchain_metrics_result = {"error": "Onchain metrics fetch timed out"}
+            elif isinstance(onchain_metrics_result, Exception):
+                orchestrator_logger.error("Onchain metrics fetch failed for report %s", report_id)
+                onchain_metrics_result = {"error": str(onchain_metrics_result)}
+
+            if isinstance(tokenomics_result, asyncio.TimeoutError):
+                orchestrator_logger.error("Tokenomics fetch timed out for report %s", report_id)
+                tokenomics_result = {"error": "Tokenomics fetch timed out"}
+            elif isinstance(tokenomics_result, Exception):
+                orchestrator_logger.error("Tokenomics fetch failed for report %s", report_id)
+                tokenomics_result = {"error": str(tokenomics_result)}
+
+            return {
+                "onchain_metrics": onchain_metrics_result,
+                "tokenomics": tokenomics_result
+            }
+        orch.register_agent('onchain_data_agent', onchain_data_agent)
     else:
-        orchestrator_logger.warning("Tokenomics agent will not be registered due to invalid configuration.")
+        orchestrator_logger.warning("Onchain Data Agent will not be registered due to invalid configuration.")
 
     return orch

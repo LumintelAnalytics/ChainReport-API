@@ -1,6 +1,7 @@
 import asyncio
 from typing import Callable, Dict, Any
 from urllib.parse import urlparse
+import httpx
 from backend.app.services.report_service import in_memory_reports
 from backend.app.core.logger import orchestrator_logger
 from backend.app.services.agents.onchain_agent import fetch_onchain_metrics, fetch_tokenomics
@@ -138,29 +139,41 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
             onchain_metrics_params = {"token_id": token_id, "report_id": report_id}
             tokenomics_params = {"token_id": token_id}
 
-            onchain_metrics_task = fetch_onchain_metrics(url=onchain_metrics_url, params=onchain_metrics_params)
-            tokenomics_task = fetch_tokenomics(url=tokenomics_url, params=tokenomics_params)
+            onchain_metrics_task = asyncio.create_task(fetch_onchain_metrics(url=onchain_metrics_url, params=onchain_metrics_params))
+            tokenomics_task = asyncio.create_task(fetch_tokenomics(url=tokenomics_url, params=tokenomics_params))
 
             onchain_metrics_result = {}
             tokenomics_result = {}
 
             try:
-                onchain_metrics_result = await asyncio.wait_for(onchain_metrics_task, timeout=settings.AGENT_TIMEOUT)
-            except asyncio.TimeoutError:
+                onchain_metrics_result, tokenomics_result = await asyncio.gather(
+                    asyncio.wait_for(onchain_metrics_task, timeout=settings.AGENT_TIMEOUT),
+                    asyncio.wait_for(tokenomics_task, timeout=settings.AGENT_TIMEOUT),
+                    return_exceptions=True  # This will allow us to handle exceptions for each task individually
+                )
+            except Exception as e:
+                orchestrator_logger.exception("An unexpected error occurred during concurrent fetching for report %s", report_id)
+                onchain_metrics_result = {"error": f"Unexpected error: {e}"}
+                tokenomics_result = {"error": f"Unexpected error: {e}"}
+                return {
+                    "onchain_metrics": onchain_metrics_result,
+                    "tokenomics": tokenomics_result
+                }
+
+            # Handle individual task results and exceptions
+            if isinstance(onchain_metrics_result, asyncio.TimeoutError):
                 orchestrator_logger.exception("Onchain metrics fetch timed out for report %s", report_id)
                 onchain_metrics_result = {"error": "Onchain metrics fetch timed out"}
-            except Exception as e:
+            elif isinstance(onchain_metrics_result, Exception):
                 orchestrator_logger.exception("Onchain metrics fetch failed for report %s", report_id)
-                onchain_metrics_result = {"error": str(e)}
+                onchain_metrics_result = {"error": str(onchain_metrics_result)}
 
-            try:
-                tokenomics_result = await asyncio.wait_for(tokenomics_task, timeout=settings.AGENT_TIMEOUT)
-            except asyncio.TimeoutError:
+            if isinstance(tokenomics_result, asyncio.TimeoutError):
                 orchestrator_logger.exception("Tokenomics fetch timed out for report %s", report_id)
                 tokenomics_result = {"error": "Tokenomics fetch timed out"}
-            except Exception as e:
+            elif isinstance(tokenomics_result, Exception):
                 orchestrator_logger.exception("Tokenomics fetch failed for report %s", report_id)
-                tokenomics_result = {"error": str(e)}
+                tokenomics_result = {"error": str(tokenomics_result)}
 
             return {
                 "onchain_metrics": onchain_metrics_result,

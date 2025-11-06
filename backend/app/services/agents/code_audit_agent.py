@@ -111,11 +111,11 @@ class CodeAuditAgent:
             repo_data['pull_requests_count'] = parse_link_header(link_header, len(pulls_resp.json()))
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"GitHub API error for {owner}/{repo}: {e}")
+            logger.exception(f"GitHub API error for {owner}/{repo}: {e}")
         except httpx.RequestError as e:
-            logger.error(f"GitHub network error for {owner}/{repo}: {e}")
+            logger.exception(f"GitHub network error for {owner}/{repo}: {e}")
         except Exception as e:
-            logger.error(f"An unexpected error occurred while fetching GitHub data for {owner}/{repo}: {e}")
+            logger.exception(f"An unexpected error occurred while fetching GitHub data for {owner}/{repo}: {e}")
         return repo_data
 
     async def _fetch_gitlab_repo_data(self, project_id: str) -> Dict[str, Any]:
@@ -153,11 +153,11 @@ class CodeAuditAgent:
             repo_data['pull_requests_count'] = int(merge_requests_resp.headers.get('x-total', 0))
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"GitLab API error for project ID {project_id}: {e}")
+            logger.exception(f"GitLab API error for project ID {project_id}: {e}")
         except httpx.RequestError as e:
-            logger.error(f"GitLab network error for project ID {project_id}: {e}")
+            logger.exception(f"GitLab network error for project ID {project_id}: {e}")
         except Exception as e:
-            logger.error(f"An unexpected error occurred while fetching GitLab data for project ID {project_id}: {e}")
+            logger.exception(f"An unexpected error occurred while fetching GitLab data for project ID {project_id}: {e}")
         return repo_data
 
     async def fetch_repo_metrics(self, repo_url: str) -> CodeMetrics:
@@ -190,6 +190,10 @@ class CodeAuditAgent:
             # For simplicity, let's assume the last part of the path is the project path with owner.
             path_segments = [s for s in parsed_url.path.split('/') if s]
             if len(path_segments) >= 2:
+                # Check if the last segment ends with '.git' and remove it
+                if path_segments[-1].endswith('.git'):
+                    path_segments[-1] = path_segments[-1][:-4] # Remove '.git'
+
                 project_path_with_namespace = "/".join(path_segments)
                 project_id = urllib.parse.quote_plus(project_path_with_namespace)
                 gitlab_data = await self._fetch_gitlab_repo_data(project_id)

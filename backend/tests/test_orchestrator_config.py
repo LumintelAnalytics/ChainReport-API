@@ -23,23 +23,20 @@ async def test_create_orchestrator_with_valid_urls():
         orchestrator = create_orchestrator()
         
         agents = orchestrator.get_agents()
-        assert 'onchain_metrics_agent' in agents
-        assert 'tokenomics_agent' in agents
+        assert 'onchain_data_agent' in agents
         mock_logger.warning.assert_not_called()
 
 @pytest.mark.asyncio
 async def test_create_orchestrator_with_missing_onchain_url():
     with patch('backend.app.core.orchestrator.orchestrator_logger') as mock_logger:
-        settings.ONCHAIN_METRICS_URL = None # Missing
-        settings.TOKENOMICS_URL = "https://valid.com/tokenomics"
-        
-        orchestrator = create_orchestrator()
-        
         agents = orchestrator.get_agents()
-        assert 'onchain_metrics_agent' not in agents
-        assert 'tokenomics_agent' in agents
-        mock_logger.warning.assert_called_with(
-            "Onchain metrics agent will not be registered due to invalid configuration."
+        assert 'onchain_data_agent' not in agents
+        assert mock_logger.warning.call_count == 2
+        mock_logger.warning.assert_any_call(
+            "Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration."
+        )
+        mock_logger.warning.assert_any_call(
+            "Onchain Data Agent will not be registered due to invalid configuration."
         )
 
 @pytest.mark.asyncio
@@ -51,10 +48,13 @@ async def test_create_orchestrator_with_invalid_onchain_url():
         orchestrator = create_orchestrator()
         
         agents = orchestrator.get_agents()
-        assert 'onchain_metrics_agent' not in agents
-        assert 'tokenomics_agent' in agents
-        mock_logger.warning.assert_called_with(
-            "Onchain metrics agent will not be registered due to invalid configuration."
+        assert 'onchain_data_agent' not in agents
+        assert mock_logger.warning.call_count == 2
+        mock_logger.warning.assert_any_call(
+            "Configuration Error: ONCHAIN_METRICS_URL ('invalid-url') is not a valid HTTP/HTTPS URL. Skipping agent registration."
+        )
+        mock_logger.warning.assert_any_call(
+            "Onchain Data Agent will not be registered due to invalid configuration."
         )
 
 @pytest.mark.asyncio
@@ -66,10 +66,13 @@ async def test_create_orchestrator_with_missing_tokenomics_url():
         orchestrator = create_orchestrator()
         
         agents = orchestrator.get_agents()
-        assert 'onchain_metrics_agent' in agents
-        assert 'tokenomics_agent' not in agents
-        mock_logger.warning.assert_called_with(
-            "Tokenomics agent will not be registered due to invalid configuration."
+        assert 'onchain_data_agent' not in agents
+        assert mock_logger.warning.call_count == 2
+        mock_logger.warning.assert_any_call(
+            "Configuration Error: TOKENOMICS_URL is missing. Skipping agent registration."
+        )
+        mock_logger.warning.assert_any_call(
+            "Onchain Data Agent will not be registered due to invalid configuration."
         )
 
 @pytest.mark.asyncio
@@ -81,10 +84,13 @@ async def test_create_orchestrator_with_invalid_tokenomics_url():
         orchestrator = create_orchestrator()
         
         agents = orchestrator.get_agents()
-        assert 'onchain_metrics_agent' in agents
-        assert 'tokenomics_agent' not in agents
-        mock_logger.warning.assert_called_with(
-            "Tokenomics agent will not be registered due to invalid configuration."
+        assert 'onchain_data_agent' not in agents
+        assert mock_logger.warning.call_count == 2
+        mock_logger.warning.assert_any_call(
+            "Configuration Error: TOKENOMICS_URL ('ftp://invalid.com') is not a valid HTTP/HTTPS URL. Skipping agent registration."
+        )
+        mock_logger.warning.assert_any_call(
+            "Onchain Data Agent will not be registered due to invalid configuration."
         )
 
 @pytest.mark.asyncio
@@ -96,12 +102,11 @@ async def test_create_orchestrator_with_no_urls():
         orchestrator = create_orchestrator()
         
         agents = orchestrator.get_agents()
-        assert 'onchain_metrics_agent' not in agents
-        assert 'tokenomics_agent' not in agents
-        assert mock_logger.warning.call_count == 4
+        assert 'onchain_data_agent' not in agents
+        assert mock_logger.warning.call_count == 2
         mock_logger.warning.assert_any_call(
-            "Onchain metrics agent will not be registered due to invalid configuration."
+            "Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration."
         )
         mock_logger.warning.assert_any_call(
-            "Tokenomics agent will not be registered due to invalid configuration."
+            "Configuration Error: TOKENOMICS_URL is missing. Skipping agent registration."
         )

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     TOKENOMICS_URL: str | None = None
     USER_AGENT: str = "ChainReport-API/1.0 (https://lumintelanalytics.com)"
     REQUEST_DELAY_SECONDS: float = 1.0
+    AGENT_TIMEOUT: float = 30.0
 
     model_config = SettingsConfigDict(env_file=".env")
 

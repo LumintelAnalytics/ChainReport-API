@@ -42,10 +42,24 @@ class CodeAuditResult(BaseModel):
     audit_summaries: List[AuditSummary]
 
 class CodeAuditAgent:
+    """
+    Agent for auditing codebases, fetching repository metrics, and summarizing audit reports.
+    This class is designed to be used as an async context manager to ensure proper
+    management of the underlying httpx.AsyncClient.
+
+    Example usage:
+        async with CodeAuditAgent() as agent:
+            metrics = await agent.fetch_repo_metrics("https://github.com/owner/repo")
+            # ...
+    """
     def __init__(self):
         self.github_token = os.getenv("GITHUB_TOKEN")
         self.gitlab_token = os.getenv("GITLAB_TOKEN")
+        self.client = None
+
+    async def __aenter__(self):
         self.client = httpx.AsyncClient()
+        return self
 
     async def _fetch_github_repo_data(self, owner: str, repo: str) -> Dict[str, Any]:
         headers = {"Authorization": f"token {self.github_token}"} if self.github_token else {}
@@ -271,8 +285,6 @@ class CodeAuditAgent:
             audit_summaries=audit_summaries
         )
 
-    async def close(self):
-        await self.client.aclose()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.client.aclose()

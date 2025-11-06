@@ -1,7 +1,12 @@
 import os
+import re
+import logging
 from typing import Dict, Any, List
 import httpx
 from pydantic import BaseModel, Field
+import urllib.parse
+
+logger = logging.getLogger(__name__)
 
 class CommitActivity(BaseModel):
     total: int
@@ -49,26 +54,40 @@ class CodeAuditAgent:
         repo_data = {}
         
         try:
+            # Helper function to parse link header
+            def parse_link_header(link_header_str: str, fallback_len: int) -> int:
+                if not link_header_str:
+                    return fallback_len
+                
+                last_page_link = None
+                for part in link_header_str.split(','):
+                    if 'rel="last"' in part:
+                        last_page_link = part.strip()
+                        break
+                
+                if last_page_link:
+                    try:
+                        url_match = re.search(r'<(.*?)>', last_page_link)
+                        if url_match:
+                            url = url_match.group(1)
+                            page_match = re.search(r'[?&]page=(\d+)', url)
+                            if page_match:
+                                return int(page_match.group(1))
+                    except Exception:
+                        logger.warning(f"Failed to parse 'rel=\"last\"' link from header: {last_page_link}")
+                return fallback_len
+
             # Fetch commits count
             commits_resp = await self.client.get(f"{base_url}/commits?per_page=1", headers=headers)
             commits_resp.raise_for_status()
-            link_header = commits_resp.headers.get('link') or commits_resp.headers.get('Link') # Try both cases
-            if link_header:
-                last_page_link = link_header.split(',')[-1] # Corrected index to -1
-                commits_count = int(last_page_link.split('&page=')[1].split('>')[0])
-            else:
-                commits_count = len(commits_resp.json()) # Fallback for small repos
-            repo_data['commits_count'] = commits_count
+            link_header = commits_resp.headers.get('link') or commits_resp.headers.get('Link')
+            repo_data['commits_count'] = parse_link_header(link_header, len(commits_resp.json()))
 
             # Fetch contributors count
             contributors_resp = await self.client.get(f"{base_url}/contributors?per_page=1", headers=headers)
             contributors_resp.raise_for_status()
-            if 'link' in contributors_resp.headers:
-                last_page_link = contributors_resp.headers['link'].split(',')[-1] # Corrected index to -1
-                contributors_count = int(last_page_link.split('&page=')[1].split('>')[0])
-            else:
-                contributors_count = len(contributors_resp.json()) # Fallback for small repos
-            repo_data['contributors_count'] = contributors_count
+            link_header = contributors_resp.headers.get('link') or contributors_resp.headers.get('Link')
+            repo_data['contributors_count'] = parse_link_header(link_header, len(contributors_resp.json()))
 
             # Fetch latest release
             releases_resp = await self.client.get(f"{base_url}/releases/latest", headers=headers)
@@ -80,27 +99,21 @@ class CodeAuditAgent:
             # Fetch issues count
             issues_resp = await self.client.get(f"{base_url}/issues?state=all&per_page=1", headers=headers)
             issues_resp.raise_for_status()
-            if 'link' in issues_resp.headers:
-                last_page_link = issues_resp.headers['link'].split(',')[-1] # Corrected index to -1
-                issues_count = int(last_page_link.split('&page=')[1].split('>')[0])
-            else:
-                issues_count = len(issues_resp.json())
-            repo_data['issues_count'] = issues_count
+            link_header = issues_resp.headers.get('link') or issues_resp.headers.get('Link')
+            repo_data['issues_count'] = parse_link_header(link_header, len(issues_resp.json()))
 
             # Fetch pull requests count
             pulls_resp = await self.client.get(f"{base_url}/pulls?state=all&per_page=1", headers=headers)
             pulls_resp.raise_for_status()
-            if 'link' in pulls_resp.headers:
-                last_page_link = pulls_resp.headers['link'].split(',')[-1] # Corrected index to -1
-                pulls_count = int(last_page_link.split('&page=')[1].split('>')[0])
-            else:
-                pulls_count = len(pulls_resp.json())
-            repo_data['pull_requests_count'] = pulls_count
+            link_header = pulls_resp.headers.get('link') or pulls_resp.headers.get('Link')
+            repo_data['pull_requests_count'] = parse_link_header(link_header, len(pulls_resp.json()))
 
         except httpx.HTTPStatusError as e:
-            print(f"GitHub API error: {e}")
+            logger.error(f"GitHub API error for {owner}/{repo}: {e}")
         except httpx.RequestError as e:
-            print(f"GitHub network error: {e}")
+            logger.error(f"GitHub network error for {owner}/{repo}: {e}")
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while fetching GitHub data for {owner}/{repo}: {e}")
         return repo_data
 
     async def _fetch_gitlab_repo_data(self, project_id: str) -> Dict[str, Any]:
@@ -138,9 +151,11 @@ class CodeAuditAgent:
             repo_data['pull_requests_count'] = int(merge_requests_resp.headers.get('x-total', 0))
 
         except httpx.HTTPStatusError as e:
-            print(f"GitLab API error: {e}")
+            logger.error(f"GitLab API error for project ID {project_id}: {e}")
         except httpx.RequestError as e:
-            print(f"GitLab network error: {e}")
+            logger.error(f"GitLab network error for project ID {project_id}: {e}")
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while fetching GitLab data for project ID {project_id}: {e}")
         return repo_data
 
     async def fetch_repo_metrics(self, repo_url: str) -> CodeMetrics:
@@ -154,35 +169,33 @@ class CodeAuditAgent:
             "pull_requests_count": 0,
         }
 
-        if "github.com" in repo_url:
-            parts = repo_url.split("/")
-            owner = parts[-2]
-            repo = parts[-1].replace(".git", "")
-            github_data = await self._fetch_github_repo_data(owner, repo)
-            metrics_data.update(github_data)
-        elif "gitlab.com" in repo_url:
+        parsed_url = urllib.parse.urlparse(repo_url)
+
+        if "github.com" in parsed_url.netloc:
+            path_segments = [s for s in parsed_url.path.split('/') if s]
+            if len(path_segments) >= 2:
+                owner = path_segments[0]
+                repo = path_segments[1].replace(".git", "")
+                github_data = await self._fetch_github_repo_data(owner, repo)
+                metrics_data.update(github_data)
+            else:
+                logger.error(f"Invalid GitHub repository URL format: {repo_url}")
+        elif "gitlab.com" in parsed_url.netloc:
             # For GitLab, we need the project ID. This is a simplification.
             # A more robust solution would involve searching for the project by path.
             # For now, assume the URL contains the project ID or path that can be converted.
             # Example: https://gitlab.com/group/subgroup/project -> project_id can be derived or passed.
             # For simplicity, let's assume the last part of the path is the project path with owner.
-            parts = repo_url.split("/")
-            project_path_with_namespace = "/".join(parts[-2:])
-            # This is a significant simplification. GitLab API needs project ID or URL-encoded path.
-            # For a real implementation, you'd need to resolve project_path_with_namespace to an ID.
-            # For now, I'll use a placeholder for project_id.
-            # A better approach would be to use the search API or require the user to provide the project ID.
-            print("GitLab integration requires project ID or full path. Using placeholder for now.")
-            # Placeholder for project_id. In a real scenario, this would need to be resolved.
-            # For example, if the URL is https://gitlab.com/gitlab-org/gitlab, project_id could be 'gitlab-org%2Fgitlab'
-            # For now, I'll use a dummy ID or try to infer from URL if possible.
-            # Let's assume the user provides the full path in the URL for now.
-            # Example: https://gitlab.com/gitlab-org/gitlab-foss -> project_id = gitlab-org%2Fgitlab-foss
-            project_id = project_path_with_namespace.replace("/", "%2F")
-            gitlab_data = await self._fetch_gitlab_repo_data(project_id)
-            metrics_data.update(gitlab_data)
+            path_segments = [s for s in parsed_url.path.split('/') if s]
+            if len(path_segments) >= 2:
+                project_path_with_namespace = "/".join(path_segments)
+                project_id = urllib.parse.quote_plus(project_path_with_namespace)
+                gitlab_data = await self._fetch_gitlab_repo_data(project_id)
+                metrics_data.update(gitlab_data)
+            else:
+                logger.error(f"Invalid GitLab repository URL format: {repo_url}")
         else:
-            print(f"Unsupported repository URL: {repo_url}")
+            logger.error(f"Unsupported repository URL: {repo_url}")
 
         return CodeMetrics(**metrics_data)
 
@@ -251,6 +264,9 @@ class CodeAuditAgent:
             code_metrics=code_metrics,
             audit_summaries=audit_summaries
         )
+
+    async def close(self):
+        await self.client.aclose()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.client.aclose()

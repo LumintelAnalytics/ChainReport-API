@@ -285,12 +285,12 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
                     )
                     audit_summary_data = audit_summary
 
-            except asyncio.TimeoutError as exc:
+            except asyncio.TimeoutError:
                 orchestrator_logger.error("Code/Audit Agent timed out for report %s", report_id)
-                raise exc
+                return {"code_audit": {"error": "Agent timed out", "code_metrics": code_metrics_data, "audit_summary": audit_summary_data}}
             except Exception as e:
                 orchestrator_logger.exception("Code/Audit Agent failed for report %s", report_id)
-                raise
+                return {"code_audit": {"error": str(e), "code_metrics": code_metrics_data, "audit_summary": audit_summary_data}}
             
             return {
                 "code_audit": {

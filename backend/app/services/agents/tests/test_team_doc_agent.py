@@ -66,7 +66,7 @@ def test_analyze_whitepaper_public_statement_no_period(team_doc_agent):
 
     assert analysis["public_statements"] == [] # Should not extract if no period is found
 
-@patch('requests.get')
+@patch('backend.app.services.agents.team_doc_agent.requests.get')
 def test_scrape_team_profiles_success(mock_get, team_doc_agent):
     mock_html = """
     <html>
@@ -95,7 +95,7 @@ def test_scrape_team_profiles_success(mock_get, team_doc_agent):
     assert profiles == expected_profiles
     mock_get.assert_called_once_with(urls[0], timeout=10)
 
-@patch('requests.get')
+@patch('backend.app.services.agents.team_doc_agent.requests.get')
 def test_scrape_team_profiles_missing_elements(mock_get, team_doc_agent):
     mock_html = """
     <html>
@@ -122,7 +122,7 @@ def test_scrape_team_profiles_missing_elements(mock_get, team_doc_agent):
     ]
     assert profiles == expected_profiles
 
-@patch('requests.get')
+@patch('backend.app.services.agents.team_doc_agent.requests.get')
 def test_scrape_team_profiles_http_error(mock_get, team_doc_agent):
     mock_get.return_value = MockResponse("Not Found", status_code=404)
 
@@ -134,7 +134,7 @@ def test_scrape_team_profiles_http_error(mock_get, team_doc_agent):
     assert "error" in profiles[0]
     assert "HTTP Error: 404" in profiles[0]["error"]
 
-@patch('requests.get')
+@patch('backend.app.services.agents.team_doc_agent.requests.get')
 def test_scrape_team_profiles_connection_error(mock_get, team_doc_agent):
     mock_get.side_effect = requests.exceptions.ConnectionError("Network is unreachable")
 
@@ -146,7 +146,7 @@ def test_scrape_team_profiles_connection_error(mock_get, team_doc_agent):
     assert "error" in profiles[0]
     assert "Network is unreachable" in profiles[0]["error"]
 
-@patch('requests.get')
+@patch('backend.app.services.agents.team_doc_agent.requests.get')
 def test_scrape_team_profiles_multiple_urls(mock_get, team_doc_agent):
     mock_html_success = """
     <html>

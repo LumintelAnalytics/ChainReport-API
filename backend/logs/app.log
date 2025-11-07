@@ -3881,3 +3881,27 @@ Exception: Agent failed
 2025-11-07 15:13:51,240 - services - WARNING - Report with id non_existent_report not found when attempting to retrieve data.
 2025-11-07 15:13:51,240 - api - ERROR - Report with id non_existent_report not found or not completed for data request.
 2025-11-07 15:13:51,240 - api - ERROR - ReportNotFoundException: Report not found or not completed
+2025-11-07 18:55:03,901 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:55:03,904 - orchestrator - ERROR - Error scraping http://example.com/team/network-error: Network is unreachable
+2025-11-07 18:55:03,908 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:55:03,909 - orchestrator - ERROR - An unexpected error occurred while processing http://example.com/team/connection-refused: object of type 'Mock' has no len()
+2025-11-07 18:55:18,927 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:55:18,928 - orchestrator - ERROR - Error scraping http://example.com/team/network-error: Network is unreachable
+2025-11-07 18:55:18,930 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:55:18,931 - orchestrator - ERROR - An unexpected error occurred while processing http://example.com/team/connection-refused: object of type 'Mock' has no len()
+2025-11-07 18:56:28,268 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:56:28,269 - orchestrator - ERROR - Error scraping http://example.com/team/network-error: Network is unreachable
+2025-11-07 18:56:28,271 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:56:28,271 - orchestrator - ERROR - Error scraping http://example.com/team/connection-refused: Connection refused
+2025-11-07 18:56:39,287 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:56:39,288 - orchestrator - ERROR - Error scraping http://example.com/team/network-error: Network is unreachable
+2025-11-07 18:56:39,290 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:56:39,290 - orchestrator - ERROR - Error scraping http://example.com/team/connection-refused: Connection refused
+2025-11-07 18:57:28,341 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:57:28,342 - orchestrator - ERROR - Error scraping http://example.com/team/network-error: Network is unreachable
+2025-11-07 18:57:28,344 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:57:28,344 - orchestrator - ERROR - Error scraping http://example.com/team/connection-refused: Connection refused
+2025-11-07 18:57:37,755 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:57:37,757 - orchestrator - ERROR - Error scraping http://example.com/team/network-error: Network is unreachable
+2025-11-07 18:57:37,758 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-07 18:57:37,759 - orchestrator - ERROR - Error scraping http://example.com/team/connection-refused: Connection refused

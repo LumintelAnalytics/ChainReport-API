@@ -3765,3 +3765,119 @@ Exception: Agent failed
 2025-11-07 09:20:00,606 - services - WARNING - Report with id non_existent_report not found when attempting to retrieve data.
 2025-11-07 09:20:00,606 - api - ERROR - Report with id non_existent_report not found or not completed for data request.
 2025-11-07 09:20:00,606 - api - ERROR - ReportNotFoundException: Report not found or not completed
+2025-11-07 15:13:21,600 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-07 15:13:21,600 - orchestrator - WARNING - Onchain Data Agent will not be registered due to invalid configuration.
+2025-11-07 15:13:21,600 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-07 15:13:21,600 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-07 15:13:21,600 - orchestrator - WARNING - Configuration Error: CODE_AUDIT_REPO_URL is missing. Skipping agent registration.
+2025-11-07 15:13:21,600 - orchestrator - WARNING - Code/Audit Agent will not be registered due to invalid CODE_AUDIT_REPO_URL configuration.
+2025-11-07 15:13:21,600 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-07 15:13:21,600 - orchestrator - INFO - Registering agent: AgentTwo
+2025-11-07 15:13:48,005 - orchestrator - INFO - Registering agent: price_agent
+2025-11-07 15:13:48,005 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-07 15:13:48,005 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-07 15:13:48,005 - orchestrator - INFO - Executing agents for report_id: test_report_1, token_id: test_token_1
+2025-11-07 15:13:48,005 - orchestrator - INFO - Agent price_agent completed for report test_report_1.
+2025-11-07 15:13:48,005 - orchestrator - INFO - Agent trend_agent completed for report test_report_1.
+2025-11-07 15:13:48,005 - orchestrator - INFO - Agent volume_agent completed for report test_report_1.
+2025-11-07 15:13:48,006 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-07 15:13:48,011 - orchestrator - INFO - Registering agent: price_agent
+2025-11-07 15:13:48,011 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-07 15:13:48,011 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-07 15:13:48,011 - orchestrator - INFO - Executing agents for report_id: test_report_3, token_id: test_token_3
+2025-11-07 15:13:48,011 - orchestrator - ERROR - Agent price_agent failed for report test_report_3
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/core/orchestrator.py", line 54, in execute_agents
+    result = await asyncio.wait_for(task, timeout=settings.AGENT_TIMEOUT) # Added timeout
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/asyncio/tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    raise effect
+Exception: Agent error
+2025-11-07 15:13:48,112 - orchestrator - INFO - Agent trend_agent completed for report test_report_3.
+2025-11-07 15:13:48,112 - orchestrator - INFO - Agent volume_agent completed for report test_report_3.
+2025-11-07 15:13:48,112 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-07 15:13:48,118 - orchestrator - INFO - Registering agent: price_agent
+2025-11-07 15:13:48,119 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-07 15:13:48,119 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-07 15:13:48,119 - orchestrator - INFO - Executing agents for report_id: concurrent_report, token_id: concurrent_token
+2025-11-07 15:13:48,123 - orchestrator - INFO - Agent price_agent completed for report concurrent_report.
+2025-11-07 15:13:48,123 - orchestrator - INFO - Agent trend_agent completed for report concurrent_report.
+2025-11-07 15:13:48,123 - orchestrator - INFO - Agent volume_agent completed for report concurrent_report.
+2025-11-07 15:13:48,123 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-07 15:13:48,126 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-07 15:13:48,126 - orchestrator - INFO - Registering agent: AgentTwo
+2025-11-07 15:13:48,126 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_id_success, token_id: test_token_id
+2025-11-07 15:13:48,126 - orchestrator - INFO - Executing agents for report_id: test_report_id_success, token_id: test_token_id
+2025-11-07 15:13:48,126 - orchestrator - INFO - Agent AgentOne completed for report test_report_id_success.
+2025-11-07 15:13:48,126 - orchestrator - INFO - Agent AgentTwo completed for report test_report_id_success.
+2025-11-07 15:13:48,126 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-07 15:13:48,126 - orchestrator - INFO - Report test_report_id_success status updated to completed.
+2025-11-07 15:13:48,128 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-07 15:13:48,128 - orchestrator - INFO - Registering agent: AgentFailing
+2025-11-07 15:13:48,128 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_id_failure, token_id: test_token_id
+2025-11-07 15:13:48,128 - orchestrator - INFO - Executing agents for report_id: test_report_id_failure, token_id: test_token_id
+2025-11-07 15:13:48,129 - orchestrator - INFO - Agent AgentOne completed for report test_report_id_failure.
+2025-11-07 15:13:48,129 - orchestrator - ERROR - Agent AgentFailing failed for report test_report_id_failure
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/core/orchestrator.py", line 54, in execute_agents
+    result = await asyncio.wait_for(task, timeout=settings.AGENT_TIMEOUT) # Added timeout
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/asyncio/tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    raise effect
+Exception: Agent failed
+2025-11-07 15:13:48,129 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-07 15:13:48,129 - orchestrator - ERROR - Report test_report_id_failure failed due to one or more agent failures.
+2025-11-07 15:13:48,129 - orchestrator - INFO - Report test_report_id_failure status updated to failed.
+2025-11-07 15:13:48,131 - orchestrator - INFO - Registering agent: a
+2025-11-07 15:13:48,132 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-07 15:13:48,132 - orchestrator - WARNING - Onchain Data Agent will not be registered due to invalid configuration.
+2025-11-07 15:13:48,132 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-07 15:13:48,132 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-07 15:13:48,132 - orchestrator - WARNING - Configuration Error: CODE_AUDIT_REPO_URL is missing. Skipping agent registration.
+2025-11-07 15:13:48,132 - orchestrator - WARNING - Code/Audit Agent will not be registered due to invalid CODE_AUDIT_REPO_URL configuration.
+2025-11-07 15:13:48,133 - orchestrator - INFO - Registering agent: dummy_agent
+2025-11-07 15:13:48,133 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-07 15:13:48,133 - orchestrator - WARNING - Onchain Data Agent will not be registered due to invalid configuration.
+2025-11-07 15:13:48,133 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-07 15:13:48,133 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-07 15:13:48,133 - orchestrator - WARNING - Configuration Error: CODE_AUDIT_REPO_URL is missing. Skipping agent registration.
+2025-11-07 15:13:48,133 - orchestrator - WARNING - Code/Audit Agent will not be registered due to invalid CODE_AUDIT_REPO_URL configuration.
+2025-11-07 15:13:48,157 - api - INFO - Received report generation request for token_id: test_token
+2025-11-07 15:13:48,158 - services - INFO - Generating new report for token_id: test_token
+2025-11-07 15:13:48,160 - api - INFO - Received data request for report_id: 5f665296-6ffe-454a-8e19-12dfa670b608
+2025-11-07 15:13:48,160 - services - INFO - Attempting to retrieve data for report_id: 5f665296-6ffe-454a-8e19-12dfa670b608
+2025-11-07 15:13:48,160 - services - INFO - Report 5f665296-6ffe-454a-8e19-12dfa670b608 is in status: processing, returning status only.
+2025-11-07 15:13:48,160 - api - WARNING - Report 5f665296-6ffe-454a-8e19-12dfa670b608 is still processing.
+2025-11-07 15:13:48,167 - api - INFO - Received report generation request for token_id: test_token
+2025-11-07 15:13:48,167 - services - INFO - Generating new report for token_id: test_token
+2025-11-07 15:13:48,167 - orchestrator - INFO - Executing agents concurrently for report_id: a398972f-0aa2-4e73-a15b-2787dbfd7d47, token_id: test_token
+2025-11-07 15:13:48,167 - orchestrator - INFO - Executing agents for report_id: a398972f-0aa2-4e73-a15b-2787dbfd7d47, token_id: test_token
+2025-11-07 15:13:48,167 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: a398972f-0aa2-4e73-a15b-2787dbfd7d47, token_id: test_token
+2025-11-07 15:13:48,167 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: a398972f-0aa2-4e73-a15b-2787dbfd7d47, token_id: test_token
+2025-11-07 15:13:48,167 - orchestrator - INFO - Scraping team profiles for token test_token from URLs: []
+2025-11-07 15:13:48,168 - orchestrator - INFO - Team profile scraping completed for token test_token.
+2025-11-07 15:13:48,168 - orchestrator - WARNING - No whitepaper text source provided for token test_token. Skipping whitepaper analysis.
+2025-11-07 15:13:51,227 - orchestrator - INFO - Social Sentiment Agent completed for report a398972f-0aa2-4e73-a15b-2787dbfd7d47.
+2025-11-07 15:13:51,227 - orchestrator - INFO - Agent social_sentiment_agent completed for report a398972f-0aa2-4e73-a15b-2787dbfd7d47.
+2025-11-07 15:13:51,227 - orchestrator - INFO - Agent team_documentation_agent completed for report a398972f-0aa2-4e73-a15b-2787dbfd7d47.
+2025-11-07 15:13:51,227 - orchestrator - INFO - Agent AgentOne completed for report a398972f-0aa2-4e73-a15b-2787dbfd7d47.
+2025-11-07 15:13:51,227 - orchestrator - INFO - Agent AgentTwo completed for report a398972f-0aa2-4e73-a15b-2787dbfd7d47.
+2025-11-07 15:13:51,227 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-07 15:13:51,227 - orchestrator - INFO - Report a398972f-0aa2-4e73-a15b-2787dbfd7d47 status updated to completed.
+2025-11-07 15:13:51,229 - api - INFO - Received status request for report_id: a398972f-0aa2-4e73-a15b-2787dbfd7d47
+2025-11-07 15:13:51,229 - services - INFO - Retrieving status for report_id: a398972f-0aa2-4e73-a15b-2787dbfd7d47 from memory.
+2025-11-07 15:13:51,231 - api - INFO - Received data request for report_id: a398972f-0aa2-4e73-a15b-2787dbfd7d47
+2025-11-07 15:13:51,231 - services - INFO - Attempting to retrieve data for report_id: a398972f-0aa2-4e73-a15b-2787dbfd7d47
+2025-11-07 15:13:51,231 - services - INFO - Report a398972f-0aa2-4e73-a15b-2787dbfd7d47 is completed, returning data.
+2025-11-07 15:13:51,231 - api - INFO - Returning data for report_id: a398972f-0aa2-4e73-a15b-2787dbfd7d47
+2025-11-07 15:13:51,239 - api - INFO - Received data request for report_id: non_existent_report
+2025-11-07 15:13:51,240 - services - INFO - Attempting to retrieve data for report_id: non_existent_report
+2025-11-07 15:13:51,240 - services - WARNING - Report with id non_existent_report not found when attempting to retrieve data.
+2025-11-07 15:13:51,240 - api - ERROR - Report with id non_existent_report not found or not completed for data request.
+2025-11-07 15:13:51,240 - api - ERROR - ReportNotFoundException: Report not found or not completed

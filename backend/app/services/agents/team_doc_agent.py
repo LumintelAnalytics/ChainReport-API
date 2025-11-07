@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 from typing import List, Dict, Any
+from backend.app.core.logger import orchestrator_logger
 
 class TeamDocAgent:
     """
@@ -41,14 +42,14 @@ class TeamDocAgent:
                     "source": url
                 })
             except requests.exceptions.RequestException as e:
-                print(f"Error scraping {url}: {e}")
+                orchestrator_logger.error("Error scraping %s: %s", url, e)
                 team_profiles.append({
                     "url": url,
                     "error": str(e),
                     "source": url
                 })
             except Exception as e:
-                print(f"An unexpected error occurred while processing {url}: {e}")
+                orchestrator_logger.error("An unexpected error occurred while processing %s: %s", url, e)
                 team_profiles.append({
                     "url": url,
                     "error": f"Unexpected error: {e}",

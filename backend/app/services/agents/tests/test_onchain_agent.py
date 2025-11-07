@@ -1,6 +1,5 @@
 import pytest
 import httpx
-import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 from tenacity import wait_fixed, stop_after_attempt
 from backend.app.services.agents.onchain_agent import (

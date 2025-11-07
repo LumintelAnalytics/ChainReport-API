@@ -5,6 +5,7 @@ from backend.app.services.report_service import in_memory_reports
 from backend.app.core.logger import orchestrator_logger
 from backend.app.services.agents.onchain_agent import fetch_onchain_metrics, fetch_tokenomics
 from backend.app.services.agents.social_sentiment_agent import SocialSentimentAgent
+from backend.app.services.agents.team_doc_agent import TeamDocAgent
 from backend.app.core.config import settings
 
 async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
@@ -198,5 +199,53 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
             social_sentiment_data = {"social_sentiment": {"error": str(e)}}
         return social_sentiment_data
     orch.register_agent('social_sentiment_agent', social_sentiment_agent_func)
+
+    # Configure and register Team and Documentation Agent
+    async def team_documentation_agent(report_id: str, token_id: str) -> Dict[str, Any]:
+        orchestrator_logger.info(f"Calling Team and Documentation Agent for report_id: {report_id}, token_id: {token_id}")
+        agent = TeamDocAgent()
+        team_analysis = []
+        whitepaper_summary = {}
+        
+        # Placeholder for fetching token-related data (URLs, whitepaper text)
+        # In a real scenario, this data would be fetched based on token_id
+        # For now, we'll use dummy data or assume it comes from settings
+        team_profile_urls = settings.TEAM_PROFILE_URLS.get(token_id, [])
+        whitepaper_text_source = settings.WHITEPAPER_TEXT_SOURCES.get(token_id, "")
+
+        try:
+            # Scrape team profiles
+            orchestrator_logger.info(f"Scraping team profiles for token {token_id} from URLs: {team_profile_urls}")
+            team_analysis = await asyncio.wait_for(
+                asyncio.to_thread(agent.scrape_team_profiles, team_profile_urls),
+                timeout=settings.AGENT_TIMEOUT - 1
+            )
+            orchestrator_logger.info(f"Team profile scraping completed for token {token_id}.")
+
+            # Analyze whitepaper
+            if whitepaper_text_source:
+                orchestrator_logger.info(f"Analyzing whitepaper for token {token_id} from source: {whitepaper_text_source}")
+                whitepaper_summary = await asyncio.wait_for(
+                    asyncio.to_thread(agent.analyze_whitepaper, whitepaper_text_source),
+                    timeout=settings.AGENT_TIMEOUT - 1
+                )
+                orchestrator_logger.info(f"Whitepaper analysis completed for token {token_id}.")
+            else:
+                orchestrator_logger.warning(f"No whitepaper text source provided for token {token_id}. Skipping whitepaper analysis.")
+
+        except asyncio.TimeoutError:
+            orchestrator_logger.error("Team and Documentation Agent timed out for report %s", report_id)
+            return {"team_documentation": {"error": "Agent timed out"}}
+        except Exception as e:
+            orchestrator_logger.exception("Team and Documentation Agent failed for report %s", report_id)
+            return {"team_documentation": {"error": str(e)}}
+        
+        return {
+            "team_documentation": {
+                "team_analysis": team_analysis,
+                "whitepaper_summary": whitepaper_summary
+            }
+        }
+    orch.register_agent('team_documentation_agent', team_documentation_agent)
 
     return orch

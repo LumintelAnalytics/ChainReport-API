@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Dict, List
 
 
 class Settings(BaseSettings):
@@ -14,6 +15,8 @@ class Settings(BaseSettings):
     USER_AGENT: str = "ChainReport-API/1.0 (https://lumintelanalytics.com)"
     REQUEST_DELAY_SECONDS: float = 1.0
     AGENT_TIMEOUT: float = 30.0
+    TEAM_PROFILE_URLS: Dict[str, List[str]] = {}
+    WHITEPAPER_TEXT_SOURCES: Dict[str, str] = {}
 
     model_config = SettingsConfigDict(env_file=".env")
 

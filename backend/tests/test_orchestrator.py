@@ -53,7 +53,7 @@ async def test_execute_agents_concurrently_with_failure():
     mock_agent_one.assert_called_once_with(report_id, token_id)
     mock_agent_failing.assert_called_once_with(report_id, token_id)
 
-    assert in_memory_reports[report_id]["status"] == "partial_success"
+    assert in_memory_reports[report_id]["status"] == "failed"
     assert in_memory_reports[report_id]["data"] == {"agent_one_result": "data1"}
 
 def test_get_agents_returns_copy():

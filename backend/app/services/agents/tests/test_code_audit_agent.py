@@ -22,8 +22,8 @@ async def test_fetch_github_repo_metrics(code_audit_agent):
         respx.get(f"https://api.github.com/repos/{owner}/{repo}/contributors?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/contributors?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/contributors?per_page=1&page=5>; rel="last"'}, json=[]))
         # Mock latest release
         respx.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest").mock(return_value=Response(200, json={'tag_name': 'v1.0.0'}))
-        # Mock issues count
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/issues?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/issues?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/issues?state=all&per_page=1&page=20>; rel="last"'}, json=[]))
+        # Mock issues count using GitHub Search API
+        respx.get(f"https://api.github.com/search/issues?q=repo%3A{owner}%2F{repo}%2Btype%3Aissue&per_page=1").mock(return_value=Response(200, json={'total_count': 20}))
         # Mock pull requests count
         respx.get(f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=15>; rel="last"'}, json=[]))
         metrics = await code_audit_agent.fetch_repo_metrics(repo_url)
@@ -105,7 +105,7 @@ async def test_audit_codebase(code_audit_agent):
         respx.get(f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/commits?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/commits?per_page=1&page=10>; rel="last"'}))
         respx.get(f"https://api.github.com/repos/{owner}/{repo}/contributors?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/contributors?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/contributors?per_page=1&page=5>; rel="last"'}))
         respx.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest").mock(return_value=Response(200, json={'tag_name': 'v1.0.0'}))
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/issues?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/issues?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/issues?state=all&per_page=1&page=20>; rel="last"'}))
+        respx.get(f"https://api.github.com/search/issues?q=repo%3A{owner}%2F{repo}%2Btype%3Aissue&per_page=1").mock(return_value=Response(200, json={'total_count': 20}))
         respx.get(f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=15>; rel="last"'}))
 
         result = await code_audit_agent.audit_codebase(repo_url, project_name)

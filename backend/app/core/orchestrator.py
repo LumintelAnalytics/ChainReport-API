@@ -6,6 +6,7 @@ from backend.app.core.logger import orchestrator_logger
 from backend.app.services.agents.onchain_agent import fetch_onchain_metrics, fetch_tokenomics
 from backend.app.services.agents.social_sentiment_agent import SocialSentimentAgent
 from backend.app.services.agents.team_doc_agent import TeamDocAgent
+from backend.app.services.agents.code_audit_agent import CodeAuditAgent # Import CodeAuditAgent
 from backend.app.core.config import settings
 
 async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
@@ -89,6 +90,9 @@ class Orchestrator(AIOrchestrator):
         # Determine overall status
         overall_status = "completed"
         if any(result["status"] == "failed" for result in agent_results.values()):
+            overall_status = "failed"
+            orchestrator_logger.error(f"Report {report_id} failed due to one or more agent failures.")
+        elif any(result["status"] == "partial_success" for result in agent_results.values()):
             overall_status = "partial_success"
             orchestrator_logger.warning(f"Report {report_id} completed with partial success due to agent failures.")
 
@@ -247,5 +251,55 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
             }
         }
     orch.register_agent('team_documentation_agent', team_documentation_agent)
+
+    # Configure and register Code/Audit Agent
+    code_audit_repo_url = settings.CODE_AUDIT_REPO_URL
+    if code_audit_repo_url:
+        async def code_audit_agent_func(report_id: str, token_id: str) -> Dict[str, Any]:
+            orchestrator_logger.info(f"Calling Code/Audit Agent for report_id: {report_id}, token_id: {token_id}")
+            code_metrics_data = {}
+            audit_summary_data = []
+            try:
+                async with CodeAuditAgent() as agent:
+                    # Fetch repo metrics
+                    orchestrator_logger.info(f"Fetching repository metrics for {code_audit_repo_url}")
+                    code_metrics = await asyncio.wait_for(
+                        agent.fetch_repo_metrics(code_audit_repo_url),
+                        timeout=settings.AGENT_TIMEOUT - 1
+                    )
+                    code_metrics_data = code_metrics.model_dump()
+
+                    # Analyze code activity
+                    orchestrator_logger.info(f"Analyzing code activity for {code_audit_repo_url}")
+                    code_activity_analysis = await asyncio.wait_for(
+                        agent.analyze_code_activity(code_metrics),
+                        timeout=settings.AGENT_TIMEOUT - 1
+                    )
+                    code_metrics_data.update({"activity_analysis": code_activity_analysis})
+
+                    # Search and summarize audit reports
+                    orchestrator_logger.info(f"Searching for audit reports for token_id: {token_id}")
+                    audit_summaries = await asyncio.wait_for(
+                        agent.search_and_summarize_audit_reports(token_id), # Assuming token_id can be used as project_name
+                        timeout=settings.AGENT_TIMEOUT - 1
+                    )
+                    audit_summary_data = [summary.model_dump() for summary in audit_summaries]
+
+            except asyncio.TimeoutError:
+                orchestrator_logger.error("Code/Audit Agent timed out for report %s", report_id)
+                return {"code_audit": {"error": "Agent timed out"}}
+            except Exception as e:
+                orchestrator_logger.exception("Code/Audit Agent failed for report %s", report_id)
+                return {"code_audit": {"error": str(e)}}
+            
+            return {
+                "code_audit": {
+                    "code_metrics": code_metrics_data,
+                    "audit_summary": audit_summary_data
+                }
+            }
+        orch.register_agent('code_audit_agent', code_audit_agent_func)
+    else:
+        orchestrator_logger.warning("Code/Audit Agent will not be registered due to missing CODE_AUDIT_REPO_URL configuration.")
 
     return orch

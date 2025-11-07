@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     AGENT_TIMEOUT: float = 30.0
     TEAM_PROFILE_URLS: Dict[str, List[str]] = {}
     WHITEPAPER_TEXT_SOURCES: Dict[str, str] = {}
+    CODE_AUDIT_REPO_URL: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env")
 

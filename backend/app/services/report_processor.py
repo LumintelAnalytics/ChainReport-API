@@ -37,10 +37,16 @@ async def process_report(report_id: str, token_id: str) -> bool:
         agent_results = await orchestrator.execute_agents(report_id, token_id)
         combined_report_data = orchestrator.aggregate_results(agent_results)
 
-        save_report_data(report_id, combined_report_data)
-        set_report_status(report_id, "completed")
+        # Determine overall status based on agent results
+        overall_status = "completed"
+        if any(result["status"] == "failed" for result in agent_results.values()):
+            overall_status = "failed"
+            logger.error(f"Report {report_id} completed with failures from one or more agents.")
 
-        logger.info("Report %s completed.", report_id)
+        save_report_data(report_id, combined_report_data)
+        set_report_status(report_id, overall_status)
+
+        logger.info("Report %s %s.", report_id, overall_status)
         return True
     except asyncio.CancelledError:
         set_report_status(report_id, "cancelled")

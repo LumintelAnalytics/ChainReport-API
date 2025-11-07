@@ -254,7 +254,7 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
 
     # Configure and register Code/Audit Agent
     code_audit_repo_url = settings.CODE_AUDIT_REPO_URL
-    if code_audit_repo_url:
+    if _is_valid_url(code_audit_repo_url, "CODE_AUDIT_REPO_URL"):
         async def code_audit_agent_func(report_id: str, token_id: str) -> Dict[str, Any]:
             orchestrator_logger.info(f"Calling Code/Audit Agent for report_id: {report_id}, token_id: {token_id}")
             code_metrics_data = {}
@@ -278,16 +278,16 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
                     code_metrics_data.update({"activity_analysis": code_activity_analysis})
 
                     # Search and summarize audit reports
-                    orchestrator_logger.info(f"Searching for audit reports for token_id: {token_id}")
-                    audit_summaries = await asyncio.wait_for(
-                        agent.search_and_summarize_audit_reports(token_id), # Assuming token_id can be used as project_name
+                    orchestrator_logger.info(f"Searching and summarizing audit reports for {code_audit_repo_url}")
+                    audit_summary = await asyncio.wait_for(
+                        agent.search_and_summarize_audit_reports(code_audit_repo_url),
                         timeout=settings.AGENT_TIMEOUT - 1
                     )
-                    audit_summary_data = [summary.model_dump() for summary in audit_summaries]
+                    audit_summary_data = audit_summary
 
-            except asyncio.TimeoutError as e:
+            except asyncio.TimeoutError:
                 orchestrator_logger.error("Code/Audit Agent timed out for report %s", report_id)
-                raise e
+                return {"code_audit": {"error": "Agent timed out"}}
             except Exception as e:
                 orchestrator_logger.exception("Code/Audit Agent failed for report %s", report_id)
                 raise e
@@ -300,6 +300,7 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
             }
         orch.register_agent('code_audit_agent', code_audit_agent_func)
     else:
-        orchestrator_logger.warning("Code/Audit Agent will not be registered due to missing CODE_AUDIT_REPO_URL configuration.")
+        orchestrator_logger.warning("Code/Audit Agent will not be registered due to invalid CODE_AUDIT_REPO_URL configuration.")
+
 
     return orch

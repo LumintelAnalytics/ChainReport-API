@@ -8,23 +8,28 @@ def reset_settings():
     # Reset settings to default or known state before each test
     original_onchain_url = settings.ONCHAIN_METRICS_URL
     original_tokenomics_url = settings.TOKENOMICS_URL
+    original_code_audit_url = settings.CODE_AUDIT_REPO_URL
     settings.ONCHAIN_METRICS_URL = None
     settings.TOKENOMICS_URL = None
+    settings.CODE_AUDIT_REPO_URL = None
     yield
     settings.ONCHAIN_METRICS_URL = original_onchain_url
     settings.TOKENOMICS_URL = original_tokenomics_url
+    settings.CODE_AUDIT_REPO_URL = original_code_audit_url
 
 @pytest.mark.asyncio
 async def test_create_orchestrator_with_valid_urls():
     with patch('backend.app.core.orchestrator.orchestrator_logger') as mock_logger:
         settings.ONCHAIN_METRICS_URL = "https://valid.com/onchain"
         settings.TOKENOMICS_URL = "https://valid.com/tokenomics"
+        settings.CODE_AUDIT_REPO_URL = "https://valid.com/codeaudit"
         
         orchestrator = create_orchestrator()
         
         agents = orchestrator.get_agents()
         assert 'onchain_data_agent' in agents
-        assert mock_logger.warning.call_count == 1
+        assert 'code_audit_agent' in agents
+        assert mock_logger.warning.call_count == 0
 
 @pytest.mark.asyncio
 async def test_create_orchestrator_with_missing_onchain_url():
@@ -36,7 +41,7 @@ async def test_create_orchestrator_with_missing_onchain_url():
 
         agents = orchestrator.get_agents()
         assert 'onchain_data_agent' not in agents
-        assert mock_logger.warning.call_count == 3
+        assert mock_logger.warning.call_count == 4
         mock_logger.warning.assert_any_call(
             "Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration."
         )
@@ -54,7 +59,7 @@ async def test_create_orchestrator_with_invalid_onchain_url():
         
         agents = orchestrator.get_agents()
         assert 'onchain_data_agent' not in agents
-        assert mock_logger.warning.call_count == 3
+        assert mock_logger.warning.call_count == 4
         mock_logger.warning.assert_any_call(
             "Configuration Error: ONCHAIN_METRICS_URL ('invalid-url') is not a valid HTTP/HTTPS URL. Skipping agent registration."
         )
@@ -72,7 +77,7 @@ async def test_create_orchestrator_with_missing_tokenomics_url():
         
         agents = orchestrator.get_agents()
         assert 'onchain_data_agent' not in agents
-        assert mock_logger.warning.call_count == 3
+        assert mock_logger.warning.call_count == 4
         mock_logger.warning.assert_any_call(
             "Configuration Error: TOKENOMICS_URL is missing. Skipping agent registration."
         )
@@ -90,7 +95,7 @@ async def test_create_orchestrator_with_invalid_tokenomics_url():
         
         agents = orchestrator.get_agents()
         assert 'onchain_data_agent' not in agents
-        assert mock_logger.warning.call_count == 3
+        assert mock_logger.warning.call_count == 4
         mock_logger.warning.assert_any_call(
             "Configuration Error: TOKENOMICS_URL ('ftp://invalid.com') is not a valid HTTP/HTTPS URL. Skipping agent registration."
         )
@@ -108,7 +113,7 @@ async def test_create_orchestrator_with_no_urls():
         
         agents = orchestrator.get_agents()
         assert 'onchain_data_agent' not in agents
-        assert mock_logger.warning.call_count == 3
+        assert mock_logger.warning.call_count == 4
         mock_logger.warning.assert_any_call(
             "Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration."
         )

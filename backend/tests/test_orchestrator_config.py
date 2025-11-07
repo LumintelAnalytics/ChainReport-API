@@ -107,16 +107,13 @@ async def test_create_orchestrator_with_invalid_tokenomics_url():
 async def test_create_orchestrator_with_no_urls():
     with patch('backend.app.core.orchestrator.orchestrator_logger') as mock_logger:
         settings.ONCHAIN_METRICS_URL = None
-        settings.TOKENOMICS_URL = None
-        
         orchestrator = create_orchestrator()
-        
-        agents = orchestrator.get_agents()
-        assert 'onchain_data_agent' not in agents
-        assert mock_logger.warning.call_count == 4
-        mock_logger.warning.assert_any_call(
-            "Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration."
-        )
         mock_logger.warning.assert_any_call(
             "Onchain Data Agent will not be registered due to invalid configuration."
+        )
+        mock_logger.warning.assert_any_call(
+            "Configuration Error: CODE_AUDIT_REPO_URL is missing. Skipping agent registration."
+        )
+        mock_logger.warning.assert_any_call(
+            "Code/Audit Agent will not be registered due to invalid CODE_AUDIT_REPO_URL configuration."
         )

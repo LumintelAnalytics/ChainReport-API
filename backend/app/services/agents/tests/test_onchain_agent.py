@@ -156,10 +156,12 @@ async def test_fetch_onchain_metrics_http_error_raises_onchainagenthttperror(moc
         create_mock_response(404) # All attempts fail
     ]
 
-    with pytest.raises(OnchainAgentHTTPError) as excinfo:
-        await fetch_onchain_metrics(url="http://test.com/onchain")
-    assert excinfo.value.status_code == 404
-    assert mock_client_instance.get.call_count == 3 # Retries should still happen
+    with patch.object(fetch_onchain_metrics.retry, 'wait', new=wait_fixed(0.01)), \
+         patch.object(fetch_onchain_metrics.retry, 'stop', new=stop_after_attempt(3)):
+        with pytest.raises(OnchainAgentHTTPError) as excinfo:
+            await fetch_onchain_metrics(url="http://test.com/onchain")
+        assert excinfo.value.status_code == 404
+        assert mock_client_instance.get.call_count == 3 # Retries should still happen
 
 @pytest.mark.asyncio
 @patch('httpx.AsyncClient')
@@ -172,9 +174,11 @@ async def test_fetch_onchain_metrics_unexpected_error_raises_onchainagentexcepti
         Exception("Unexpected error")
     ]
 
-    with pytest.raises(OnchainAgentException):
-        await fetch_onchain_metrics(url="http://test.com/onchain")
-    assert mock_client_instance.get.call_count == 3 # Retries should still happen
+    with patch.object(fetch_onchain_metrics.retry, 'wait', new=wait_fixed(0.01)), \
+         patch.object(fetch_onchain_metrics.retry, 'stop', new=stop_after_attempt(3)):
+        with pytest.raises(OnchainAgentException):
+            await fetch_onchain_metrics(url="http://test.com/onchain")
+        assert mock_client_instance.get.call_count == 3 # Retries should still happen
 
 @pytest.mark.asyncio
 @patch('httpx.AsyncClient')
@@ -187,10 +191,12 @@ async def test_fetch_tokenomics_http_error_raises_onchainagenthttperror(mock_asy
         create_mock_response(403)
     ]
 
-    with pytest.raises(OnchainAgentHTTPError) as excinfo:
-        await fetch_tokenomics(url="http://test.com/tokenomics")
-    assert excinfo.value.status_code == 403
-    assert mock_client_instance.get.call_count == 3 # Retries should still happen
+    with patch.object(fetch_tokenomics.retry, 'wait', new=wait_fixed(0.01)), \
+         patch.object(fetch_tokenomics.retry, 'stop', new=stop_after_attempt(3)):
+        with pytest.raises(OnchainAgentHTTPError) as excinfo:
+            await fetch_tokenomics(url="http://test.com/tokenomics")
+        assert excinfo.value.status_code == 403
+        assert mock_client_instance.get.call_count == 3 # Retries should still happen
 
 @pytest.mark.asyncio
 @patch('httpx.AsyncClient')
@@ -203,9 +209,11 @@ async def test_fetch_tokenomics_unexpected_error_raises_onchainagentexception(mo
         Exception("Another unexpected error")
     ]
 
-    with pytest.raises(OnchainAgentException):
-        await fetch_tokenomics(url="http://test.com/tokenomics")
-    assert mock_client_instance.get.call_count == 3 # Retries should still happen
+    with patch.object(fetch_tokenomics.retry, 'wait', new=wait_fixed(0.01)), \
+         patch.object(fetch_tokenomics.retry, 'stop', new=stop_after_attempt(3)):
+        with pytest.raises(OnchainAgentException):
+            await fetch_tokenomics(url="http://test.com/tokenomics")
+        assert mock_client_instance.get.call_count == 3 # Retries should still happen
 
 # --- New tests for successful fetching and schema validation ---
 

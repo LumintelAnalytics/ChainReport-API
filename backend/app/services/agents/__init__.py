@@ -1,1 +1,1 @@
-from .code_audit_agent import CodeAuditAgent
+from .code_audit_agent import CodeAuditAgent as CodeAuditAgent

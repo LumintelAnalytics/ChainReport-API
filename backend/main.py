@@ -1,13 +1,13 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from backend.app.core.config import settings
 from backend.app.api.v1.routes import router as v1_router
 from backend.app.core.exceptions import ReportNotFoundException, AgentExecutionException
 from backend.app.core.logger import api_logger
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
 

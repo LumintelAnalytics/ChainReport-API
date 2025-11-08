@@ -30,8 +30,8 @@ class OnchainAgentHTTPError(OnchainAgentException):
         self.status_code = status_code
 
 @retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=10),
+    stop=stop_after_attempt(settings.MAX_RETRIES),
+    wait=wait_exponential(multiplier=settings.RETRY_MULTIPLIER, min=settings.MIN_RETRY_DELAY, max=settings.MAX_RETRY_DELAY),
     retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, OnchainAgentException, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
@@ -76,8 +76,8 @@ async def fetch_onchain_metrics(url: str, params: dict = None) -> dict:
             raise OnchainAgentException(f"Unexpected error for {url}: {e}") from e
 
 @retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=10),
+    stop=stop_after_attempt(settings.MAX_RETRIES),
+    wait=wait_exponential(multiplier=settings.RETRY_MULTIPLIER, min=settings.MIN_RETRY_DELAY, max=settings.MAX_RETRY_DELAY),
     retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, OnchainAgentException, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )

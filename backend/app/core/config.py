@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     NEWS_API_KEY: str = ""
     USER_AGENT: str = "ChainReport-API/1.0 (https://lumintelanalytics.com)"
     REQUEST_DELAY_SECONDS: float = 1.0
+    MAX_RETRIES: int = 5
+    RETRY_MULTIPLIER: float = 1.0
+    MIN_RETRY_DELAY: float = 1.0
+    MAX_RETRY_DELAY: float = 60.0
     AGENT_TIMEOUT: float = 30.0
     TEAM_PROFILE_URLS: Dict[str, List[str]] = {}
     WHITEPAPER_TEXT_SOURCES: Dict[str, str] = {}

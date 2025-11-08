@@ -107,6 +107,46 @@ async def test_fetch_onchain_metrics_max_retries_exceeded(mock_async_client):
 
 @pytest.mark.asyncio
 @patch('httpx.AsyncClient')
+async def test_fetch_onchain_metrics_retry_on_rate_limit(mock_async_client):
+    mock_client_instance = AsyncMock()
+    mock_async_client.return_value.__aenter__.return_value = mock_client_instance
+
+    # Simulate 2 HTTP 429 errors, then success
+    mock_client_instance.get.side_effect = [
+        create_mock_response(429, text_data="Too Many Requests"),
+        create_mock_response(429, text_data="Too Many Requests"),
+        create_mock_response(200, {"data": "onchain_metrics"})
+    ]
+
+    with patch.object(fetch_onchain_metrics.retry, 'wait', new=wait_fixed(0.01)), \
+         patch.object(fetch_onchain_metrics.retry, 'stop', new=stop_after_attempt(3)):
+        
+        result = await fetch_onchain_metrics(url="http://test.com/onchain")
+        assert result == {"data": "onchain_metrics"}
+        assert mock_client_instance.get.call_count == 3
+
+@pytest.mark.asyncio
+@patch('httpx.AsyncClient')
+async def test_fetch_tokenomics_retry_on_rate_limit(mock_async_client):
+    mock_client_instance = AsyncMock()
+    mock_async_client.return_value.__aenter__.return_value = mock_client_instance
+
+    # Simulate 2 HTTP 429 errors, then success
+    mock_client_instance.get.side_effect = [
+        create_mock_response(429, text_data="Too Many Requests"),
+        create_mock_response(429, text_data="Too Many Requests"),
+        create_mock_response(200, {"data": "tokenomics"})
+    ]
+
+    with patch.object(fetch_tokenomics.retry, 'wait', new=wait_fixed(0.01)), \
+         patch.object(fetch_tokenomics.retry, 'stop', new=stop_after_attempt(3)):
+        
+        result = await fetch_tokenomics(url="http://test.com/tokenomics")
+        assert result == {"data": "tokenomics"}
+        assert mock_client_instance.get.call_count == 3
+
+@pytest.mark.asyncio
+@patch('httpx.AsyncClient')
 async def test_fetch_tokenomics_retry_on_timeout(mock_async_client):
     mock_client_instance = AsyncMock()
     mock_async_client.return_value.__aenter__.return_value = mock_client_instance

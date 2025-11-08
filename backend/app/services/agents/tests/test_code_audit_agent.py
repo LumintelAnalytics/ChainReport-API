@@ -3,10 +3,7 @@ import pytest_asyncio
 import respx
 from httpx import Response, Request, HTTPStatusError, RequestError
 from backend.app.services.agents.code_audit_agent import CodeAuditAgent, CodeMetrics, AuditSummary, CodeAuditResult
-import logging
 
-# Suppress logging during tests to avoid clutter
-logging.basicConfig(level=logging.CRITICAL)
 
 @pytest_asyncio.fixture
 async def code_audit_agent():
@@ -105,11 +102,11 @@ async def test_audit_codebase(code_audit_agent):
 
     with respx.mock:
         # Mock GitHub API calls for fetch_repo_metrics
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/commits?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/commits?per_page=1&page=10>; rel="last"'}))
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/contributors?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/contributors?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/contributors?per_page=1&page=5>; rel="last"'}))
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/commits?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/commits?per_page=1&page=10>; rel="last"'}, json=[]))
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/contributors?per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/contributors?per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/contributors?per_page=1&page=5>; rel="last"'}, json=[]))
         respx.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest").mock(return_value=Response(200, json={'tag_name': 'v1.0.0'}))
         respx.get(f"https://api.github.com/search/issues?q=repo%3A{owner}%2F{repo}%2Btype%3Aissue&per_page=1").mock(return_value=Response(200, json={'total_count': 20}))
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=15>; rel="last"'}))
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=15>; rel="last"'}, json=[]))
 
         result = await code_audit_agent.audit_codebase(repo_url, project_name)
 
@@ -149,11 +146,11 @@ async def test_fetch_github_repo_metrics_network_error(code_audit_agent):
 
     with respx.mock:
         # Mock all GitHub API calls to raise a RequestError
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", repo_url)))
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/contributors?per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", repo_url)))
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest").mock(side_effect=RequestError("Network error", request=Request("GET", repo_url)))
-        respx.get(f"https://api.github.com/search/issues?q=repo%3A{owner}%2F{repo}%2Btype%3Aissue&per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", repo_url)))
-        respx.get(f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", repo_url)))
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=1")))
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/contributors?per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", f"https://api.github.com/repos/{owner}/{repo}/contributors?per_page=1")))
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest").mock(side_effect=RequestError("Network error", request=Request("GET", f"https://api.github.com/repos/{owner}/{repo}/releases/latest")))
+        respx.get(f"https://api.github.com/search/issues?q=repo%3A{owner}%2F{repo}%2Btype%3Aissue&per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", f"https://api.github.com/search/issues?q=repo%3A{owner}%2F{repo}%2Btype%3Aissue&per_page=1")))
+        respx.get(f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=1")))
 
         metrics = await code_audit_agent.fetch_repo_metrics(repo_url)
 
@@ -193,11 +190,11 @@ async def test_fetch_gitlab_repo_metrics_network_error(code_audit_agent):
 
     with respx.mock:
         # Mock all GitLab API calls to raise a RequestError
-        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/commits?per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", repo_url)))
-        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/contributors?per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", repo_url)))
-        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/tags?per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", repo_url)))
-        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/issues?scope=all&per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", repo_url)))
-        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/merge_requests?scope=all&per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", repo_url)))
+        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/commits?per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", f"https://gitlab.com/api/v4/projects/{project_id}/repository/commits?per_page=1")))
+        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/contributors?per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", f"https://gitlab.com/api/v4/projects/{project_id}/repository/contributors?per_page=1")))
+        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/repository/tags?per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", f"https://gitlab.com/api/v4/projects/{project_id}/repository/tags?per_page=1")))
+        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/issues?scope=all&per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", f"https://gitlab.com/api/v4/projects/{project_id}/issues?scope=all&per_page=1")))
+        respx.get(f"https://gitlab.com/api/v4/projects/{project_id}/merge_requests?scope=all&per_page=1").mock(side_effect=RequestError("Network error", request=Request("GET", f"https://gitlab.com/api/v4/projects/{project_id}/merge_requests?scope=all&per_page=1")))
 
         metrics = await code_audit_agent.fetch_repo_metrics(repo_url)
 

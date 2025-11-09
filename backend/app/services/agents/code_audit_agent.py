@@ -65,7 +65,13 @@ class CodeAuditAgent:
         headers = {"Authorization": f"token {self.github_token}"} if self.github_token else {}
         base_url = f"https://api.github.com/repos/{owner}/{repo}"
         
-        repo_data = {}
+        repo_data = {
+            'commits_count': 0,
+            'contributors_count': 0,
+            'latest_release': 'N/A',
+            'issues_count': 0,
+            'pull_requests_count': 0,
+        }
         
         try:
             # Helper function to parse link header
@@ -126,17 +132,26 @@ class CodeAuditAgent:
 
         except httpx.HTTPStatusError as e:
             logger.exception(f"GitHub API error for {owner}/{repo}: {e}")
+            return repo_data # Return default empty data on error
         except httpx.RequestError as e:
             logger.exception(f"GitHub network error for {owner}/{repo}: {e}")
+            return repo_data # Return default empty data on error
         except Exception as e:
             logger.exception(f"An unexpected error occurred while fetching GitHub data for {owner}/{repo}: {e}")
+            return repo_data # Return default empty data on error
         return repo_data
 
     async def _fetch_gitlab_repo_data(self, project_id: str) -> Dict[str, Any]:
         headers = {"Private-Token": self.gitlab_token} if self.gitlab_token else {}
         base_url = f"https://gitlab.com/api/v4/projects/{project_id}"
         
-        repo_data = {}
+        repo_data = {
+            'commits_count': 0,
+            'contributors_count': 0,
+            'latest_release': 'N/A',
+            'issues_count': 0,
+            'pull_requests_count': 0,
+        }
 
         try:
             # Fetch commits count
@@ -168,10 +183,13 @@ class CodeAuditAgent:
 
         except httpx.HTTPStatusError as e:
             logger.exception(f"GitLab API error for project ID {project_id}: {e}")
+            return repo_data # Return default empty data on error
         except httpx.RequestError as e:
             logger.exception(f"GitLab network error for project ID {project_id}: {e}")
+            return repo_data # Return default empty data on error
         except Exception as e:
             logger.exception(f"An unexpected error occurred while fetching GitLab data for project ID {project_id}: {e}")
+            return repo_data # Return default empty data on error
         return repo_data
 
     async def fetch_repo_metrics(self, repo_url: str) -> CodeMetrics:
@@ -186,36 +204,32 @@ class CodeAuditAgent:
         }
 
         parsed_url = urllib.parse.urlparse(repo_url)
+        try:
+            if "github.com" in parsed_url.netloc:
+                path_segments = [s for s in parsed_url.path.split('/') if s]
+                if len(path_segments) >= 2:
+                    owner = path_segments[0]
+                    repo = path_segments[1].replace(".git", "")
+                    github_data = await self._fetch_github_repo_data(owner, repo)
+                    metrics_data.update(github_data)
+                else:
+                    logger.error(f"Invalid GitHub repository URL format: {repo_url}")
+            elif "gitlab.com" in parsed_url.netloc:
+                path_segments = [s for s in parsed_url.path.split('/') if s]
+                if len(path_segments) >= 2:
+                    if path_segments[-1].endswith('.git'):
+                        path_segments[-1] = path_segments[-1][:-4]
 
-        if "github.com" in parsed_url.netloc:
-            path_segments = [s for s in parsed_url.path.split('/') if s]
-            if len(path_segments) >= 2:
-                owner = path_segments[0]
-                repo = path_segments[1].replace(".git", "")
-                github_data = await self._fetch_github_repo_data(owner, repo)
-                metrics_data.update(github_data)
+                    project_path_with_namespace = "/".join(path_segments)
+                    project_id = urllib.parse.quote_plus(project_path_with_namespace)
+                    gitlab_data = await self._fetch_gitlab_repo_data(project_id)
+                    metrics_data.update(gitlab_data)
+                else:
+                    logger.error(f"Invalid GitLab repository URL format: {repo_url}")
             else:
-                logger.error(f"Invalid GitHub repository URL format: {repo_url}")
-        elif "gitlab.com" in parsed_url.netloc:
-            # For GitLab, we need the project ID. This is a simplification.
-            # A more robust solution would involve searching for the project by path.
-            # For now, assume the URL contains the project ID or path that can be converted.
-            # Example: https://gitlab.com/group/subgroup/project -> project_id can be derived or passed.
-            # For simplicity, let's assume the last part of the path is the project path with owner.
-            path_segments = [s for s in parsed_url.path.split('/') if s]
-            if len(path_segments) >= 2:
-                # Check if the last segment ends with '.git' and remove it
-                if path_segments[-1].endswith('.git'):
-                    path_segments[-1] = path_segments[-1][:-4] # Remove '.git'
-
-                project_path_with_namespace = "/".join(path_segments)
-                project_id = urllib.parse.quote_plus(project_path_with_namespace)
-                gitlab_data = await self._fetch_gitlab_repo_data(project_id)
-                metrics_data.update(gitlab_data)
-            else:
-                logger.error(f"Invalid GitLab repository URL format: {repo_url}")
-        else:
-            logger.error(f"Unsupported repository URL: {repo_url}")
+                logger.error(f"Unsupported repository URL: {repo_url}")
+        except Exception as e:
+            logger.exception(f"An unexpected error occurred while fetching repository metrics for {repo_url}: {e}")
 
         return CodeMetrics(**metrics_data)
 
@@ -257,28 +271,36 @@ class CodeAuditAgent:
         # 3. Using an LLM to summarize findings from retrieved reports.
 
         print(f"Searching for audit reports for project: {project_name} (using mock data)")
-        mock_audit_summaries = [
-            AuditSummary(
-                report_title=f"{project_name} Smart Contract Audit by CertiK",
-                audit_firm="CertiK",
-                date="2023-10-26",
-                findings_summary="Initial audit found several medium-severity reentrancy vulnerabilities and one high-severity access control issue. All issues have been addressed in subsequent patches.",
-                severity_breakdown={"critical": 0, "high": 1, "medium": 2, "low": 3, "informational": 5}
-            ),
-            AuditSummary(
-                report_title=f"{project_name} Security Review by Trail of Bits",
-                audit_firm="Trail of Bits",
-                date="2024-01-15",
-                findings_summary="A follow-up review identified minor gas optimization opportunities and confirmed the remediation of all critical findings from the previous audit.",
-                severity_breakdown={"critical": 0, "high": 0, "medium": 0, "low": 2, "informational": 7}
-            )
-        ]
-        return mock_audit_summaries
+        try:
+            mock_audit_summaries = [
+                AuditSummary(
+                    report_title=f"{project_name} Smart Contract Audit by CertiK",
+                    audit_firm="CertiK",
+                    date="2023-10-26",
+                    findings_summary="Initial audit found several medium-severity reentrancy vulnerabilities and one high-severity access control issue. All issues have been addressed in subsequent patches.",
+                    severity_breakdown={"critical": 0, "high": 1, "medium": 2, "low": 3, "informational": 5}
+                ),
+                AuditSummary(
+                    report_title=f"{project_name} Security Review by Trail of Bits",
+                    audit_firm="Trail of Bits",
+                    date="2024-01-15",
+                    findings_summary="A follow-up review identified minor gas optimization opportunities and confirmed the remediation of all critical findings from the previous audit.",
+                    severity_breakdown={"critical": 0, "high": 0, "medium": 0, "low": 2, "informational": 7}
+                )
+            ]
+            return mock_audit_summaries
+        except Exception as e:
+            logger.exception(f"An unexpected error occurred while searching and summarizing audit reports for {project_name}: {e}")
+            return [] # Return empty list on error
 
     async def audit_codebase(self, repo_url: str, project_name: str) -> CodeAuditResult:
-        code_metrics = await self.fetch_repo_metrics(repo_url)
-        # code_activity_analysis = await self.analyze_code_activity(code_metrics) # Not directly used in final output, but can be for internal logic
-        audit_summaries = await self.search_and_summarize_audit_reports(project_name)
+        code_metrics = CodeMetrics(repo_url=repo_url)
+        audit_summaries = []
+        try:
+            code_metrics = await self.fetch_repo_metrics(repo_url)
+            audit_summaries = await self.search_and_summarize_audit_reports(project_name)
+        except Exception as e:
+            logger.exception(f"An unexpected error occurred during codebase audit for {repo_url} (project: {project_name}): {e}")
 
         return CodeAuditResult(
             code_metrics=code_metrics,

@@ -68,27 +68,36 @@ class TeamDocAgent:
         Returns:
             A dictionary containing extracted whitepaper details in JSON format.
         """
-        # Placeholder for actual NLP/text analysis logic
-        # In a real scenario, you would use NLP techniques to extract information
-        extracted_data = {
-            "project_timelines": [],
-            "roadmap_items": [],
-            "public_statements": [],
-            "analysis_summary": "No specific analysis performed yet. This is a placeholder."
-        }
+        try:
+            # Placeholder for actual NLP/text analysis logic
+            # In a real scenario, you would use NLP techniques to extract information
+            extracted_data = {
+                "project_timelines": [],
+                "roadmap_items": [],
+                "public_statements": [],
+                "analysis_summary": "No specific analysis performed yet. This is a placeholder."
+            }
 
-        # Simulate extraction based on keywords or patterns
-        if "Q1 2026" in text:
-            extracted_data["project_timelines"].append({"event": "Phase 1 Completion", "date": "Q1 2026"})
-        if "mainnet launch" in text.lower():
-            extracted_data["roadmap_items"].append("Mainnet Launch")
-        if "our vision is" in text.lower():
-            start = text.lower().find("our vision is")
-            end = text.lower().find(".", start)
-            if start != -1 and end != -1:
-                extracted_data["public_statements"].append(text[start:end+1].strip())
+            # Simulate extraction based on keywords or patterns
+            if "Q1 2026" in text:
+                extracted_data["project_timelines"].append({"event": "Phase 1 Completion", "date": "Q1 2026"})
+            if "mainnet launch" in text.lower():
+                extracted_data["roadmap_items"].append("Mainnet Launch")
+            if "our vision is" in text.lower():
+                start = text.lower().find("our vision is")
+                end = text.lower().find(".", start)
+                if start != -1 and end != -1:
+                    extracted_data["public_statements"].append(text[start:end+1].strip())
 
-        return extracted_data
+            return extracted_data
+        except Exception as e:
+            orchestrator_logger.error("Error analyzing whitepaper: %s", e)
+            return {
+                "project_timelines": [],
+                "roadmap_items": [],
+                "public_statements": [],
+                "analysis_summary": f"Error during whitepaper analysis: {e}"
+            }
 
 if __name__ == "__main__":
     agent = TeamDocAgent()

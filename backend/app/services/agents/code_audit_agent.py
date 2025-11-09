@@ -209,7 +209,9 @@ class CodeAuditAgent:
                 path_segments = [s for s in parsed_url.path.split('/') if s]
                 if len(path_segments) >= 2:
                     owner = path_segments[0]
-                    repo = path_segments[1].replace(".git", "")
+                    repo = path_segments[1]
+                    if repo.endswith(".git"):
+                        repo = repo[:-4]
                     github_data = await self._fetch_github_repo_data(owner, repo)
                     metrics_data.update(github_data)
                 else:

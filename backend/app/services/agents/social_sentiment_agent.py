@@ -2,10 +2,19 @@ import asyncio
 import logging
 from typing import List, Dict, Any
 from textblob import TextBlob
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 # Configure logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Define a retry decorator for API calls at the module level
+api_retry_decorator = retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception_type(Exception), # Can be refined to specific API rate limit exceptions
+    reraise=True
+)
 
 class SocialSentimentAgent:
     def __init__(self):
@@ -15,6 +24,33 @@ class SocialSentimentAgent:
         self.reddit_api_key = "YOUR_REDDIT_API_KEY"
         self.news_api_key = "YOUR_NEWS_API_KEY"
 
+    @api_retry_decorator
+    async def _fetch_twitter_data(self, token_id: str) -> List[Dict[str, Any]]:
+        logger.info(f"Attempting to fetch Twitter data for {token_id}...")
+        await asyncio.sleep(1) # Simulate network delay
+        twitter_data = [{"source": "twitter", "text": f"Great news about {token_id}!", "id": "1"},
+                        {"source": "twitter", "text": f"{token_id} is a scam.", "id": "2"}]
+        logger.info(f"Successfully fetched Twitter data for {token_id}.")
+        return twitter_data
+
+    @api_retry_decorator
+    async def _fetch_reddit_data(self, token_id: str) -> List[Dict[str, Any]]:
+        logger.info(f"Attempting to fetch Reddit data for {token_id}...")
+        await asyncio.sleep(1) # Simulate network delay
+        reddit_data = [{"source": "reddit", "text": f"Loving the community around {token_id}.", "id": "3"},
+                       {"source": "reddit", "text": f"Is {token_id} going to zero?", "id": "4"}]
+        logger.info(f"Successfully fetched Reddit data for {token_id}.")
+        return reddit_data
+
+    @api_retry_decorator
+    async def _fetch_news_data(self, token_id: str) -> List[Dict[str, Any]]:
+        logger.info(f"Attempting to fetch News data for {token_id}...")
+        await asyncio.sleep(1) # Simulate network delay
+        news_data = [{"source": "news", "text": f"Analyst predicts bright future for {token_id}.", "id": "5"},
+                     {"source": "news", "text": f"Concerns raised over {token_id} security.", "id": "6"}]
+        logger.info(f"Successfully fetched News data for {token_id}.")
+        return news_data
+
     async def fetch_social_data(self, token_id: str) -> List[Dict[str, Any]]:
         """
         Fetches social media data (posts, tweets, comments) for a given token_id.
@@ -22,44 +58,26 @@ class SocialSentimentAgent:
         """
         all_data = []
         
-        # --- Placeholder for Twitter API integration ---
+        # --- Twitter API integration ---
         try:
-            logger.info(f"Fetching Twitter data for {token_id}...")
-            # Simulate API call and rate limiting
-            await asyncio.sleep(1) # Simulate network delay
-            twitter_data = [{"source": "twitter", "text": f"Great news about {token_id}!", "id": "1"},
-                            {"source": "twitter", "text": f"{token_id} is a scam.", "id": "2"}]
+            twitter_data = await self._fetch_twitter_data(token_id)
             all_data.extend(twitter_data)
-            logger.info(f"Successfully fetched Twitter data for {token_id}.")
         except Exception as e:
-            logger.error(f"Error fetching Twitter data for {token_id}: {e}")
-            # Implement specific rate-limit handling here (e.g., back-off and retry)
+            logger.error(f"Failed to fetch Twitter data for {token_id} after multiple retries: {e}")
 
-        # --- Placeholder for Reddit API integration ---
+        # --- Reddit API integration ---
         try:
-            logger.info(f"Fetching Reddit data for {token_id}...")
-            # Simulate API call and rate limiting
-            await asyncio.sleep(1) # Simulate network delay
-            reddit_data = [{"source": "reddit", "text": f"Loving the community around {token_id}.", "id": "3"},
-                           {"source": "reddit", "text": f"Is {token_id} going to zero?", "id": "4"}]
+            reddit_data = await self._fetch_reddit_data(token_id)
             all_data.extend(reddit_data)
-            logger.info(f"Successfully fetched Reddit data for {token_id}.")
         except Exception as e:
-            logger.error(f"Error fetching Reddit data for {token_id}: {e}")
-            # Implement specific rate-limit handling here
+            logger.error(f"Failed to fetch Reddit data for {token_id} after multiple retries: {e}")
 
-        # --- Placeholder for News Aggregator API integration ---
+        # --- News Aggregator API integration ---
         try:
-            logger.info(f"Fetching News data for {token_id}...")
-            # Simulate API call and rate limiting
-            await asyncio.sleep(1) # Simulate network delay
-            news_data = [{"source": "news", "text": f"Analyst predicts bright future for {token_id}.", "id": "5"},
-                         {"source": "news", "text": f"Concerns raised over {token_id} security.", "id": "6"}]
+            news_data = await self._fetch_news_data(token_id)
             all_data.extend(news_data)
-            logger.info(f"Successfully fetched News data for {token_id}.")
         except Exception as e:
-            logger.error(f"Error fetching News data for {token_id}: {e}")
-            # Implement specific rate-limit handling here
+            logger.error(f"Failed to fetch News data for {token_id} after multiple retries: {e}")
 
         return all_data
 

@@ -2,6 +2,7 @@ import pytest
 import asyncio
 from unittest.mock import patch, AsyncMock
 from backend.app.services.agents.social_sentiment_agent import SocialSentimentAgent
+from tenacity import RetryError
 
 @pytest.mark.asyncio
 async def test_fetch_social_data_success():
@@ -37,15 +38,14 @@ async def test_fetch_social_data_api_failure_one_source():
     agent = SocialSentimentAgent()
     token_id = "TestToken"
 
-    # Create a mock for asyncio.sleep that raises an exception on its first call
-    mock_sleep = AsyncMock(side_effect=[Exception("Simulated Twitter API error"), None, None])
+    # Create a mock for _fetch_twitter_data_with_retry that raises an exception for all retry attempts
+    mock_twitter_fetch = AsyncMock(side_effect=[RetryError("Simulated Twitter API error")] * 3) # Fails 3 times
 
-    with patch('asyncio.sleep', new=mock_sleep), \
-         patch('backend.app.services.agents.social_sentiment_agent.logger.error') as mock_logger_error:
+    with patch('backend.app.services.agents.social_sentiment_agent.SocialSentimentAgent._fetch_twitter_data', new=mock_twitter_fetch), \
+         patch('backend.app.services.agents.social_sentiment_agent.logger.exception') as mock_logger_exception:
         data = await agent.fetch_social_data(token_id)
-
         # Verify error was logged for Twitter
-        mock_logger_error.assert_called_with(f"Error fetching Twitter data for {token_id}: Simulated Twitter API error")
+        mock_logger_exception.assert_called_with(f"Failed to fetch Twitter data for {token_id} after multiple retries.")
         
         # Verify data from other sources is still present
         assert isinstance(data, list)
@@ -60,15 +60,15 @@ async def test_fetch_social_data_all_api_failures():
     token_id = "TestToken"
 
     # Create a mock for asyncio.sleep that raises an exception on all calls
-    mock_sleep = AsyncMock(side_effect=[Exception("Twitter error"), Exception("Reddit error"), Exception("News error")])
+    mock_sleep = AsyncMock(side_effect=[RetryError("Twitter error"), RetryError("Reddit error"), RetryError("News error")])
 
     with patch('asyncio.sleep', new=mock_sleep), \
-         patch('backend.app.services.agents.social_sentiment_agent.logger.error') as mock_logger_error:
+         patch('backend.app.services.agents.social_sentiment_agent.logger.exception') as mock_logger_exception:
         data = await agent.fetch_social_data(token_id)
         
         assert isinstance(data, list)
         assert len(data) == 0 # No data should be returned if all APIs fail
-        assert mock_logger_error.call_count == 3 # Verify errors logged for all three sources
+        assert mock_logger_exception.call_count == 3 # Verify errors logged for all three sources
 
 @pytest.mark.asyncio
 async def test_analyze_sentiment_positive():

@@ -1,19 +1,28 @@
 import asyncio
 import logging
 from typing import List, Dict, Any
+import httpx
 from textblob import TextBlob
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, before_sleep_log
 
 # Configure logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+def log_retry_attempt(retry_state):
+    logger.warning(
+        f"Retrying: attempt {retry_state.attempt_number}, "
+        f"exception: {retry_state.outcome.exception()}, "
+        f"next backoff: {retry_state.next_action.sleep} seconds."
+    )
+
 # Define a retry decorator for API calls at the module level
 api_retry_decorator = retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception_type(Exception), # Can be refined to specific API rate limit exceptions
-    reraise=True
+    retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError, asyncio.TimeoutError)),
+    reraise=True,
+    before_sleep=log_retry_attempt
 )
 
 class SocialSentimentAgent:

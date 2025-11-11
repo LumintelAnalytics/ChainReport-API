@@ -33,7 +33,7 @@ class OnchainAgentHTTPError(OnchainAgentException):
     retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, OnchainAgentException, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
-async def fetch_onchain_metrics(url: str, params: dict | None = None, token_id: str | None = None) -> dict:
+async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = None) -> dict:
     """
     Fetches on-chain metrics from a specified URL.
 

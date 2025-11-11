@@ -145,7 +145,7 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
             tokenomics_params = {"token_id": token_id}
 
             onchain_metrics_task = asyncio.create_task(fetch_onchain_metrics(url=onchain_metrics_url, params=onchain_metrics_params, token_id=token_id))
-            tokenomics_task = asyncio.create_task(fetch_tokenomics(url=tokenomics_url, params=tokenomics_params))
+            tokenomics_task = asyncio.create_task(fetch_tokenomics(url=tokenomics_url, params=tokenomics_params, token_id=token_id))
 
             onchain_metrics_result = {}
             tokenomics_result = {}

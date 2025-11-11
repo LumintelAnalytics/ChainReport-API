@@ -84,14 +84,14 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
     retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, OnchainAgentException, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
-async def fetch_tokenomics(url: str, params: dict | None = None, token_id: str | None = None) -> dict:
+async def fetch_tokenomics(url: str, token_id: str, params: dict | None = None) -> dict:
     """
     Fetches tokenomics data from a specified URL.
 
     Args:
         url: The URL to fetch tokenomics data from.
+        token_id: The token ID for traceability.
         params: Optional dictionary of query parameters.
-        token_id: Optional token ID for traceability.
 
     Returns:
         A dictionary containing the fetched tokenomics data.

@@ -1,6 +1,5 @@
 import asyncio
 import httpx
-import logging
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from backend.app.core.config import settings
@@ -34,7 +33,7 @@ class OnchainAgentHTTPError(OnchainAgentException):
     retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, OnchainAgentException, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
-async def fetch_onchain_metrics(url: str, params: dict = None, token_id: str = None) -> dict:
+async def fetch_onchain_metrics(url: str, params: dict | None = None, token_id: str | None = None) -> dict:
     """
     Fetches on-chain metrics from a specified URL.
 
@@ -85,7 +84,7 @@ async def fetch_onchain_metrics(url: str, params: dict = None, token_id: str = N
     retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, OnchainAgentException, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
-async def fetch_tokenomics(url: str, params: dict = None, token_id: str = None) -> dict:
+async def fetch_tokenomics(url: str, params: dict | None = None, token_id: str | None = None) -> dict:
     """
     Fetches tokenomics data from a specified URL.
 

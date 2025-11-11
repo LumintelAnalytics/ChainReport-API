@@ -39,8 +39,8 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
 
     Args:
         url: The URL to fetch metrics from.
+        token_id: Token ID for request tracing and log correlation.
         params: Optional dictionary of query parameters.
-        token_id: Optional token ID for traceability.
 
     Returns:
         A dictionary containing the fetched on-chain metrics.
@@ -59,10 +59,9 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:
             response = await client.get(url, params=params)
-            response.raise_for_status()  # Raise an exception for 4xx/5xx responses
             response_json = response.json()
-            output_size = len(str(response_json))
-            logger.info(f"[Token ID: {token_id}] API call to {url} successful. Status: {response.status_code}, Output size: {output_size} bytes")
+            output_size = len(response.content)
+            logger.info(f"[Token ID: {token_id}] API call to {url} successful. Status: {response.status_code}, Response size: {output_size} bytes")
             await asyncio.sleep(settings.REQUEST_DELAY_SECONDS)
             return response_json
         except httpx.TimeoutException as e:

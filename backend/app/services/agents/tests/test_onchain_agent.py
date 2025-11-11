@@ -41,7 +41,7 @@ async def test_fetch_onchain_metrics_retry_on_timeout(mock_async_client):
             create_mock_response(200, {"data": "onchain_metrics"})
         ]
         
-        result = await fetch_onchain_metrics(url="http://test.com/onchain")
+        result = await fetch_onchain_metrics(url="http://test.com/onchain", token_id="test_token_id")
         assert result == {"data": "onchain_metrics"}
         assert mock_client_instance.get.call_count == 3
 
@@ -61,7 +61,7 @@ async def test_fetch_onchain_metrics_retry_on_network_error(mock_async_client):
     with patch.object(fetch_onchain_metrics.retry, 'wait', new=wait_fixed(0.01)), \
          patch.object(fetch_onchain_metrics.retry, 'stop', new=stop_after_attempt(3)):
         
-        result = await fetch_onchain_metrics(url="http://test.com/onchain")
+        result = await fetch_onchain_metrics(url="http://test.com/onchain", token_id="test_token_id")
         assert result == {"data": "onchain_metrics"}
         assert mock_client_instance.get.call_count == 3
 
@@ -81,7 +81,7 @@ async def test_fetch_onchain_metrics_retry_on_http_error(mock_async_client):
     with patch.object(fetch_onchain_metrics.retry, 'wait', new=wait_fixed(0.01)), \
          patch.object(fetch_onchain_metrics.retry, 'stop', new=stop_after_attempt(3)):
         
-        result = await fetch_onchain_metrics(url="http://test.com/onchain")
+        result = await fetch_onchain_metrics(url="http://test.com/onchain", token_id="test_token_id")
         assert result == {"data": "onchain_metrics"}
         assert mock_client_instance.get.call_count == 3
 
@@ -102,7 +102,7 @@ async def test_fetch_onchain_metrics_max_retries_exceeded(mock_async_client):
          patch.object(fetch_onchain_metrics.retry, 'stop', new=stop_after_attempt(3)):
         
         with pytest.raises(OnchainAgentTimeout):
-            await fetch_onchain_metrics(url="http://test.com/onchain")
+            await fetch_onchain_metrics(url="http://test.com/onchain", token_id="test_token_id")
         assert mock_client_instance.get.call_count == 3
 
 @pytest.mark.asyncio
@@ -121,7 +121,7 @@ async def test_fetch_onchain_metrics_retry_on_rate_limit(mock_async_client):
     with patch.object(fetch_onchain_metrics.retry, 'wait', new=wait_fixed(0.01)), \
          patch.object(fetch_onchain_metrics.retry, 'stop', new=stop_after_attempt(3)):
         
-        result = await fetch_onchain_metrics(url="http://test.com/onchain")
+        result = await fetch_onchain_metrics(url="http://test.com/onchain", token_id="test_token_id")
         assert result == {"data": "onchain_metrics"}
         assert mock_client_instance.get.call_count == 3
 
@@ -199,7 +199,7 @@ async def test_fetch_onchain_metrics_http_error_raises_onchainagenthttperror(moc
     with patch.object(fetch_onchain_metrics.retry, 'wait', new=wait_fixed(0.01)), \
          patch.object(fetch_onchain_metrics.retry, 'stop', new=stop_after_attempt(3)):
         with pytest.raises(OnchainAgentHTTPError) as excinfo:
-            await fetch_onchain_metrics(url="http://test.com/onchain")
+            await fetch_onchain_metrics(url="http://test.com/onchain", token_id="test_token_id")
         assert excinfo.value.status_code == 404
         assert mock_client_instance.get.call_count == 3 # Retries should still happen
 
@@ -217,7 +217,7 @@ async def test_fetch_onchain_metrics_unexpected_error_raises_onchainagentexcepti
     with patch.object(fetch_onchain_metrics.retry, 'wait', new=wait_fixed(0.01)), \
          patch.object(fetch_onchain_metrics.retry, 'stop', new=stop_after_attempt(3)):
         with pytest.raises(OnchainAgentException):
-            await fetch_onchain_metrics(url="http://test.com/onchain")
+            await fetch_onchain_metrics(url="http://test.com/onchain", token_id="test_token_id")
         assert mock_client_instance.get.call_count == 3 # Retries should still happen
 
 @pytest.mark.asyncio
@@ -271,7 +271,7 @@ async def test_fetch_onchain_metrics_success_and_schema(mock_async_client):
     }
     mock_client_instance.get.return_value = create_mock_response(200, expected_metrics)
 
-    result = await fetch_onchain_metrics(url="http://test.com/onchain")
+    result = await fetch_onchain_metrics(url="http://test.com/onchain", token_id="test_token_id")
     assert result == expected_metrics
     assert "total_transactions" in result
     assert "active_users" in result
@@ -325,7 +325,7 @@ async def test_fetch_onchain_metrics_missing_fields(mock_async_client):
     }
     mock_client_instance.get.return_value = create_mock_response(200, incomplete_metrics)
 
-    result = await fetch_onchain_metrics(url="http://test.com/onchain")
+    result = await fetch_onchain_metrics(url="http://test.com/onchain", token_id="test_token_id")
     assert result == incomplete_metrics
     # The agent should return whatever it gets, schema validation is typically done downstream
     assert "total_transactions" in result
@@ -367,7 +367,7 @@ async def test_fetch_onchain_metrics_invalid_token_id(mock_async_client):
     mock_client_instance.get.return_value = create_mock_response(400, error_response_data)
 
     with pytest.raises(OnchainAgentHTTPError) as excinfo:
-        await fetch_onchain_metrics(url="http://test.com/onchain", params={"token_id": "invalid"})
+        await fetch_onchain_metrics(url="http://test.com/onchain", token_id="invalid")
     assert excinfo.value.status_code == 400
 
 @pytest.mark.asyncio

@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
 from backend.app.core.orchestrator import create_orchestrator
 from backend.app.services.report_service import in_memory_reports
 from backend.app.core.config import settings

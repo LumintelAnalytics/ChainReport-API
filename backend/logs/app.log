@@ -4245,3 +4245,122 @@ Exception: Agent failed
 2025-11-11 17:16:49,637 - services - WARNING - Report with id non_existent_report not found when attempting to retrieve data.
 2025-11-11 17:16:49,637 - api - ERROR - Report with id non_existent_report not found or not completed for data request.
 2025-11-11 17:16:49,637 - api - ERROR - ReportNotFoundException: Report not found or not completed
+2025-11-12 18:07:41,766 - orchestrator - INFO - Registering agent: onchain_data_agent
+2025-11-12 18:07:41,766 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-12 18:07:41,766 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-12 18:07:41,766 - orchestrator - INFO - Registering agent: code_audit_agent
+2025-11-12 18:07:41,766 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:41,766 - orchestrator - INFO - Executing agents for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:41,766 - orchestrator - INFO - Calling Onchain Data Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:41,766 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:41,767 - orchestrator - INFO - Social Sentiment Agent completed for report test_report_123.
+2025-11-12 18:07:41,767 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:41,767 - orchestrator - INFO - Scraping team profiles for token ethereum from URLs: ['http://mock-team-profile.com']
+2025-11-12 18:07:41,769 - orchestrator - INFO - Calling Code/Audit Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:41,781 - orchestrator - INFO - Fetching repository metrics for http://mock-code-audit.com/repo
+2025-11-12 18:07:41,782 - orchestrator - INFO - Analyzing code activity for http://mock-code-audit.com/repo
+2025-11-12 18:07:41,791 - orchestrator - ERROR - Code/Audit Agent failed for report test_report_123
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/core/orchestrator.py", line 278, in code_audit_agent_func
+    code_metrics_data.update({"activity_analysis": code_activity_analysis})
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'coroutine' object has no attribute 'update'
+2025-11-12 18:07:41,793 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-onchain-metrics.com with params: {'token_id': 'ethereum', 'report_id': 'test_report_123'}
+2025-11-12 18:07:41,803 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-tokenomics.com with params: {'token_id': 'ethereum'}
+2025-11-12 18:07:41,814 - orchestrator - INFO - Team profile scraping completed for token ethereum.
+2025-11-12 18:07:41,815 - orchestrator - INFO - Analyzing whitepaper for token ethereum from source: mock whitepaper text
+2025-11-12 18:07:41,816 - orchestrator - INFO - Whitepaper analysis completed for token ethereum.
+2025-11-12 18:07:41,821 - services - ERROR - [Token ID: ethereum] Network error fetching tokenomics data from http://mock-tokenomics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:41,822 - services - ERROR - [Token ID: ethereum] Network error fetching on-chain metrics from http://mock-onchain-metrics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:42,823 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-tokenomics.com with params: {'token_id': 'ethereum'}
+2025-11-12 18:07:42,838 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-onchain-metrics.com with params: {'token_id': 'ethereum', 'report_id': 'test_report_123'}
+2025-11-12 18:07:42,855 - services - ERROR - [Token ID: ethereum] Network error fetching tokenomics data from http://mock-tokenomics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:42,855 - services - ERROR - [Token ID: ethereum] Network error fetching on-chain metrics from http://mock-onchain-metrics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:44,858 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-tokenomics.com with params: {'token_id': 'ethereum'}
+2025-11-12 18:07:44,869 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-onchain-metrics.com with params: {'token_id': 'ethereum', 'report_id': 'test_report_123'}
+2025-11-12 18:07:44,884 - services - ERROR - [Token ID: ethereum] Network error fetching tokenomics data from http://mock-tokenomics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:44,884 - services - ERROR - [Token ID: ethereum] Network error fetching on-chain metrics from http://mock-onchain-metrics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:45,815 - orchestrator - ERROR - Onchain metrics fetch timed out for report test_report_123
+2025-11-12 18:07:45,815 - orchestrator - ERROR - Tokenomics fetch timed out for report test_report_123
+2025-11-12 18:07:45,815 - orchestrator - INFO - Agent onchain_data_agent completed for report test_report_123.
+2025-11-12 18:07:45,816 - orchestrator - INFO - Agent social_sentiment_agent completed for report test_report_123.
+2025-11-12 18:07:45,816 - orchestrator - INFO - Agent team_documentation_agent completed for report test_report_123.
+2025-11-12 18:07:45,816 - orchestrator - INFO - Agent code_audit_agent completed for report test_report_123.
+2025-11-12 18:07:45,816 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-12 18:07:45,816 - orchestrator - INFO - Report test_report_123 status updated to completed.
+2025-11-12 18:07:45,986 - orchestrator - INFO - Registering agent: onchain_data_agent
+2025-11-12 18:07:45,986 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-12 18:07:45,986 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-12 18:07:45,987 - orchestrator - INFO - Registering agent: code_audit_agent
+2025-11-12 18:07:45,987 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:45,987 - orchestrator - INFO - Executing agents for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:45,987 - orchestrator - INFO - Calling Onchain Data Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:45,987 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:45,987 - orchestrator - INFO - Social Sentiment Agent completed for report test_report_123.
+2025-11-12 18:07:45,987 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:45,987 - orchestrator - INFO - Scraping team profiles for token ethereum from URLs: ['http://mock-team-profile.com']
+2025-11-12 18:07:45,988 - orchestrator - INFO - Calling Code/Audit Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:46,005 - orchestrator - INFO - Fetching repository metrics for http://mock-code-audit.com/repo
+2025-11-12 18:07:46,006 - orchestrator - INFO - Analyzing code activity for http://mock-code-audit.com/repo
+2025-11-12 18:07:46,006 - orchestrator - INFO - Searching and summarizing audit reports for http://mock-code-audit.com/repo
+2025-11-12 18:07:46,008 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-onchain-metrics.com with params: {'token_id': 'ethereum', 'report_id': 'test_report_123'}
+2025-11-12 18:07:46,025 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-tokenomics.com with params: {'token_id': 'ethereum'}
+2025-11-12 18:07:46,041 - orchestrator - INFO - Team profile scraping completed for token ethereum.
+2025-11-12 18:07:46,042 - orchestrator - INFO - Analyzing whitepaper for token ethereum from source: mock whitepaper text
+2025-11-12 18:07:46,043 - orchestrator - INFO - Whitepaper analysis completed for token ethereum.
+2025-11-12 18:07:46,045 - services - ERROR - [Token ID: ethereum] Network error fetching tokenomics data from http://mock-tokenomics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:46,046 - services - ERROR - [Token ID: ethereum] Network error fetching on-chain metrics from http://mock-onchain-metrics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:47,047 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-tokenomics.com with params: {'token_id': 'ethereum'}
+2025-11-12 18:07:47,064 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-onchain-metrics.com with params: {'token_id': 'ethereum', 'report_id': 'test_report_123'}
+2025-11-12 18:07:47,086 - services - ERROR - [Token ID: ethereum] Network error fetching on-chain metrics from http://mock-onchain-metrics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:47,095 - services - ERROR - [Token ID: ethereum] Network error fetching tokenomics data from http://mock-tokenomics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:49,096 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-onchain-metrics.com with params: {'token_id': 'ethereum', 'report_id': 'test_report_123'}
+2025-11-12 18:07:49,113 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-tokenomics.com with params: {'token_id': 'ethereum'}
+2025-11-12 18:07:49,134 - services - ERROR - [Token ID: ethereum] Network error fetching on-chain metrics from http://mock-onchain-metrics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:49,135 - services - ERROR - [Token ID: ethereum] Network error fetching tokenomics data from http://mock-tokenomics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:50,043 - orchestrator - ERROR - Onchain metrics fetch timed out for report test_report_123
+2025-11-12 18:07:50,043 - orchestrator - ERROR - Tokenomics fetch timed out for report test_report_123
+2025-11-12 18:07:50,043 - orchestrator - INFO - Agent onchain_data_agent completed for report test_report_123.
+2025-11-12 18:07:50,043 - orchestrator - INFO - Agent social_sentiment_agent completed for report test_report_123.
+2025-11-12 18:07:50,043 - orchestrator - INFO - Agent team_documentation_agent completed for report test_report_123.
+2025-11-12 18:07:50,043 - orchestrator - INFO - Agent code_audit_agent completed for report test_report_123.
+2025-11-12 18:07:50,044 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-12 18:07:50,044 - orchestrator - INFO - Report test_report_123 status updated to completed.
+2025-11-12 18:07:50,070 - orchestrator - INFO - Registering agent: onchain_data_agent
+2025-11-12 18:07:50,070 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-12 18:07:50,070 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-12 18:07:50,070 - orchestrator - INFO - Registering agent: code_audit_agent
+2025-11-12 18:07:50,070 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:50,070 - orchestrator - INFO - Executing agents for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:50,070 - orchestrator - INFO - Calling Onchain Data Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:50,070 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:50,071 - orchestrator - INFO - Social Sentiment Agent completed for report test_report_123.
+2025-11-12 18:07:50,071 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:50,071 - orchestrator - INFO - Scraping team profiles for token ethereum from URLs: ['http://mock-team-profile.com']
+2025-11-12 18:07:50,071 - orchestrator - INFO - Calling Code/Audit Agent for report_id: test_report_123, token_id: ethereum
+2025-11-12 18:07:50,089 - orchestrator - INFO - Fetching repository metrics for http://mock-code-audit.com/repo
+2025-11-12 18:07:50,089 - orchestrator - INFO - Analyzing code activity for http://mock-code-audit.com/repo
+2025-11-12 18:07:50,089 - orchestrator - INFO - Searching and summarizing audit reports for http://mock-code-audit.com/repo
+2025-11-12 18:07:50,091 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-onchain-metrics.com with params: {'token_id': 'ethereum', 'report_id': 'test_report_123'}
+2025-11-12 18:07:50,109 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-tokenomics.com with params: {'token_id': 'ethereum'}
+2025-11-12 18:07:50,127 - orchestrator - INFO - Team profile scraping completed for token ethereum.
+2025-11-12 18:07:50,128 - orchestrator - INFO - Analyzing whitepaper for token ethereum from source: mock whitepaper text
+2025-11-12 18:07:50,129 - orchestrator - INFO - Whitepaper analysis completed for token ethereum.
+2025-11-12 18:07:50,130 - services - ERROR - [Token ID: ethereum] Network error fetching tokenomics data from http://mock-tokenomics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:50,132 - services - ERROR - [Token ID: ethereum] Network error fetching on-chain metrics from http://mock-onchain-metrics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:51,133 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-tokenomics.com with params: {'token_id': 'ethereum'}
+2025-11-12 18:07:51,151 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-onchain-metrics.com with params: {'token_id': 'ethereum', 'report_id': 'test_report_123'}
+2025-11-12 18:07:51,179 - services - ERROR - [Token ID: ethereum] Network error fetching tokenomics data from http://mock-tokenomics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:51,180 - services - ERROR - [Token ID: ethereum] Network error fetching on-chain metrics from http://mock-onchain-metrics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:53,183 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-tokenomics.com with params: {'token_id': 'ethereum'}
+2025-11-12 18:07:53,195 - services - INFO - [Token ID: ethereum] Initiating API call to http://mock-onchain-metrics.com with params: {'token_id': 'ethereum', 'report_id': 'test_report_123'}
+2025-11-12 18:07:53,209 - services - ERROR - [Token ID: ethereum] Network error fetching on-chain metrics from http://mock-onchain-metrics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:53,210 - services - ERROR - [Token ID: ethereum] Network error fetching tokenomics data from http://mock-tokenomics.com: [Errno -2] Name or service not known
+2025-11-12 18:07:54,128 - orchestrator - ERROR - Onchain metrics fetch timed out for report test_report_123
+2025-11-12 18:07:54,129 - orchestrator - ERROR - Tokenomics fetch timed out for report test_report_123
+2025-11-12 18:07:54,129 - orchestrator - INFO - Agent onchain_data_agent completed for report test_report_123.
+2025-11-12 18:07:54,129 - orchestrator - INFO - Agent social_sentiment_agent completed for report test_report_123.
+2025-11-12 18:07:54,129 - orchestrator - INFO - Agent team_documentation_agent completed for report test_report_123.
+2025-11-12 18:07:54,129 - orchestrator - INFO - Agent code_audit_agent completed for report test_report_123.
+2025-11-12 18:07:54,129 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-12 18:07:54,129 - orchestrator - INFO - Report test_report_123 status updated to completed.

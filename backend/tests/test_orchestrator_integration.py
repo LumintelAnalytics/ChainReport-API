@@ -45,6 +45,16 @@ async def test_orchestrator_full_integration_success(mock_settings):
          patch('backend.app.services.agents.code_audit_agent.CodeAuditAgent.analyze_code_activity', new_callable=AsyncMock) as mock_analyze_code_activity, \
          patch('backend.app.services.agents.code_audit_agent.CodeAuditAgent.search_and_summarize_audit_reports', new_callable=AsyncMock) as mock_search_and_summarize_audit_reports:
 
+        mock_fetch_onchain_metrics.return_value = {"onchain_metrics_data": "mocked"}
+        mock_fetch_tokenomics.return_value = {"tokenomics_data": "mocked"}
+        mock_fetch_social_data.return_value = {"social_data": "mocked"}
+        mock_analyze_sentiment.return_value = {"overall_sentiment": "positive", "score": 0.8, "summary": "mocked sentiment"}
+        mock_scrape_team_profiles.return_value = [{"team_member": "mocked"}]
+        mock_analyze_whitepaper.return_value = {"whitepaper_summary": "mocked"}
+        mock_fetch_repo_metrics.return_value = MagicMock(model_dump=lambda: {"repo_metrics": "mocked"})
+        mock_analyze_code_activity.return_value = {"activity_analysis": "mocked"}
+        mock_search_and_summarize_audit_reports.return_value = [{"audit_report": "mocked"}]
+
         in_memory_reports[SAMPLE_REPORT_ID] = {"status": "pending", "data": {}}
         orchestrator = create_orchestrator()
         result = await orchestrator.execute_agents_concurrently(SAMPLE_REPORT_ID, SAMPLE_TOKEN_ID)
@@ -102,6 +112,7 @@ async def test_orchestrator_agent_timeout_handling(mock_settings):
         mock_analyze_code_activity.return_value = {"activity_analysis": "mocked"}
         mock_search_and_summarize_audit_reports.return_value = [{"audit_report": "mocked"}]
 
+        in_memory_reports[SAMPLE_REPORT_ID] = {"status": "pending", "data": {}}
         orchestrator = create_orchestrator()
         result = await orchestrator.execute_agents_concurrently(SAMPLE_REPORT_ID, SAMPLE_TOKEN_ID)
 
@@ -139,6 +150,7 @@ async def test_orchestrator_agent_exception_handling(mock_settings):
         mock_analyze_code_activity.return_value = {"activity_analysis": "mocked"}
         mock_search_and_summarize_audit_reports.return_value = [{"audit_report": "mocked"}]
 
+        in_memory_reports[SAMPLE_REPORT_ID] = {"status": "pending", "data": {}}
         orchestrator = create_orchestrator()
         result = await orchestrator.execute_agents_concurrently(SAMPLE_REPORT_ID, SAMPLE_TOKEN_ID)
 

@@ -295,7 +295,17 @@ class CodeAuditAgent:
             logger.exception(f"An unexpected error occurred while searching and summarizing audit reports for {project_name}: {e}")
             return [] # Return empty list on error
 
-    async def audit_codebase(self, repo_url: str, project_name: str) -> CodeAuditResult:
+    async def fetch_data(self, token_id: str, project_name: str = None) -> Dict[str, Any]:
+        repo_url = token_id
+        if project_name is None:
+            # Attempt to derive project_name from repo_url
+            parsed_url = urllib.parse.urlparse(repo_url)
+            path_segments = [s for s in parsed_url.path.split('/') if s]
+            if path_segments:
+                project_name = path_segments[-1].replace(".git", "")
+            else:
+                project_name = "unknown_project" # Fallback
+
         code_metrics = CodeMetrics(repo_url=repo_url)
         audit_summaries = []
         try:
@@ -307,7 +317,7 @@ class CodeAuditAgent:
         return CodeAuditResult(
             code_metrics=code_metrics,
             audit_summaries=audit_summaries
-        )
+        ).model_dump()
 
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

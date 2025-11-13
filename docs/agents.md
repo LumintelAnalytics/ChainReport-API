@@ -112,25 +112,25 @@ The `OnchainAgent` is responsible for fetching on-chain metrics and tokenomics d
 
 **Functions:**
 
-*   `fetch_onchain_metrics(url: str, token_id: str, params: dict | None = None) -> dict`:
-    *   **Description:** Fetches general on-chain metrics from a specified API endpoint.
-    *   **Inputs:**
-        *   `url` (string): The API endpoint URL.
-        *   `token_id` (string): A unique identifier for request tracing and log correlation.
-        *   `params` (dict, optional): A dictionary of query parameters to be included in the request.
-    *   **Outputs:** A dictionary containing the fetched on-chain metrics. The structure depends on the external API.
-    *   **Error Handling:**
-        *   `OnchainAgentTimeout`: Raised if the request times out.
-        *   `OnchainAgentNetworkError`: Raised for network-related errors (e.g., connection issues).
-        *   `OnchainAgentHTTPError`: Raised if the HTTP response status is not in the 2xx range.
-        *   `OnchainAgentException`: Raised for other unexpected errors.
-        *   Uses `tenacity` for retries with exponential backoff on various exceptions.
+* `fetch_onchain_metrics(url: str, token_id: str, params: dict | None = None) -> dict`:
+  * **Description:** Fetches general on-chain metrics from a specified API endpoint.
+  * **Inputs:**
+    * `url` (string): The API endpoint URL.
+    * `token_id` (string): A unique identifier for request tracing and log correlation.
+    * `params` (dict, optional): A dictionary of query parameters to be included in the request.
+  * **Outputs:** A dictionary containing the fetched on-chain metrics. The structure depends on the external API.
+  * **Error Handling:**
+    * `OnchainAgentTimeout`: Raised if the request times out.
+    * `OnchainAgentNetworkError`: Raised for network-related errors (e.g., connection issues).
+    * `OnchainAgentHTTPError`: Raised if the HTTP response status is not in the 2xx range.
+    * `OnchainAgentException`: Raised for other unexpected errors.
+    * Uses `tenacity` for retries with exponential backoff on various exceptions.
 
-*   `fetch_tokenomics(url: str, token_id: str, params: dict | None = None) -> dict`:
-    *   **Description:** Fetches tokenomics-specific data from a specified API endpoint.
-    *   **Inputs:** Same as `fetch_onchain_metrics`.
-    *   **Outputs:** A dictionary containing the fetched tokenomics data. The structure depends on the external API.
-    *   **Error Handling:** Same as `fetch_onchain_metrics`.
+* `fetch_tokenomics(url: str, token_id: str, params: dict | None = None) -> dict`:
+  * **Description:** Fetches tokenomics-specific data from a specified API endpoint.
+  * **Inputs:** Same as `fetch_onchain_metrics`.
+  * **Outputs:** A dictionary containing the fetched tokenomics data. The structure depends on the external API.
+  * **Error Handling:** Same as `fetch_onchain_metrics`.
 
 **Integration with Orchestrator:**
 The orchestrator directly calls the asynchronous functions `fetch_onchain_metrics` and `fetch_tokenomics`, providing the necessary API URL, a `token_id` for traceability, and any required query parameters.
@@ -187,13 +187,13 @@ The `PriceAgent` is a mock agent designed to simulate fetching price data for a 
 
 **Functions:**
 
-*   `run(report_id: str, token_id: str)`:
-    *   **Description:** Mocks the retrieval of price data for a specified token.
-    *   **Inputs:**
-        *   `report_id` (string): An identifier for the report being generated.
-        *   `token_id` (string): The identifier of the token for which price data is requested.
-    *   **Outputs:** A dictionary containing a mock price, along with the input `token_id` and `report_id`.
-    *   **Error Handling:** Not explicitly implemented in this mock.
+* `run(report_id: str, token_id: str)`:
+  * **Description:** Mocks the retrieval of price data for a specified token.
+  * **Inputs:**
+    * `report_id` (string): An identifier for the report being generated.
+    * `token_id` (string): The identifier of the token for which price data is requested.
+  * **Outputs:** A dictionary containing a mock price, along with the input `token_id` and `report_id`.
+  * **Error Handling:** Not explicitly implemented in this mock.
 
 **Integration with Orchestrator:**
 The orchestrator calls the asynchronous `run` function, passing the `report_id` and `token_id` to obtain mock price information.

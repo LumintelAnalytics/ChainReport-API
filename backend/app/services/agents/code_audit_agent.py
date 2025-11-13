@@ -295,8 +295,19 @@ class CodeAuditAgent:
             logger.exception(f"An unexpected error occurred while searching and summarizing audit reports for {project_name}: {e}")
             return [] # Return empty list on error
 
-    async def fetch_data(self, token_id: str, project_name: str = None) -> Dict[str, Any]:
-        repo_url = token_id
+    async def fetch_data(self, repo_url: str | None = None, project_name: str = None) -> Dict[str, Any]:
+        """
+        Fetches code metrics and audit summaries for a given repository URL.
+
+        Args:
+            repo_url (str | None): The URL of the repository to audit (e.g., "https://github.com/owner/repo").
+                                   If None, a default or placeholder might be used internally, but it's
+                                   expected to be provided for meaningful results.
+            project_name (str | None): The name of the project. If None, it will be derived from the repo_url.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing CodeMetrics and a list of AuditSummary objects.
+        """
         if project_name is None:
             # Attempt to derive project_name from repo_url
             parsed_url = urllib.parse.urlparse(repo_url)

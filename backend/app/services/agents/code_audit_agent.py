@@ -295,19 +295,41 @@ class CodeAuditAgent:
             logger.exception(f"An unexpected error occurred while searching and summarizing audit reports for {project_name}: {e}")
             return [] # Return empty list on error
 
-    async def audit_codebase(self, repo_url: str, project_name: str) -> CodeAuditResult:
-        code_metrics = CodeMetrics(repo_url=repo_url)
+    async def fetch_data(self, token_id: str, project_name: str | None = None) -> dict:
+        """
+        Fetches code metrics and audit summaries for a given token_id, which is used as the repository URL.
+
+        Args:
+            token_id (str): The identifier used as the repository URL for CodeAuditAgent (e.g., "https://github.com/owner/repo").
+            project_name (str | None): The name of the project. If None, it will be derived from the token_id.
+
+        Returns:
+            dict: A dictionary containing CodeMetrics and a list of AuditSummary objects.
+        """
+        if not token_id:
+            raise ValueError("token_id must be provided for CodeAuditAgent.")
+
+        if project_name is None:
+            # Attempt to derive project_name from token_id
+            parsed_url = urllib.parse.urlparse(token_id)
+            path_segments = [s for s in parsed_url.path.split('/') if s]
+            if path_segments:
+                project_name = path_segments[-1].replace(".git", "")
+            else:
+                project_name = "unknown_project" # Fallback
+
+        code_metrics = CodeMetrics(repo_url=token_id)
         audit_summaries = []
         try:
-            code_metrics = await self.fetch_repo_metrics(repo_url)
+            code_metrics = await self.fetch_repo_metrics(token_id)
             audit_summaries = await self.search_and_summarize_audit_reports(project_name)
         except Exception as e:
-            logger.exception(f"An unexpected error occurred during codebase audit for {repo_url} (project: {project_name}): {e}")
+            logger.exception(f"An unexpected error occurred during codebase audit for {token_id} (project: {project_name}): {e}")
 
         return CodeAuditResult(
             code_metrics=code_metrics,
             audit_summaries=audit_summaries
-        )
+        ).model_dump()
 
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

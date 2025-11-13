@@ -7,57 +7,57 @@ This document describes the data acquisition agents within the ChainReport-API, 
 ## 1. CodeAuditAgent
 
 **Purpose:**
-The `CodeAuditAgent` is responsible for auditing codebases, fetching repository metrics (e.g., commit count, contributors, latest releases, issues, pull requests) from platforms like GitHub and GitLab, and summarizing audit reports.
+  The `CodeAuditAgent` is responsible for auditing codebases, fetching repository metrics (e.g., commit count, contributors, latest releases, issues, pull requests) from platforms like GitHub and GitLab, and summarizing audit reports.
 
 **Functions:**
 
-*   `fetch_repo_metrics(repo_url: str) -> CodeMetrics`:
-    *   **Description:** Fetches various repository metrics from the specified `repo_url`. It supports both GitHub and GitLab repositories.
-    *   **Inputs:**
-        *   `repo_url` (string): The URL of the repository (e.g., "https://github.com/owner/repo" or "https://gitlab.com/owner/repo").
-    *   **Outputs:** A `CodeMetrics` object containing:
-        *   `repo_url` (str)
-        *   `commits_count` (int)
-        *   `contributors_count` (int)
-        *   `latest_release` (str)
-        *   `lines_of_code` (int, currently a placeholder)
-        *   `issues_count` (int)
-        *   `pull_requests_count` (int)
-    *   **Error Handling:** Logs `httpx.HTTPStatusError`, `httpx.RequestError`, and general `Exception` during API calls. In case of an error, it returns a `CodeMetrics` object with default/empty data.
+* `fetch_repo_metrics(repo_url: str) -> CodeMetrics`:
+  * **Description:** Fetches various repository metrics from the specified `repo_url`. It supports both GitHub and GitLab repositories.
+  * **Inputs:**
+    * `repo_url` (string): The URL of the repository (e.g., "https://github.com/owner/repo" or "https://gitlab.com/owner/repo").
+  * **Outputs:** A `CodeMetrics` object containing:
+    * `repo_url` (str)
+    * `commits_count` (int)
+    * `contributors_count` (int)
+    * `latest_release` (str)
+    * `lines_of_code` (int, currently a placeholder)
+    * `issues_count` (int)
+    * `pull_requests_count` (int)
+  * **Error Handling:** Logs `httpx.HTTPStatusError`, `httpx.RequestError`, and general `Exception` during API calls. In case of an error, it returns a `CodeMetrics` object with default/empty data.
 
-*   `analyze_code_activity(metrics: CodeMetrics) -> Dict[str, Any]`:
-    *   **Description:** Analyzes the provided `CodeMetrics` to determine activity levels, contributor engagement, release frequency, and issues/PRs activity.
-    *   **Inputs:**
-        *   `metrics` (CodeMetrics object): The metrics obtained from `fetch_repo_metrics`.
-    *   **Outputs:** A dictionary summarizing the analysis, including:
-        *   `activity_level` (str: "low", "medium", "high")
-        *   `contributor_engagement` (str: "low", "medium", "high")
-        *   `release_frequency` (str: "low", "present")
-        *   `code_quality_indicators` (str: "N/A", placeholder)
-        *   `issues_and_prs_activity` (str: "low", "medium", "high")
-    *   **Error Handling:** Not explicitly shown, but designed to return default values if metrics are insufficient.
+* `analyze_code_activity(metrics: CodeMetrics) -> Dict[str, Any]`:
+  * **Description:** Analyzes the provided `CodeMetrics` to determine activity levels, contributor engagement, release frequency, and issues/PRs activity.
+  * **Inputs:**
+    * `metrics` (CodeMetrics object): The metrics obtained from `fetch_repo_metrics`.
+  * **Outputs:** A dictionary summarizing the analysis, including:
+    * `activity_level` (str: "low", "medium", "high")
+    * `contributor_engagement` (str: "low", "medium", "high")
+    * `release_frequency` (str: "low", "present")
+    * `code_quality_indicators` (str: "N/A", placeholder)
+    * `issues_and_prs_activity` (str: "low", "medium", "high")
+  * **Error Handling:** Not explicitly shown, but designed to return default values if metrics are insufficient.
 
-*   `search_and_summarize_audit_reports(project_name: str) -> List[AuditSummary]`:
-    *   **Description:** (Placeholder) This function is intended to search for and summarize external audit reports related to a given project.
-    *   **Inputs:**
-        *   `project_name` (string): The name of the project to search for audit reports.
-    *   **Outputs:** A list of `AuditSummary` objects, each containing:
-        *   `report_title` (str)
-        *   `audit_firm` (str)
-        *   `date` (str)
-        *   `findings_summary` (str)
-        *   `severity_breakdown` (Dict[str, int])
-    *   **Error Handling:** Logs general `Exception` and returns an empty list in case of an error.
+* `search_and_summarize_audit_reports(project_name: str) -> List[AuditSummary]`:
+  * **Description:** (Placeholder) This function is intended to search for and summarize external audit reports related to a given project.
+  * **Inputs:**
+    * `project_name` (string): The name of the project to search for audit reports.
+  * **Outputs:** A list of `AuditSummary` objects, each containing:
+    * `report_title` (str)
+    * `audit_firm` (str)
+    * `date` (str)
+    * `findings_summary` (str)
+    * `severity_breakdown` (Dict[str, int])
+  * **Error Handling:** Logs general `Exception` and returns an empty list in case of an error.
 
-*   `audit_codebase(repo_url: str, project_name: str) -> CodeAuditResult`:
-    *   **Description:** Orchestrates the complete codebase audit process by fetching metrics and summarizing audit reports.
-    *   **Inputs:**
-        *   `repo_url` (string): The URL of the repository.
-        *   `project_name` (string): The name of the project.
-    *   **Outputs:** A `CodeAuditResult` object containing:
-        *   `code_metrics` (CodeMetrics object)
-        *   `audit_summaries` (List[AuditSummary])
-    *   **Error Handling:** Logs general `Exception` and returns a `CodeAuditResult` with default/empty data.
+* `audit_codebase(repo_url: str, project_name: str) -> CodeAuditResult`:
+  * **Description:** Orchestrates the complete codebase audit process by fetching metrics and summarizing audit reports.
+  * **Inputs:**
+    * `repo_url` (string): The URL of the repository.
+    * `project_name` (string): The name of the project.
+  * **Outputs:** A `CodeAuditResult` object containing:
+    * `code_metrics` (CodeMetrics object)
+    * `audit_summaries` (List[AuditSummary])
+  * **Error Handling:** Logs general `Exception` and returns a `CodeAuditResult` with default/empty data.
 
 **Integration with Orchestrator:**
 The `CodeAuditAgent` is designed as an asynchronous context manager. The orchestrator would typically instantiate the agent using `async with CodeAuditAgent() as agent:`, then call methods like `audit_codebase` to retrieve comprehensive audit results.
@@ -218,26 +218,26 @@ price_data = await run(report_id="report_abc", token_id="mock_token")
 ## 4. SocialSentimentAgent
 
 **Purpose:**
-The `SocialSentimentAgent` collects social media data (from sources like Twitter, Reddit, and news aggregators) for a specified token and performs sentiment analysis to gauge community perception.
+  The `SocialSentimentAgent` collects social media data (from sources like Twitter, Reddit, and news aggregators) for a specified token and performs sentiment analysis to gauge community perception.
 
 **Functions:**
 
-*   `fetch_social_data(token_id: str) -> List[Dict[str, Any]]`:
-    *   **Description:** Orchestrates the fetching of social media data from various sources for a given `token_id`. (Currently uses mock data for Twitter, Reddit, and News).
-    *   **Inputs:**
-        *   `token_id` (string): The identifier of the token to search for on social media.
-    *   **Outputs:** A list of dictionaries, where each dictionary represents a piece of social data (e.g., a tweet, Reddit post, news snippet) with `source`, `text`, and `id`.
-    *   **Error Handling:** Catches `RetryError` from underlying fetch functions (which use `tenacity` for retries on `httpx.RequestError`, `httpx.HTTPStatusError`, `asyncio.TimeoutError`) and logs them.
+* `fetch_social_data(token_id: str) -> List[Dict[str, Any]]`:
+  * **Description:** Orchestrates the fetching of social media data from various sources for a given `token_id`. (Currently uses mock data for Twitter, Reddit, and News).
+  * **Inputs:**
+    * `token_id` (string): The identifier of the token to search for on social media.
+  * **Outputs:** A list of dictionaries, where each dictionary represents a piece of social data (e.g., a tweet, Reddit post, news snippet) with `source`, `text`, and `id`.
+  * **Error Handling:** Catches `RetryError` from underlying fetch functions (which use `tenacity` for retries on `httpx.RequestError`, `httpx.HTTPStatusError`, `asyncio.TimeoutError`) and logs them.
 
-*   `analyze_sentiment(data: List[Dict[str, Any]]) -> Dict[str, Any]`:
-    *   **Description:** Performs sentiment analysis on the collected social data using `TextBlob` and provides an overall sentiment score and breakdown.
-    *   **Inputs:**
-        *   `data` (List[Dict[str, Any]]): A list of social data items, typically the output from `fetch_social_data`.
-    *   **Outputs:** A dictionary containing:
-        *   `overall_sentiment` (str: "positive", "neutral", "negative")
-        *   `score` (float: average polarity, -1.0 to +1.0)
-        *   `details` (List[Dict[str, Any]]): Individual sentiment analysis results for each item, including `source`, `text`, `sentiment`, and `polarity_score`.
-    *   **Error Handling:** Returns a "neutral" sentiment with a score of 0.0 if no data is provided for analysis.
+* `analyze_sentiment(data: List[Dict[str, Any]]) -> Dict[str, Any]`:
+  * **Description:** Performs sentiment analysis on the collected social data using `TextBlob` and provides an overall sentiment score and breakdown.
+  * **Inputs:**
+    * `data` (List[Dict[str, Any]]): A list of social data items, typically the output from `fetch_social_data`.
+  * **Outputs:** A dictionary containing:
+    * `overall_sentiment` (str: "positive", "neutral", "negative")
+    * `score` (float: average polarity, -1.0 to +1.0)
+    * `details` (List[Dict[str, Any]]): Individual sentiment analysis results for each item, including `source`, `text`, `sentiment`, and `polarity_score`.
+  * **Error Handling:** Returns a "neutral" sentiment with a score of 0.0 if no data is provided for analysis.
 
 **Integration with Orchestrator:**
 The orchestrator would instantiate `SocialSentimentAgent`, call `fetch_social_data` with a `token_id`, and then pass the resulting data to `analyze_sentiment` to get the sentiment report.
@@ -301,23 +301,23 @@ sentiment_report = await agent.analyze_sentiment(social_data)
 ## 5. TeamDocAgent
 
 **Purpose:**
-The `TeamDocAgent` is designed to scrape and analyze information related to project teams, documentation, and whitepapers. This includes extracting team member profiles and key details from whitepaper content.
+  The `TeamDocAgent` is designed to scrape and analyze information related to project teams, documentation, and whitepapers. This includes extracting team member profiles and key details from whitepaper content.
 
 **Functions:**
 
-*   `scrape_team_profiles(urls: List[str]) -> List[Dict[str, Any]]`:
-    *   **Description:** Scrapes team member profiles from a list of provided URLs. It attempts to extract name, title, biography, and simulates credential verification.
-    *   **Inputs:**
-        *   `urls` (List[str]): A list of URLs pointing to team member profiles (e.g., LinkedIn, company bio pages).
-    *   **Outputs:** A list of dictionaries, each representing a team member's profile with:
-        *   `url` (str)
-        *   `name` (str)
-        *   `title` (str)
-        *   `biography` (str)
-        *   `credentials_verified` (bool, simulated)
-        *   `source` (str)
-        *   If an error occurs, the dictionary will contain `url` and `error`.
-    *   **Error Handling:** Catches `requests.exceptions.RequestException` for network/HTTP errors and general `Exception`. Logs errors and returns a dictionary with error details for failed URLs.
+* `scrape_team_profiles(urls: List[str]) -> List[Dict[str, Any]]`:
+  * **Description:** Scrapes team member profiles from a list of provided URLs. It attempts to extract name, title, biography, and simulates credential verification.
+  * **Inputs:**
+    * `urls` (List[str]): A list of URLs pointing to team member profiles (e.g., LinkedIn, company bio pages).
+  * **Outputs:** A list of dictionaries, each representing a team member's profile with:
+    * `url` (str)
+    * `name` (str)
+    * `title` (str)
+    * `biography` (str)
+    * `credentials_verified` (bool, simulated)
+    * `source` (str)
+    * If an error occurs, the dictionary will contain `url` and `error`.
+  * **Error Handling:** Catches `requests.exceptions.RequestException` for network/HTTP errors and general `Exception`. Logs errors and returns a dictionary with error details for failed URLs.
 
 *   `analyze_whitepaper(text: str) -> Dict[str, Any]`:
     *   **Description:** Analyzes the full text content of a whitepaper to extract project timelines, roadmap items, and public statements. (Currently uses keyword-based simulation).

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
@@ -43,42 +44,58 @@ class NLGEngine(ABC):
                   structured with sections and their respective texts.
                   Example: `return self._format_output({"report_title": "...", "sections": [{"section_id": "...", "text": "..."}]})`
         """
+        sections_to_generate = [
+            {
+                "section_id": "tokenomics",
+                "generator": self.generate_tokenomics_text,
+                "data": data.get("tokenomics_data", {}),
+                "fallback": {"section_id": "tokenomics", "text": "Failed to generate tokenomics summary due to an internal error."}
+            },
+            {
+                "section_id": "onchain_metrics",
+                "generator": self.generate_onchain_text,
+                "data": data.get("onchain_data", {}),
+                "fallback": {"section_id": "onchain_metrics", "text": "Failed to generate on-chain metrics summary due to an internal error."}
+            },
+            {
+                "section_id": "social_sentiment",
+                "generator": self.generate_sentiment_text,
+                "data": data.get("sentiment_data", {}),
+                "fallback": {"section_id": "social_sentiment", "text": "Failed to generate social sentiment summary due to an internal error."}
+            },
+            {
+                "section_id": "code_audit_summary",
+                "generator": self.generate_code_audit_text,
+                "data": (data.get("code_data", {}), data.get("audit_data", {})), # Pass as tuple for multiple args
+                "fallback": {"section_id": "code_audit_summary", "text": "Failed to generate code audit summary due to an internal error."}
+            },
+        ]
+
+        tasks = []
+        for section_info in sections_to_generate:
+            if section_info["section_id"] == "code_audit_summary":
+                # Handle code_audit_summary with two arguments
+                tasks.append(asyncio.create_task(section_info["generator"](*section_info["data"])))
+            else:
+                tasks.append(asyncio.create_task(section_info["generator"](section_info["data"])))
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
         sections = []
+        for i, result in enumerate(results):
+            section_info = sections_to_generate[i]
+            section_id = section_info["section_id"]
+            fallback_dict = section_info["fallback"]
 
-        # Generate Tokenomics section
-        try:
-            tokenomics_output = await self.generate_tokenomics_text(data.get("tokenomics_data", {}))
-            sections.append(json.loads(tokenomics_output))
-        except Exception as e:
-            logger.error(f"Error generating tokenomics section: {e}", exc_info=True)
-            sections.append({"section_id": "tokenomics", "text": "Failed to generate tokenomics summary due to an internal error."})
-
-        # Generate On-chain Metrics section
-        try:
-            onchain_output = await self.generate_onchain_text(data.get("onchain_data", {}))
-            sections.append(json.loads(onchain_output))
-        except Exception as e:
-            logger.error(f"Error generating on-chain metrics section: {e}", exc_info=True)
-            sections.append({"section_id": "onchain_metrics", "text": "Failed to generate on-chain metrics summary due to an internal error."})
-
-        # Generate Social Sentiment section
-        try:
-            sentiment_output = await self.generate_sentiment_text(data.get("sentiment_data", {}))
-            sections.append(json.loads(sentiment_output))
-        except Exception as e:
-            logger.error(f"Error generating social sentiment section: {e}", exc_info=True)
-            sections.append({"section_id": "social_sentiment", "text": "Failed to generate social sentiment summary due to an internal error."})
-
-        # Generate Code Audit Summary section
-        try:
-            code_audit_output = await self.generate_code_audit_text(
-                data.get("code_data", {}),
-                data.get("audit_data", {})
-            )
-            sections.append(json.loads(code_audit_output))
-        except Exception as e:
-            logger.error(f"Error generating code audit summary section: {e}", exc_info=True)
-            sections.append({"section_id": "code_audit_summary", "text": "Failed to generate code audit summary due to an internal error."})
+            if isinstance(result, Exception):
+                logger.error(f"Error generating {section_id} section: {result}", exc_info=True)
+                sections.append(fallback_dict)
+            else:
+                try:
+                    sections.append(json.loads(result))
+                except json.JSONDecodeError as e:
+                    logger.error(f"JSON decoding error for {section_id} section: {e}. Raw result: {result}", exc_info=True)
+                    sections.append(fallback_dict)
 
         return self._format_output({"sections": sections})
 

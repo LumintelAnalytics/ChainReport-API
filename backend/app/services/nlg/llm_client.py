@@ -1,10 +1,10 @@
 import os
 import httpx
-from dotenv import load_dotenv
 from typing import Dict, Any
+import logging
 
-# Load environment variables from .env file
-load_dotenv()
+logger = logging.getLogger(__name__)
+
 
 class LLMClient:
     def __init__(self):
@@ -36,13 +36,13 @@ class LLMClient:
                 response.raise_for_status()  # Raise an exception for HTTP errors
                 return response.json()
         except httpx.RequestError as exc:
-            print(f"An error occurred while requesting {exc.request.url!r}: {exc}")
+            logger.error(f"An error occurred while requesting {exc.request.url!r}: {exc}", exc_info=True)
             raise
         except httpx.HTTPStatusError as exc:
-            print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}: {exc.response.text}")
+            logger.error(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}: {exc.response.text}", exc_info=True)
             raise
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            logger.exception(f"An unexpected error occurred: {e}")
             raise
 
 if __name__ == "__main__":

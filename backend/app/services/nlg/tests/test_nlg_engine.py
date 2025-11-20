@@ -120,3 +120,76 @@ async def test_generate_onchain_text_llm_empty_content():
         assert parsed_response["section_id"] == "onchain_metrics"
         assert "Failed to generate on-chain metrics summary due to an internal error." in parsed_response["text"]
         assert respx_mock.calls.call_count == 1
+
+@pytest.mark.asyncio
+async def test_generate_sentiment_text_success():
+    engine = ConcreteNLGEngine()
+    raw_data = {
+        "overall_sentiment_score": 0.75,
+        "community_perception": "positive",
+        "trends": ["growing adoption", "strong community engagement"],
+        "direction": "upward"
+    }
+    expected_llm_response = {
+        "choices": [{"message": {"content": "Overall sentiment is highly positive (0.75) with a strong upward community direction. Key trends include growing adoption and strong community engagement."}}]
+    }
+
+    with respx.mock as respx_mock:
+        respx_mock.post("https://api.openai.com/v1/chat/completions").return_value = Response(200, json=expected_llm_response)
+
+        response = await engine.generate_sentiment_text(raw_data)
+        parsed_response = json.loads(response)
+
+        assert parsed_response["section_id"] == "social_sentiment"
+        assert "Overall sentiment is highly positive (0.75)" in parsed_response["text"]
+        assert respx_mock.calls.call_count == 1
+
+@pytest.mark.asyncio
+async def test_generate_sentiment_text_empty_data():
+    engine = ConcreteNLGEngine()
+    raw_data = {}
+
+    response = await engine.generate_sentiment_text(raw_data)
+    parsed_response = json.loads(response)
+
+    assert parsed_response["section_id"] == "social_sentiment"
+    assert "Social sentiment data is not available at this time." in parsed_response["text"]
+
+@pytest.mark.asyncio
+async def test_generate_sentiment_text_llm_error():
+    engine = ConcreteNLGEngine()
+    raw_data = {
+        "overall_sentiment_score": 0.75,
+        "community_perception": "positive"
+    }
+
+    with respx.mock as respx_mock:
+        respx_mock.post("https://api.openai.com/v1/chat/completions").return_value = Response(500, text="Internal Server Error")
+
+        response = await engine.generate_sentiment_text(raw_data)
+        parsed_response = json.loads(response)
+
+        assert parsed_response["section_id"] == "social_sentiment"
+        assert "Failed to generate social sentiment summary due to an internal error." in parsed_response["text"]
+        assert respx_mock.calls.call_count == 1
+
+@pytest.mark.asyncio
+async def test_generate_sentiment_text_llm_empty_content():
+    engine = ConcreteNLGEngine()
+    raw_data = {
+        "overall_sentiment_score": 0.75,
+        "community_perception": "positive"
+    }
+    expected_llm_response = {
+        "choices": [{"message": {"content": ""}}]
+    }
+
+    with respx.mock as respx_mock:
+        respx_mock.post("https://api.openai.com/v1/chat/completions").return_value = Response(200, json=expected_llm_response)
+
+        response = await engine.generate_sentiment_text(raw_data)
+        parsed_response = json.loads(response)
+
+        assert parsed_response["section_id"] == "social_sentiment"
+        assert "Failed to generate social sentiment summary due to an internal error." in parsed_response["text"]
+        assert respx_mock.calls.call_count == 1

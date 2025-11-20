@@ -114,3 +114,16 @@ class NLGEngine(ABC):
             error_msg="Failed to generate on-chain metrics summary due to an internal error. Please try again later."
         )
 
+    async def generate_sentiment_text(self, raw_data: Dict[str, Any]) -> str:
+        """
+        Generates natural language text for social sentiment based on raw data.
+        Converts sentiment scores and community perception into a written summary,
+        highlighting trends and community direction.
+        """
+        return await self._generate_section_with_llm(
+            section_id="social_sentiment",
+            data=raw_data,
+            not_available_msg="Social sentiment data is not available at this time. Please check back later for updates.",
+            error_msg="Failed to generate social sentiment summary due to an internal error. Please try again later."
+        )
+

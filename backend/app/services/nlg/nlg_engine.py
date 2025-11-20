@@ -1,9 +1,12 @@
 import json
+import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 
 from backend.app.services.nlg.llm_client import LLMClient
 from backend.app.services.nlg.prompt_templates import get_template, fill_template
+
+logger = logging.getLogger(__name__)
 
 class NLGEngine(ABC):
     """
@@ -48,6 +51,30 @@ class NLGEngine(ABC):
         """
         return json.dumps(content)
 
+    async def _generate_section_with_llm(self, section_id: str, data: Dict[str, Any], not_available_msg: str, error_msg: str) -> str:
+        if not data:
+            return self._format_output({
+                "section_id": section_id,
+                "text": not_available_msg
+            })
+
+        template = get_template(section_id)
+        prompt = fill_template(template, data=json.dumps(data, indent=2))
+
+        async with LLMClient() as llm_client:
+            try:
+                response = await llm_client.generate_text(prompt)
+                generated_text = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                if not generated_text:
+                    raise ValueError(f"LLM returned empty content for {section_id}.")
+                return self._format_output({"section_id": section_id, "text": generated_text})
+            except Exception as e:
+                logger.error(f"Error generating {section_id} text with LLM: {e}", exc_info=True)
+                return self._format_output({
+                    "section_id": section_id,
+                    "text": error_msg
+                })
+
     async def generate_tokenomics_text(self, raw_data: Dict[str, Any]) -> str:
         """
         Generates natural language text for tokenomics based on raw data.
@@ -58,24 +85,12 @@ class NLGEngine(ABC):
                 "section_id": "tokenomics",
                 "text": "Tokenomics data is not available at this time. Please check back later for updates."
             })
-
-        template = get_template("tokenomics")
-        prompt = fill_template(template, data=json.dumps(raw_data, indent=2))
-
-        async with LLMClient() as llm_client:
-            try:
-                response = await llm_client.generate_text(prompt)
-                generated_text = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-                if not generated_text:
-                    raise ValueError("LLM returned empty content for tokenomics.")
-                return self._format_output({"section_id": "tokenomics", "text": generated_text})
-            except Exception as e:
-                # Log the exception for debugging purposes
-                print(f"Error generating tokenomics text with LLM: {e}")
-                return self._format_output({
-                    "section_id": "tokenomics",
-                    "text": "Failed to generate tokenomics summary due to an internal error. Please try again later."
-                })
+        return await self._generate_section_with_llm(
+            section_id="tokenomics",
+            data=raw_data,
+            not_available_msg="Tokenomics data is not available at this time. Please check back later for updates.",
+            error_msg="Failed to generate tokenomics summary due to an internal error. Please try again later."
+        )
 
     async def generate_onchain_text(self, raw_data: Dict[str, Any]) -> str:
         """
@@ -90,33 +105,17 @@ class NLGEngine(ABC):
             })
 
         # Extract relevant metrics, handling potential missing fields safely
-        active_addresses = raw_data.get("active_addresses", "N/A")
-        holders = raw_data.get("holders", "N/A")
-        transaction_flows = raw_data.get("transaction_flows", "N/A")
-        liquidity = raw_data.get("liquidity", "N/A")
-
-        # Prepare data for the prompt template
         onchain_metrics_data = {
-            "active_addresses": active_addresses,
-            "holders": holders,
-            "transaction_flows": transaction_flows,
-            "liquidity": liquidity,
+            "active_addresses": raw_data.get("active_addresses", "N/A"),
+            "holders": raw_data.get("holders", "N/A"),
+            "transaction_flows": raw_data.get("transaction_flows", "N/A"),
+            "liquidity": raw_data.get("liquidity", "N/A"),
         }
 
-        template = get_template("onchain_metrics")
-        prompt = fill_template(template, data=json.dumps(onchain_metrics_data, indent=2))
-
-        async with LLMClient() as llm_client:
-            try:
-                response = await llm_client.generate_text(prompt)
-                generated_text = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-                if not generated_text:
-                    raise ValueError("LLM returned empty content for on-chain metrics.")
-                return self._format_output({"section_id": "onchain_metrics", "text": generated_text})
-            except Exception as e:
-                print(f"Error generating on-chain metrics text with LLM: {e}")
-                return self._format_output({
-                    "section_id": "onchain_metrics",
-                    "text": "Failed to generate on-chain metrics summary due to an internal error. Please try again later."
-                })
+        return await self._generate_section_with_llm(
+            section_id="onchain_metrics",
+            data=onchain_metrics_data,
+            not_available_msg="On-chain metrics data is not available at this time. Please check back later for updates.",
+            error_msg="Failed to generate on-chain metrics summary due to an internal error. Please try again later."
+        )
 

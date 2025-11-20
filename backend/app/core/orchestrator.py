@@ -176,9 +176,16 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
                 orchestrator_logger.error("Tokenomics fetch failed for report %s", report_id)
                 tokenomics_result = {"status": "failed", "error": str(tokenomics_result)}
 
+            overall_agent_status = "completed"
+            if onchain_metrics_result.get("status") == "failed" or tokenomics_result.get("status") == "failed":
+                overall_agent_status = "failed"
+
             return {
-                "onchain_metrics": onchain_metrics_result,
-                "tokenomics": tokenomics_result
+                "status": overall_agent_status,
+                "data": {
+                    "onchain_metrics": onchain_metrics_result,
+                    "tokenomics": tokenomics_result
+                }
             }
         orch.register_agent('onchain_data_agent', onchain_data_agent)
     else:
@@ -202,11 +209,20 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
             orchestrator_logger.info(f"Social Sentiment Agent completed for report {report_id}.")
         except asyncio.TimeoutError:
             orchestrator_logger.error("Social Sentiment Agent timed out for report %s", report_id)
-            social_sentiment_data = {"social_sentiment": {"status": "failed", "error": "Agent timed out"}}
+            return {"status": "failed", "error": "Agent timed out"}
         except Exception as e:
             orchestrator_logger.exception("Social Sentiment Agent failed for report %s", report_id)
-            social_sentiment_data = {"social_sentiment": {"status": "failed", "error": str(e)}}
-        return social_sentiment_data
+            return {"status": "failed", "error": str(e)}
+        return {
+            "status": "completed",
+            "data": {
+                "social_sentiment": {
+                    "overall_sentiment": sentiment_report.get("overall_sentiment"),
+                    "score": sentiment_report.get("score"),
+                    "summary": sentiment_report.get("details") # Storing details as summary for now
+                }
+            }
+        }
     orch.register_agent('social_sentiment_agent', social_sentiment_agent_func)
 
     # Configure and register Team and Documentation Agent
@@ -244,15 +260,18 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
 
         except asyncio.TimeoutError:
             orchestrator_logger.error("Team and Documentation Agent timed out for report %s", report_id)
-            return {"team_documentation": {"status": "failed", "error": "Agent timed out"}}
+            return {"status": "failed", "error": "Agent timed out"}
         except Exception as e:
             orchestrator_logger.exception("Team and Documentation Agent failed for report %s", report_id)
-            return {"team_documentation": {"status": "failed", "error": str(e)}}
+            return {"status": "failed", "error": str(e)}
         
         return {
-            "team_documentation": {
-                "team_analysis": team_analysis,
-                "whitepaper_summary": whitepaper_summary
+            "status": "completed",
+            "data": {
+                "team_documentation": {
+                    "team_analysis": team_analysis,
+                    "whitepaper_summary": whitepaper_summary
+                }
             }
         }
     orch.register_agent('team_documentation_agent', team_documentation_agent)
@@ -292,15 +311,18 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
 
             except asyncio.TimeoutError:
                 orchestrator_logger.error("Code/Audit Agent timed out for report %s", report_id)
-                return {"code_audit": {"status": "failed", "error": "Agent timed out", "code_metrics": code_metrics_data, "audit_summary": audit_summary_data}}
+                return {"status": "failed", "error": "Agent timed out"}
             except Exception as e:
                 orchestrator_logger.exception("Code/Audit Agent failed for report %s", report_id)
-                return {"code_audit": {"status": "failed", "error": str(e), "code_metrics": code_metrics_data, "audit_summary": audit_summary_data}}
+                return {"status": "failed", "error": str(e)}
             
             return {
-                "code_audit": {
-                    "code_metrics": code_metrics_data,
-                    "audit_summary": audit_summary_data
+                "status": "completed",
+                "data": {
+                    "code_audit": {
+                        "code_metrics": code_metrics_data,
+                        "audit_summary": audit_summary_data
+                    }
                 }
             }
         orch.register_agent('code_audit_agent', code_audit_agent_func)

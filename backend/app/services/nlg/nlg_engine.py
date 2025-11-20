@@ -30,10 +30,10 @@ class NLGEngine(ABC):
         """
         pass
 
-    @abstractmethod
-    def generate_full_report(self, data: dict) -> str:
+    async def generate_full_report(self, data: dict) -> str:
         """
         Generates a complete natural language report based on a comprehensive data structure.
+        Gathers text outputs from all section generators and merges them into a final multi-section narrative.
 
         Args:
             data (dict): A dictionary containing all necessary data for generating the full report.
@@ -43,7 +43,44 @@ class NLGEngine(ABC):
                   structured with sections and their respective texts.
                   Example: `return self._format_output({"report_title": "...", "sections": [{"section_id": "...", "text": "..."}]})`
         """
-        pass
+        sections = []
+
+        # Generate Tokenomics section
+        try:
+            tokenomics_output = await self.generate_tokenomics_text(data.get("tokenomics_data", {}))
+            sections.append(json.loads(tokenomics_output))
+        except Exception as e:
+            logger.error(f"Error generating tokenomics section: {e}", exc_info=True)
+            sections.append({"section_id": "tokenomics", "text": "Failed to generate tokenomics summary due to an internal error."})
+
+        # Generate On-chain Metrics section
+        try:
+            onchain_output = await self.generate_onchain_text(data.get("onchain_data", {}))
+            sections.append(json.loads(onchain_output))
+        except Exception as e:
+            logger.error(f"Error generating on-chain metrics section: {e}", exc_info=True)
+            sections.append({"section_id": "onchain_metrics", "text": "Failed to generate on-chain metrics summary due to an internal error."})
+
+        # Generate Social Sentiment section
+        try:
+            sentiment_output = await self.generate_sentiment_text(data.get("sentiment_data", {}))
+            sections.append(json.loads(sentiment_output))
+        except Exception as e:
+            logger.error(f"Error generating social sentiment section: {e}", exc_info=True)
+            sections.append({"section_id": "social_sentiment", "text": "Failed to generate social sentiment summary due to an internal error."})
+
+        # Generate Code Audit Summary section
+        try:
+            code_audit_output = await self.generate_code_audit_text(
+                data.get("code_data", {}),
+                data.get("audit_data", {})
+            )
+            sections.append(json.loads(code_audit_output))
+        except Exception as e:
+            logger.error(f"Error generating code audit summary section: {e}", exc_info=True)
+            sections.append({"section_id": "code_audit_summary", "text": "Failed to generate code audit summary due to an internal error."})
+
+        return self._format_output({"sections": sections})
 
     def _format_output(self, content: dict) -> str:
         """

@@ -3,17 +3,23 @@ import respx
 from httpx import Response
 import os
 import json
+from typing import Dict, Any
 
 from backend.app.services.nlg.nlg_engine import NLGEngine
 from backend.app.services.nlg.llm_client import LLMClient
 
 # Concrete implementation of NLGEngine for testing
 class ConcreteNLGEngine(NLGEngine):
-    def generate_section_text(self, section_id: str, raw_data: dict) -> str:
-        return self._format_output({"section_id": section_id, "text": "Mocked section text."})
+    async def generate_section_text(self, section_id: str, raw_data: dict) -> str:
+        return self._format_output({"section_id": section_id, "text": "Mocked base section text."})
 
-    def generate_full_report(self, data: dict) -> str:
-        return self._format_output({"report_title": "Mocked Report", "sections": []})
+    async def generate_full_report(self, data: dict) -> str:
+        sections = []
+        sections.append(json.loads(await super().generate_tokenomics_text(data.get("tokenomics_data", {}))))
+        sections.append(json.loads(await super().generate_onchain_text(data.get("onchain_data", {}))))
+        sections.append(json.loads(await super().generate_sentiment_text(data.get("sentiment_data", {}))))
+        sections.append(json.loads(await super().generate_code_audit_text(data.get("code_data", {}), data.get("audit_data", {}))))
+        return self._format_output({"sections": sections})
 
 # Mock the environment variable for testing
 @pytest.fixture(autouse=True)
@@ -242,3 +248,53 @@ async def test_generate_code_audit_text_llm_empty_content():
         assert parsed_response["section_id"] == "code_audit_summary"
         assert "Failed to generate code audit summary due to an internal error." in parsed_response["text"]
         assert respx_mock.calls.call_count == 1
+
+@pytest.mark.asyncio
+async def test_generate_full_report_success():
+    engine = ConcreteNLGEngine()
+    
+    mock_tokenomics_data = {"key": "value"}
+    mock_onchain_data = {"active_addresses": 1000}
+    mock_sentiment_data = {"score": 0.8}
+    mock_code_data = {"files": ["file1.py"]}
+    mock_audit_data = {"risks": ["high"]}
+
+    full_report_data = {
+        "tokenomics_data": mock_tokenomics_data,
+        "onchain_data": mock_onchain_data,
+        "sentiment_data": mock_sentiment_data,
+        "code_data": mock_code_data,
+        "audit_data": mock_audit_data,
+    }
+
+    with respx.mock as respx_mock:
+        respx_mock.post("https://api.openai.com/v1/chat/completions").side_effect = [
+            Response(200, json={"choices": [{"message": {"content": "Mocked tokenomics text."}}]}),
+            Response(200, json={"choices": [{"message": {"content": "Mocked on-chain text."}}]}),
+            Response(200, json={"choices": [{"message": {"content": "Mocked sentiment text."}}]}),
+            Response(200, json={"choices": [{"message": {"content": "Mocked code audit text."}}]}),
+        ]
+
+        response = await engine.generate_full_report(full_report_data)
+        parsed_response = json.loads(response)
+
+        assert "sections" in parsed_response
+        assert len(parsed_response["sections"]) == 4
+
+        section_ids = [s["section_id"] for s in parsed_response["sections"]]
+        assert "tokenomics" in section_ids
+        assert "onchain_metrics" in section_ids
+        assert "social_sentiment" in section_ids
+        assert "code_audit_summary" in section_ids
+
+        for section in parsed_response["sections"]:
+            if section["section_id"] == "tokenomics":
+                assert "Mocked tokenomics text." in section["text"]
+            elif section["section_id"] == "onchain_metrics":
+                assert "Mocked on-chain text." in section["text"]
+            elif section["section_id"] == "social_sentiment":
+                assert "Mocked sentiment text." in section["text"]
+            elif section["section_id"] == "code_audit_summary":
+                assert "Mocked code audit text." in section["text"]
+        
+        assert respx_mock.calls.call_count == 4

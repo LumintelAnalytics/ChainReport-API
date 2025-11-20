@@ -1,5 +1,9 @@
 import json
 from abc import ABC, abstractmethod
+from typing import Dict, Any
+
+from backend.app.services.nlg.llm_client import LLMClient
+from backend.app.services.nlg.prompt_templates import get_template, fill_template
 
 class NLGEngine(ABC):
     """
@@ -43,3 +47,33 @@ class NLGEngine(ABC):
         Helper method to ensure all outputs are structured as JSON.
         """
         return json.dumps(content)
+
+    async def generate_tokenomics_text(self, raw_data: Dict[str, Any]) -> str:
+        """
+        Generates natural language text for tokenomics based on raw data.
+        Includes fallback logic for missing data.
+        """
+        if not raw_data:
+            return self._format_output({
+                "section_id": "tokenomics",
+                "text": "Tokenomics data is not available at this time. Please check back later for updates."
+            })
+
+        template = get_template("tokenomics")
+        prompt = fill_template(template, data=json.dumps(raw_data, indent=2))
+
+        async with LLMClient() as llm_client:
+            try:
+                response = await llm_client.generate_text(prompt)
+                generated_text = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                if not generated_text:
+                    raise ValueError("LLM returned empty content for tokenomics.")
+                return self._format_output({"section_id": "tokenomics", "text": generated_text})
+            except Exception as e:
+                # Log the exception for debugging purposes
+                print(f"Error generating tokenomics text with LLM: {e}")
+                return self._format_output({
+                    "section_id": "tokenomics",
+                    "text": "Failed to generate tokenomics summary due to an internal error. Please try again later."
+                })
+

@@ -108,12 +108,14 @@ async def test_audit_codebase(code_audit_agent):
         respx.get(f"https://api.github.com/search/issues?q=repo%3A{owner}%2F{repo}%2Btype%3Aissue&per_page=1").mock(return_value=Response(200, json={'total_count': 20}))
         respx.get(f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=1").mock(return_value=Response(200, headers={'link': '<https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=2>; rel="next", <https://api.github.com/repositories/1296269/pulls?state=all&per_page=1&page=15>; rel="last"'}, json=[]))
 
-        result = await code_audit_agent.audit_codebase(repo_url, project_name)
+        result = await code_audit_agent.fetch_data(repo_url, project_name)
 
-        assert isinstance(result, CodeAuditResult)
-        assert result.code_metrics.repo_url == repo_url
-        assert len(result.audit_summaries) == 2
-        assert project_name in result.audit_summaries[0].report_title
+        assert isinstance(result, dict)
+        assert "code_metrics" in result
+        assert result["code_metrics"]["repo_url"] == repo_url
+        assert "audit_summaries" in result
+        assert len(result["audit_summaries"]) == 2
+        assert project_name in result["audit_summaries"][0]["report_title"]
 
 @pytest.mark.asyncio
 async def test_fetch_github_repo_metrics_http_error(code_audit_agent):

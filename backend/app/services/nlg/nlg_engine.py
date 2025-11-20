@@ -9,7 +9,7 @@ class NLGEngine(ABC):
     """
 
     @abstractmethod
-    def generate_section_text(self, section_id: str, raw_data: dict) -> json:
+    def generate_section_text(self, section_id: str, raw_data: dict) -> str:
         """
         Generates natural language text for a specific report section based on raw data.
 
@@ -18,13 +18,13 @@ class NLGEngine(ABC):
             raw_data (dict): The raw data pertinent to the section, used as context for generation.
 
         Returns:
-            json: A JSON object containing the generated text and any relevant metadata.
-                  Example: {"section_id": "executive_summary", "text": "Generated summary text."}
+            str: A JSON-formatted string containing the generated text and metadata.
+                  Example: `return self._format_output({"section_id": "executive_summary", "text": "Generated summary text."})`
         """
         pass
 
     @abstractmethod
-    def generate_full_report(self, data: dict) -> json:
+    def generate_full_report(self, data: dict) -> str:
         """
         Generates a complete natural language report based on a comprehensive data structure.
 
@@ -32,13 +32,13 @@ class NLGEngine(ABC):
             data (dict): A dictionary containing all necessary data for generating the full report.
 
         Returns:
-            json: A JSON object representing the full generated report,
+            str: A JSON-formatted string representing the full generated report,
                   structured with sections and their respective texts.
-                  Example: {"report_title": "...", "sections": [{"section_id": "...", "text": "..."}]}
+                  Example: `return self._format_output({"report_title": "...", "sections": [{"section_id": "...", "text": "..."}]})`
         """
         pass
 
-    def _format_output(self, content: dict) -> json:
+    def _format_output(self, content: dict) -> str:
         """
         Helper method to ensure all outputs are structured as JSON.
         """

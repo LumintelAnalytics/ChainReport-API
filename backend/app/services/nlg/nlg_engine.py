@@ -77,3 +77,46 @@ class NLGEngine(ABC):
                     "text": "Failed to generate tokenomics summary due to an internal error. Please try again later."
                 })
 
+    async def generate_onchain_text(self, raw_data: Dict[str, Any]) -> str:
+        """
+        Generates natural language text for on-chain metrics based on raw data.
+        Collects metrics like active addresses, holders, transaction flows, and liquidity
+        and converts them into narrative form using the LLM. Handles incomplete fields safely.
+        """
+        if not raw_data:
+            return self._format_output({
+                "section_id": "onchain_metrics",
+                "text": "On-chain metrics data is not available at this time. Please check back later for updates."
+            })
+
+        # Extract relevant metrics, handling potential missing fields safely
+        active_addresses = raw_data.get("active_addresses", "N/A")
+        holders = raw_data.get("holders", "N/A")
+        transaction_flows = raw_data.get("transaction_flows", "N/A")
+        liquidity = raw_data.get("liquidity", "N/A")
+
+        # Prepare data for the prompt template
+        onchain_metrics_data = {
+            "active_addresses": active_addresses,
+            "holders": holders,
+            "transaction_flows": transaction_flows,
+            "liquidity": liquidity,
+        }
+
+        template = get_template("onchain_metrics")
+        prompt = fill_template(template, data=json.dumps(onchain_metrics_data, indent=2))
+
+        async with LLMClient() as llm_client:
+            try:
+                response = await llm_client.generate_text(prompt)
+                generated_text = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                if not generated_text:
+                    raise ValueError("LLM returned empty content for on-chain metrics.")
+                return self._format_output({"section_id": "onchain_metrics", "text": generated_text})
+            except Exception as e:
+                print(f"Error generating on-chain metrics text with LLM: {e}")
+                return self._format_output({
+                    "section_id": "onchain_metrics",
+                    "text": "Failed to generate on-chain metrics summary due to an internal error. Please try again later."
+                })
+

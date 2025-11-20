@@ -26,11 +26,11 @@ def get_template(section_id: str) -> str:
         On-chain Metrics Data:
         {data}
         """,
-        "sentiment": """
-        Review the social sentiment data and summarize the overall market perception
-        of the project. Identify key themes, positive or negative trends, and
-        any significant events influencing sentiment. Discuss the potential impact
-        of this sentiment on the project's future.
+        "social_sentiment": """
+        Analyze the following social sentiment data, including sentiment scores and community perception.
+        Generate a concise written summary that highlights overall trends, key community directions,
+        and any significant shifts in public opinion. Emphasize both positive and negative aspects,
+        and their potential implications for the project.
 
         Sentiment Data:
         {data}

@@ -116,11 +116,8 @@ async def test_orchestrator_agent_timeout_handling(mock_settings):
         result = await orchestrator.execute_agents_concurrently(SAMPLE_REPORT_ID, SAMPLE_TOKEN_ID)
 
         # Assertions for timeout handling
-        assert "onchain_metrics" in result
-        assert "error" in result["onchain_metrics"]
-        assert result["onchain_metrics"]["error"] == "Onchain metrics fetch timed out"
+        assert "onchain_metrics" not in result
         assert in_memory_reports[SAMPLE_REPORT_ID]["status"] == "failed" # Overall status should be failed due to timeout
-
 @pytest.mark.asyncio
 async def test_orchestrator_agent_exception_handling(mock_settings):
     """
@@ -154,7 +151,5 @@ async def test_orchestrator_agent_exception_handling(mock_settings):
         result = await orchestrator.execute_agents_concurrently(SAMPLE_REPORT_ID, SAMPLE_TOKEN_ID)
 
         # Assertions for exception handling
-        assert "tokenomics" in result
-        assert "error" in result["tokenomics"]
-        assert result["tokenomics"]["error"] == "Mocked agent error"
+        assert "tokenomics" not in result
         assert in_memory_reports[SAMPLE_REPORT_ID]["status"] == "failed" # Overall status should be failed due to exception

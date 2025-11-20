@@ -59,6 +59,7 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:
             response = await client.get(url, params=params)
+            response.raise_for_status()
             response_json = response.json()
             output_size = len(response.content)
             logger.info(f"[Token ID: {token_id}] API call to {url} successful. Status: {response.status_code}, Response size: {output_size} bytes")

@@ -59,6 +59,7 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:
             response = await client.get(url, params=params)
+            response.raise_for_status()
             response_json = response.json()
             output_size = len(response.content)
             logger.info(f"[Token ID: {token_id}] API call to {url} successful. Status: {response.status_code}, Response size: {output_size} bytes")
@@ -71,11 +72,10 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
             logger.error(f"[Token ID: {token_id}] Network error fetching on-chain metrics from {url}: {e}")
             raise OnchainAgentNetworkError(f"Network error for {url}: {e}") from e
         except httpx.HTTPStatusError as e:
-            logger.error(f"[Token ID: {token_id}] HTTP error fetching on-chain metrics from {url}: {e.response.status_code} - {e.response.text}")
+            logger.error(f"[Token ID: {token_id}] HTTP error fetching on-chain metrics from {url}: {e.response.status_code}. Response text truncated: {e.response.text[:200]}")
             raise OnchainAgentHTTPError(f"HTTP error for {url}: {e.response.status_code}", e.response.status_code) from e
         except Exception as e:
-            logger.error(f"[Token ID: {token_id}] An unexpected error occurred while fetching on-chain metrics from {url}: {e}")
-            raise OnchainAgentException(f"Unexpected error for {url}: {e}") from e
+            raise OnchainAgentException(f"Unexpected error for {url}") from e
 
 @retry(
     stop=stop_after_attempt(settings.MAX_RETRIES),
@@ -122,8 +122,8 @@ async def fetch_tokenomics(url: str, token_id: str, params: dict | None = None) 
             logger.error(f"[Token ID: {token_id}] Network error fetching tokenomics data from {url}: {e}")
             raise OnchainAgentNetworkError(f"Network error for {url}: {e}") from e
         except httpx.HTTPStatusError as e:
-            logger.error(f"[Token ID: {token_id}] HTTP error fetching tokenomics data from {url}: {e.response.status_code} - {e.response.text}")
+            logger.error(f"[Token ID: {token_id}] HTTP error fetching tokenomics data from {url}: {e.response.status_code}. Response text truncated: {e.response.text[:200]}")
             raise OnchainAgentHTTPError(f"HTTP error for {url}: {e.response.status_code}", e.response.status_code) from e
         except Exception as e:
-            logger.error(f"[Token ID: {token_id}] An unexpected error occurred while fetching tokenomics data from {url}: {e}")
-            raise OnchainAgentException(f"Unexpected error for {url}: {e}") from e
+            logger.exception(f"[Token ID: {token_id}] An unexpected error occurred while fetching tokenomics data from {url}")
+            raise OnchainAgentException(f"Unexpected error for {url}") from e

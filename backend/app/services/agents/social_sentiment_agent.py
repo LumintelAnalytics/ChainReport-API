@@ -3,7 +3,7 @@ import logging
 from typing import List, Dict, Any
 import httpx
 from textblob import TextBlob
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, before_sleep_log, RetryError
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, RetryError
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -71,21 +71,21 @@ class SocialSentimentAgent:
         try:
             twitter_data = await self._fetch_twitter_data(token_id)
             all_data.extend(twitter_data)
-        except RetryError as e:
+        except RetryError:
             logger.exception(f"Failed to fetch Twitter data for {token_id} after multiple retries.")
 
         # --- Reddit API integration ---
         try:
             reddit_data = await self._fetch_reddit_data(token_id)
             all_data.extend(reddit_data)
-        except RetryError as e:
+        except RetryError:
             logger.exception(f"Failed to fetch Reddit data for {token_id} after multiple retries.")
 
         # --- News Aggregator API integration ---
         try:
             news_data = await self._fetch_news_data(token_id)
             all_data.extend(news_data)
-        except RetryError as e:
+        except RetryError:
             logger.exception(f"Failed to fetch News data for {token_id} after multiple retries.")
 
         return all_data

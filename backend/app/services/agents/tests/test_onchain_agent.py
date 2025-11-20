@@ -141,7 +141,7 @@ async def test_fetch_tokenomics_retry_on_rate_limit(mock_async_client):
     with patch.object(fetch_tokenomics.retry, 'wait', new=wait_fixed(0.01)), \
          patch.object(fetch_tokenomics.retry, 'stop', new=stop_after_attempt(3)):
         
-        result = await fetch_tokenomics(url="http://test.com/tokenomics")
+        result = await fetch_tokenomics(url="http://test.com/tokenomics", token_id="test_token")
         assert result == {"data": "tokenomics"}
         assert mock_client_instance.get.call_count == 3
 
@@ -161,7 +161,7 @@ async def test_fetch_tokenomics_retry_on_timeout(mock_async_client):
     with patch.object(fetch_tokenomics.retry, 'wait', new=wait_fixed(0.01)), \
          patch.object(fetch_tokenomics.retry, 'stop', new=stop_after_attempt(3)):
         
-        result = await fetch_tokenomics(url="http://test.com/tokenomics")
+        result = await fetch_tokenomics(url="http://test.com/tokenomics", token_id="test_token")
         assert result == {"data": "tokenomics"}
         assert mock_client_instance.get.call_count == 3
 
@@ -182,7 +182,7 @@ async def test_fetch_tokenomics_max_retries_exceeded(mock_async_client):
          patch.object(fetch_tokenomics.retry, 'stop', new=stop_after_attempt(3)):
         
         with pytest.raises(OnchainAgentNetworkError):
-            await fetch_tokenomics(url="http://test.com/tokenomics")
+            await fetch_tokenomics(url="http://test.com/tokenomics", token_id="test_token")
         assert mock_client_instance.get.call_count == 3
 
 @pytest.mark.asyncio
@@ -234,7 +234,7 @@ async def test_fetch_tokenomics_http_error_raises_onchainagenthttperror(mock_asy
     with patch.object(fetch_tokenomics.retry, 'wait', new=wait_fixed(0.01)), \
          patch.object(fetch_tokenomics.retry, 'stop', new=stop_after_attempt(3)):
         with pytest.raises(OnchainAgentHTTPError) as excinfo:
-            await fetch_tokenomics(url="http://test.com/tokenomics")
+            await fetch_tokenomics(url="http://test.com/tokenomics", token_id="test_token")
         assert excinfo.value.status_code == 403
         assert mock_client_instance.get.call_count == 3 # Retries should still happen
 
@@ -252,7 +252,7 @@ async def test_fetch_tokenomics_unexpected_error_raises_onchainagentexception(mo
     with patch.object(fetch_tokenomics.retry, 'wait', new=wait_fixed(0.01)), \
          patch.object(fetch_tokenomics.retry, 'stop', new=stop_after_attempt(3)):
         with pytest.raises(OnchainAgentException):
-            await fetch_tokenomics(url="http://test.com/tokenomics")
+            await fetch_tokenomics(url="http://test.com/tokenomics", token_id="test_token")
         assert mock_client_instance.get.call_count == 3 # Retries should still happen
 
 # --- New tests for successful fetching and schema validation ---
@@ -297,7 +297,7 @@ async def test_fetch_tokenomics_success_and_schema(mock_async_client):
     }
     mock_client_instance.get.return_value = create_mock_response(200, expected_tokenomics)
 
-    result = await fetch_tokenomics(url="http://test.com/tokenomics")
+    result = await fetch_tokenomics(url="http://test.com/tokenomics", token_id="test_token")
     assert result == expected_tokenomics
     assert "total_supply" in result
     assert "circulating_supply" in result
@@ -346,7 +346,7 @@ async def test_fetch_tokenomics_missing_fields(mock_async_client):
     }
     mock_client_instance.get.return_value = create_mock_response(200, incomplete_tokenomics)
 
-    result = await fetch_tokenomics(url="http://test.com/tokenomics")
+    result = await fetch_tokenomics(url="http://test.com/tokenomics", token_id="test_token")
     assert result == incomplete_tokenomics
     assert "total_supply" in result
     assert "circulating_supply" not in result
@@ -381,5 +381,5 @@ async def test_fetch_tokenomics_invalid_token_id(mock_async_client):
     mock_client_instance.get.return_value = create_mock_response(404, error_response_data)
 
     with pytest.raises(OnchainAgentHTTPError) as excinfo:
-        await fetch_tokenomics(url="http://test.com/tokenomics", params={"token_id": "nonexistent"})
+        await fetch_tokenomics(url="http://test.com/tokenomics", params={"token_id": "nonexistent"}, token_id="test_token")
     assert excinfo.value.status_code == 404

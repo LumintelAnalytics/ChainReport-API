@@ -52,7 +52,12 @@ class AIOrchestrator:
         for name, task in tasks.items():
             try:
                 result = await asyncio.wait_for(task, timeout=settings.AGENT_TIMEOUT) # Added timeout
-                results[name] = {"status": "completed", "data": result}
+                orchestrator_logger.debug(f"Agent {name} task result: {result}")
+                # Check if the agent itself returned a status
+                if isinstance(result, dict) and "status" in result:
+                    results[name] = result
+                else:
+                    results[name] = {"status": "completed", "data": result}
                 orchestrator_logger.info(f"Agent {name} completed for report {report_id}.")
             except asyncio.TimeoutError: # Handle timeout specifically
                 orchestrator_logger.exception("Agent %s timed out for report %s", name, report_id)
@@ -159,17 +164,17 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
             # Handle individual task results and exceptions
             if isinstance(onchain_metrics_result, asyncio.TimeoutError):
                 orchestrator_logger.error("Onchain metrics fetch timed out for report %s", report_id)
-                onchain_metrics_result = {"error": "Onchain metrics fetch timed out"}
+                onchain_metrics_result = {"status": "failed", "error": "Onchain metrics fetch timed out"}
             elif isinstance(onchain_metrics_result, Exception):
                 orchestrator_logger.error("Onchain metrics fetch failed for report %s", report_id)
-                onchain_metrics_result = {"error": str(onchain_metrics_result)}
+                onchain_metrics_result = {"status": "failed", "error": str(onchain_metrics_result)}
 
             if isinstance(tokenomics_result, asyncio.TimeoutError):
                 orchestrator_logger.error("Tokenomics fetch timed out for report %s", report_id)
-                tokenomics_result = {"error": "Tokenomics fetch timed out"}
+                tokenomics_result = {"status": "failed", "error": "Tokenomics fetch timed out"}
             elif isinstance(tokenomics_result, Exception):
                 orchestrator_logger.error("Tokenomics fetch failed for report %s", report_id)
-                tokenomics_result = {"error": str(tokenomics_result)}
+                tokenomics_result = {"status": "failed", "error": str(tokenomics_result)}
 
             return {
                 "onchain_metrics": onchain_metrics_result,
@@ -197,10 +202,10 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
             orchestrator_logger.info(f"Social Sentiment Agent completed for report {report_id}.")
         except asyncio.TimeoutError:
             orchestrator_logger.error("Social Sentiment Agent timed out for report %s", report_id)
-            social_sentiment_data = {"social_sentiment": {"error": "Agent timed out"}}
+            social_sentiment_data = {"social_sentiment": {"status": "failed", "error": "Agent timed out"}}
         except Exception as e:
             orchestrator_logger.exception("Social Sentiment Agent failed for report %s", report_id)
-            social_sentiment_data = {"social_sentiment": {"error": str(e)}}
+            social_sentiment_data = {"social_sentiment": {"status": "failed", "error": str(e)}}
         return social_sentiment_data
     orch.register_agent('social_sentiment_agent', social_sentiment_agent_func)
 
@@ -239,10 +244,10 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
 
         except asyncio.TimeoutError:
             orchestrator_logger.error("Team and Documentation Agent timed out for report %s", report_id)
-            return {"team_documentation": {"error": "Agent timed out"}}
+            return {"team_documentation": {"status": "failed", "error": "Agent timed out"}}
         except Exception as e:
             orchestrator_logger.exception("Team and Documentation Agent failed for report %s", report_id)
-            return {"team_documentation": {"error": str(e)}}
+            return {"team_documentation": {"status": "failed", "error": str(e)}}
         
         return {
             "team_documentation": {
@@ -287,10 +292,10 @@ def create_orchestrator(register_dummy: bool = False) -> Orchestrator:
 
             except asyncio.TimeoutError:
                 orchestrator_logger.error("Code/Audit Agent timed out for report %s", report_id)
-                return {"code_audit": {"error": "Agent timed out", "code_metrics": code_metrics_data, "audit_summary": audit_summary_data}}
+                return {"code_audit": {"status": "failed", "error": "Agent timed out", "code_metrics": code_metrics_data, "audit_summary": audit_summary_data}}
             except Exception as e:
                 orchestrator_logger.exception("Code/Audit Agent failed for report %s", report_id)
-                return {"code_audit": {"error": str(e), "code_metrics": code_metrics_data, "audit_summary": audit_summary_data}}
+                return {"code_audit": {"status": "failed", "error": str(e), "code_metrics": code_metrics_data, "audit_summary": audit_summary_data}}
             
             return {
                 "code_audit": {

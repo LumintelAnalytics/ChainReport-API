@@ -70,8 +70,9 @@ def get_template(section_id: str) -> str:
     }
     return templates.get(section_id, "No template found for this section ID.")
 
-def fill_template(template: str, data: str) -> str:
+def fill_template(template: str, **kwargs) -> str:
     """
-    Fills a given template with the provided data.
+    Fills a given template with the provided data using keyword arguments.
+    This allows for flexible placeholder names in the template.
     """
-    return template.format(data=data)
+    return template.format(**kwargs)

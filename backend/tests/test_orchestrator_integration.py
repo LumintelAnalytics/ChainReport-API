@@ -34,8 +34,8 @@ async def test_orchestrator_full_integration_success(mock_settings):
     executing successfully.
     """
     # Mock agent functions
-    with patch('backend.app.services.agents.onchain_agent.fetch_onchain_metrics', new_callable=AsyncMock) as mock_fetch_onchain_metrics, \
-         patch('backend.app.services.agents.onchain_agent.fetch_tokenomics', new_callable=AsyncMock) as mock_fetch_tokenomics, \
+    with patch('backend.app.core.orchestrator.fetch_onchain_metrics', new_callable=AsyncMock) as mock_fetch_onchain_metrics, \
+         patch('backend.app.core.orchestrator.fetch_tokenomics', new_callable=AsyncMock) as mock_fetch_tokenomics, \
          patch('backend.app.services.agents.social_sentiment_agent.SocialSentimentAgent.fetch_social_data', new_callable=AsyncMock) as mock_fetch_social_data, \
          patch('backend.app.services.agents.social_sentiment_agent.SocialSentimentAgent.analyze_sentiment', new_callable=AsyncMock) as mock_analyze_sentiment, \
          patch('backend.app.services.agents.team_doc_agent.TeamDocAgent.scrape_team_profiles', new_callable=MagicMock) as mock_scrape_team_profiles, \
@@ -88,8 +88,8 @@ async def test_orchestrator_agent_timeout_handling(mock_settings):
     """
     Tests that the orchestrator handles agent timeouts gracefully.
     """
-    with patch('backend.app.services.agents.onchain_agent.fetch_onchain_metrics', new_callable=AsyncMock) as mock_fetch_onchain_metrics, \
-         patch('backend.app.services.agents.onchain_agent.fetch_tokenomics', new_callable=AsyncMock) as mock_fetch_tokenomics, \
+    with patch('backend.app.core.orchestrator.fetch_onchain_metrics', new_callable=AsyncMock) as mock_fetch_onchain_metrics, \
+         patch('backend.app.core.orchestrator.fetch_tokenomics', new_callable=AsyncMock) as mock_fetch_tokenomics, \
          patch('backend.app.services.agents.social_sentiment_agent.SocialSentimentAgent.fetch_social_data', new_callable=AsyncMock) as mock_fetch_social_data, \
          patch('backend.app.services.agents.social_sentiment_agent.SocialSentimentAgent.analyze_sentiment', new_callable=AsyncMock) as mock_analyze_sentiment, \
          patch('backend.app.services.agents.team_doc_agent.TeamDocAgent.scrape_team_profiles', new_callable=MagicMock) as mock_scrape_team_profiles, \
@@ -126,8 +126,8 @@ async def test_orchestrator_agent_exception_handling(mock_settings):
     """
     Tests that the orchestrator handles agent exceptions gracefully.
     """
-    with patch('backend.app.services.agents.onchain_agent.fetch_onchain_metrics', new_callable=AsyncMock) as mock_fetch_onchain_metrics, \
-         patch('backend.app.services.agents.onchain_agent.fetch_tokenomics', new_callable=AsyncMock) as mock_fetch_tokenomics, \
+    with patch('backend.app.core.orchestrator.fetch_onchain_metrics', new_callable=AsyncMock) as mock_fetch_onchain_metrics, \
+         patch('backend.app.core.orchestrator.fetch_tokenomics', new_callable=AsyncMock) as mock_fetch_tokenomics, \
          patch('backend.app.services.agents.social_sentiment_agent.SocialSentimentAgent.fetch_social_data', new_callable=AsyncMock) as mock_fetch_social_data, \
          patch('backend.app.services.agents.social_sentiment_agent.SocialSentimentAgent.analyze_sentiment', new_callable=AsyncMock) as mock_analyze_sentiment, \
          patch('backend.app.services.agents.team_doc_agent.TeamDocAgent.scrape_team_profiles', new_callable=MagicMock) as mock_scrape_team_profiles, \

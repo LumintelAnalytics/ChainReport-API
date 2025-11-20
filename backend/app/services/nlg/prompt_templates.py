@@ -66,6 +66,39 @@ def get_template(section_id: str) -> str:
 
         Risk Factors Data:
         {data}
+        """,
+        "team_roles_summary": """
+        Based on the following team member data, summarize the key roles and responsibilities
+        identified within the team. Highlight the diversity of roles and how they contribute
+        to the project's overall structure and execution.
+
+        Team Member Data:
+        {team_data}
+        """,
+        "team_experience_summary": """
+        Analyze the provided team member data to summarize the collective experience and expertise
+        within the team. Focus on relevant industry experience, technical skills, and past project
+        successes. Discuss how this experience strengthens the team's ability to deliver.
+
+        Team Member Data:
+        {team_data}
+        """,
+        "team_credibility_summary": """
+        From the given team member data, assess and summarize the team's credibility.
+        Consider factors like verified credentials, significant past achievements,
+        and public recognition. Explain why the team is credible and trustworthy.
+
+        Team Member Data:
+        {team_data}
+        """,
+        "documentation_strength_summary": """
+        Evaluate the strength and comprehensiveness of the project documentation
+        based on the provided documentation data. Highlight well-documented areas,
+        clarity, and accessibility. Discuss how strong documentation supports
+        user adoption and developer engagement.
+
+        Documentation Data:
+        {doc_data}
         """
     }
     return templates.get(section_id, "No template found for this section ID.")

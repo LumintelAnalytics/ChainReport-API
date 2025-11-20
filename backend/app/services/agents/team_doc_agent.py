@@ -3,11 +3,99 @@ from bs4 import BeautifulSoup
 import json
 from typing import List, Dict, Any
 from backend.app.core.logger import orchestrator_logger
+from backend.app.services.nlg.llm_client import LLMClient
+from backend.app.services.nlg.prompt_templates import get_template, fill_template
 
 class TeamDocAgent:
     """
     Agent for scraping team information, project documentation, and whitepaper details.
     """
+
+    async def generate_team_doc_text(self, team_data: List[Dict[str, Any]], doc_data: Dict[str, Any]) -> str:
+        """
+        Summarizes team roles, experience, credibility, and documentation strength
+        using LLM prompts to turn scraped text into a readable analysis.
+
+        Args:
+            team_data: A list of dictionaries, each representing a team member's profile.
+            doc_data: A dictionary containing extracted whitepaper/documentation details.
+
+        Returns:
+            A structured string containing the summarized analysis.
+        """
+        orchestrator_logger.info("Generating team and documentation analysis using LLM.")
+        summary_parts = []
+
+        async with LLMClient() as client:
+            # Summarize Team Roles
+            team_roles_prompt = fill_template(
+                get_template("team_roles_summary"),
+                team_data=json.dumps(team_data, indent=2)
+            )
+            try:
+                team_roles_response = await client.generate_text(team_roles_prompt)
+                choices = team_roles_response.get("choices") or []
+                content = choices[0].get("message", {}).get("content", "N/A") if choices else "N/A"
+                summary_parts.append("### Team Roles and Responsibilities\n")
+                summary_parts.append(content)
+            except Exception as e:
+                orchestrator_logger.error(f"Error generating team roles summary: {e}")
+                summary_parts.append("### Team Roles and Responsibilities\n")
+                summary_parts.append("N/A (Failed to generate team roles summary)")
+            summary_parts.append("\n\n")
+
+            # Summarize Team Experience
+            team_experience_prompt = fill_template(
+                get_template("team_experience_summary"),
+                team_data=json.dumps(team_data, indent=2)
+            )
+            try:
+                team_experience_response = await client.generate_text(team_experience_prompt)
+                choices = team_experience_response.get("choices") or []
+                content = choices[0].get("message", {}).get("content", "N/A") if choices else "N/A"
+                summary_parts.append("### Team Experience and Expertise\n")
+                summary_parts.append(content)
+            except Exception as e:
+                orchestrator_logger.error(f"Error generating team experience summary: {e}")
+                summary_parts.append("### Team Experience and Expertise\n")
+                summary_parts.append("N/A (Failed to generate team experience summary)")
+            summary_parts.append("\n\n")
+
+            # Summarize Team Credibility
+            team_credibility_prompt = fill_template(
+                get_template("team_credibility_summary"),
+                team_data=json.dumps(team_data, indent=2)
+            )
+            try:
+                team_credibility_response = await client.generate_text(team_credibility_prompt)
+                choices = team_credibility_response.get("choices") or []
+                content = choices[0].get("message", {}).get("content", "N/A") if choices else "N/A"
+                summary_parts.append("### Team Credibility\n")
+                summary_parts.append(content)
+            except Exception as e:
+                orchestrator_logger.error(f"Error generating team credibility summary: {e}")
+                summary_parts.append("### Team Credibility\n")
+                summary_parts.append("N/A (Failed to generate team credibility summary)")
+            summary_parts.append("\n\n")
+
+            # Summarize Documentation Strength
+            doc_strength_prompt = fill_template(
+                get_template("documentation_strength_summary"),
+                doc_data=json.dumps(doc_data, indent=2)
+            )
+            try:
+                doc_strength_response = await client.generate_text(doc_strength_prompt)
+                choices = doc_strength_response.get("choices") or []
+                content = choices[0].get("message", {}).get("content", "N/A") if choices else "N/A"
+                summary_parts.append("### Documentation Strength\n")
+                summary_parts.append(content)
+            except Exception as e:
+                orchestrator_logger.error(f"Error generating documentation strength summary: {e}")
+                summary_parts.append("### Documentation Strength\n")
+                summary_parts.append("N/A (Failed to generate documentation strength summary)")
+            summary_parts.append("\n\n")
+
+        return "".join(summary_parts)
 
     def scrape_team_profiles(self, urls: List[str]) -> List[Dict[str, Any]]:
         """

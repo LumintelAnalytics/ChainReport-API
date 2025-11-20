@@ -127,3 +127,38 @@ class NLGEngine(ABC):
             error_msg="Failed to generate social sentiment summary due to an internal error. Please try again later."
         )
 
+    async def generate_code_audit_text(self, code_data: Dict[str, Any], audit_data: Dict[str, Any]) -> str:
+        """
+        Generates a comprehensive code audit summary using LLM prompts.
+        Includes clarity points, risk highlights, code activity, and repository quality indicators.
+        Handles missing audit information gracefully.
+        """
+        if not code_data and not audit_data:
+            return self._format_output({
+                "section_id": "code_audit_summary",
+                "text": "Code audit and repository data are not available at this time. Please check back later for updates."
+            })
+
+        # Combine data for the prompt, handling potentially missing parts
+        combined_data = {
+            "code_data": json.dumps(code_data, indent=2) if code_data else "N/A",
+            "audit_data": json.dumps(audit_data, indent=2) if audit_data else "N/A",
+        }
+
+        template = get_template("code_audit_summary")
+        prompt = fill_template(template, **combined_data)
+
+        async with LLMClient() as llm_client:
+            try:
+                response = await llm_client.generate_text(prompt)
+                generated_text = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                if not generated_text:
+                    raise ValueError("LLM returned empty content for code_audit_summary.")
+                return self._format_output({"section_id": "code_audit_summary", "text": generated_text})
+            except Exception as e:
+                logger.error(f"Error generating code_audit_summary text with LLM: {e}", exc_info=True)
+                return self._format_output({
+                    "section_id": "code_audit_summary",
+                    "text": "Failed to generate code audit summary due to an internal error. Please try again later."
+                })
+

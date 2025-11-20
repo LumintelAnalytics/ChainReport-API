@@ -67,6 +67,27 @@ def get_template(section_id: str) -> str:
         Risk Factors Data:
         {data}
         """,
+        "code_audit_summary": """
+        Based on the provided code audit and repository data, generate a comprehensive audit summary.
+        The summary should include:
+        1.  **Clarity Points**: Highlight aspects of the codebase that are well-structured,
+            easy to understand, and follow best practices.
+        2.  **Risk Highlights**: Identify potential security vulnerabilities, performance bottlenecks,
+            or maintainability issues.
+        3.  **Code Activity**: Summarize recent development activity, such as commit frequency,
+            contributor engagement, and major feature implementations.
+        4.  **Repository Quality Indicators**: Comment on aspects like test coverage,
+            documentation quality, and adherence to coding standards.
+
+        Handle cases where specific audit information might be missing by stating
+        that the information is not available or could not be assessed.
+
+        Code Audit Data:
+        {code_data}
+
+        Audit Data:
+        {audit_data}
+        """,
         "team_roles_summary": """
         Based on the following team member data, summarize the key roles and responsibilities
         identified within the team. Highlight the diversity of roles and how they contribute

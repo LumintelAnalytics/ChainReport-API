@@ -3,7 +3,6 @@ import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 from backend.app.core.orchestrator import create_orchestrator
 from backend.app.services.report_service import in_memory_reports
-from backend.app.core.config import settings
 
 # Sample data for testing
 SAMPLE_REPORT_ID = "test_report_123"

@@ -39,10 +39,10 @@ class LLMClient:
             logger.error(f"An error occurred while requesting {exc.request.url!r}: {exc}", exc_info=True)
             raise
         except httpx.HTTPStatusError as exc:
-            logger.error(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}: {exc.response.text}", exc_info=True)
+            logger.error(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}. Response text truncated: {exc.response.text[:200]}", exc_info=True)
             raise
-        except Exception as e:
-            logger.exception(f"An unexpected error occurred: {e}")
+        except Exception:
+            logger.exception("An unexpected error occurred")
             raise
 
 if __name__ == "__main__":

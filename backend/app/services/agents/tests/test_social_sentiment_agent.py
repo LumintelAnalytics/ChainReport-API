@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 from unittest.mock import patch, AsyncMock
 from backend.app.services.agents.social_sentiment_agent import SocialSentimentAgent
 from tenacity import RetryError

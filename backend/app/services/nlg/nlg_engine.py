@@ -80,11 +80,6 @@ class NLGEngine(ABC):
         Generates natural language text for tokenomics based on raw data.
         Includes fallback logic for missing data.
         """
-        if not raw_data:
-            return self._format_output({
-                "section_id": "tokenomics",
-                "text": "Tokenomics data is not available at this time. Please check back later for updates."
-            })
         return await self._generate_section_with_llm(
             section_id="tokenomics",
             data=raw_data,
@@ -98,7 +93,7 @@ class NLGEngine(ABC):
         Collects metrics like active addresses, holders, transaction flows, and liquidity
         and converts them into narrative form using the LLM. Handles incomplete fields safely.
         """
-        if not raw_data:
+        if not raw_data or raw_data.get("status") == "failed":
             return self._format_output({
                 "section_id": "onchain_metrics",
                 "text": "On-chain metrics data is not available at this time. Please check back later for updates."

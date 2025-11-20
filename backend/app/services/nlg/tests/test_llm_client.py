@@ -13,8 +13,7 @@ def mock_env_vars():
     del os.environ["OPENAI_API_KEY"]
 
 @pytest.mark.asyncio
-async def test_generate_text_success():
-    client = LLMClient()
+async def test_generate_text_success():    async with LLMClient() as client:
     expected_response_payload = {
         "choices": [{
             "message": {"content": "The capital of France is Paris."}
@@ -37,7 +36,7 @@ async def test_generate_text_success():
 
 @pytest.mark.asyncio
 async def test_generate_text_http_error():
-    client = LLMClient()
+    async with LLMClient() as client:
 
     with respx.mock as respx_mock:
         respx_mock.post("https://api.openai.com/v1/chat/completions").return_value = Response(500, text="Internal Server Error")
@@ -49,7 +48,7 @@ async def test_generate_text_http_error():
 
 @pytest.mark.asyncio
 async def test_generate_text_request_error():
-    client = LLMClient()
+    async with LLMClient() as client:
 
     with respx.mock as respx_mock:
         respx_mock.post("https://api.openai.com/v1/chat/completions").mock(side_effect=httpx.RequestError("Connection refused", request=Request("POST", "https://api.openai.com")))

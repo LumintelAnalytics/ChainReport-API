@@ -120,6 +120,20 @@ def get_template(section_id: str) -> str:
 
         Documentation Data:
         {doc_data}
+        """,
+        "team_documentation": """
+        Based on the provided team analysis and whitepaper summary, generate a comprehensive overview of the project's team and documentation.
+        The summary should include:
+        1.  **Team Analysis**: Summarize the team's background, experience, and contributions.
+        2.  **Whitepaper Summary**: Provide a concise summary of the project's whitepaper, highlighting key aspects and technical details.
+
+        Handle cases where specific information might be missing by stating that the information is not available or could not be assessed.
+
+        Team Analysis Data:
+        {team_analysis}
+
+        Whitepaper Summary Data:
+        {whitepaper_summary}
         """
     }
     return templates.get(section_id, "No template found for this section ID.")

@@ -8,6 +8,8 @@ from backend.app.services.agents.social_sentiment_agent import SocialSentimentAg
 from backend.app.services.agents.team_doc_agent import TeamDocAgent
 from backend.app.services.agents.code_audit_agent import CodeAuditAgent # Import CodeAuditAgent
 from backend.app.core.config import settings
+from backend.app.services.summary import ReportSummaryEngine
+from backend.app.services.nlg.report_nlg_engine import ReportNLGEngine
 
 async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
     """
@@ -101,11 +103,35 @@ class Orchestrator(AIOrchestrator):
             overall_status = "partial_success"
             orchestrator_logger.warning(f"Report {report_id} completed with partial success due to agent failures.")
 
+        # Initialize SummaryEngine and NLGEngine
+        summary_engine = ReportSummaryEngine()
+        nlg_engine = ReportNLGEngine() # Assuming NLGEngine is initialized here
+
+        # Generate NLG outputs (placeholder for actual NLG generation)
+        # In a real scenario, nlg_engine would process aggregated_data to produce text
+        nlg_outputs = await nlg_engine.generate_nlg_outputs(aggregated_data) # Assuming this method exists
+
+        # Prepare score_input for the summary engine
+        score_input = {
+            "tokenomics_data": aggregated_data.get("tokenomics", {}),
+            "sentiment_data": aggregated_data.get("social_sentiment", {}),
+            "code_audit_data": aggregated_data.get("code_audit", {}),
+            "team_data": aggregated_data.get("team_documentation", {}),
+        }
+
+        # Generate scores
+        scores = summary_engine.generate_scores(score_input)
+
+        # Build final summary
+        final_summary = summary_engine.build_final_summary(nlg_outputs, scores)
+
         # Update in_memory_reports
         if report_id in in_memory_reports:
             in_memory_reports[report_id].update({
                 "status": overall_status,
-                "data": aggregated_data
+                "data": aggregated_data,
+                "scores": scores,  # Add scores to the report
+                "summary": final_summary # Add final summary to the report
             })
             orchestrator_logger.info(f"Report {report_id} status updated to {overall_status}.")
         else:

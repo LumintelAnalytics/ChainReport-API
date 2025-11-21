@@ -119,6 +119,64 @@ def perform_cross_source_checks(data: Dict[str, Any]) -> Dict[str, Any]:
             "INFO: Documentation circulating supply not found."
         )
 
+    if validation_results["alerts"]:
+        validation_results["cross_source_checks"] = "COMPLETED_WITH_ALERTS"
+    else:
+        validation_results["cross_source_checks"] = "PASSED"
+
     return validation_results
+
+
+def normalize_missing(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Normalizes the input data by replacing missing or empty fields with explicit placeholders
+    and generates a `missing_data_report` explaining the gaps.
+
+    Args:
+        data: The input data dictionary to normalize.
+
+    Returns:
+        A new dictionary with missing fields normalized and a `missing_data_report`.
+    """
+    normalized_data = data.copy()
+    missing_data_report = {}
+
+    def _traverse_and_normalize(current_data, path):
+        if isinstance(current_data, dict):
+            for key, value in current_data.items():
+                new_path = f"{path}.{key}" if path else key
+                if value is None or (isinstance(value, str) and value.strip() == ""):
+                    normalized_data_ref = normalized_data
+                    path_parts = new_path.split('.')
+                    # Navigate to the correct nested dictionary in normalized_data
+                    for part in path_parts[:-1]:
+                        normalized_data_ref = normalized_data_ref.setdefault(part, {})
+                    normalized_data_ref[path_parts[-1]] = "N/A"  # Replace with placeholder
+                    missing_data_report[new_path] = "Missing or empty field replaced with 'N/A'."
+                elif isinstance(value, (dict, list)):
+                    _traverse_and_normalize(value, new_path)
+        elif isinstance(current_data, list):
+            for index, item in enumerate(current_data):
+                new_path = f"{path}[{index}]"
+                if item is None or (isinstance(item, str) and item.strip() == ""):
+                    normalized_data_ref = normalized_data
+                    path_parts = new_path.replace(']', '').split('[')
+                    # Navigate to the correct nested structure in normalized_data
+                    for i, part in enumerate(path_parts[:-1]):
+                        if part.isdigit():
+                            normalized_data_ref = normalized_data_ref[int(part)]
+                        else:
+                            normalized_data_ref = normalized_data_ref.setdefault(part, {})
+                    if path_parts[-1].isdigit():
+                        normalized_data_ref[int(path_parts[-1])] = "N/A"
+                    else:
+                        normalized_data_ref[path_parts[-1]] = "N/A"
+                    missing_data_report[new_path] = "Missing or empty field replaced with 'N/A'."
+                elif isinstance(item, (dict, list)):
+                    _traverse_and_normalize(item, new_path)
+
+    _traverse_and_normalize(data, "")
+    normalized_data["missing_data_report"] = missing_data_report
+    return normalized_data
 
 # You can add more validation functions as needed.

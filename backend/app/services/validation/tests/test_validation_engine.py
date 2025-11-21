@@ -1,5 +1,51 @@
 import pytest
-from backend.app.services.validation.validation_engine import perform_cross_source_checks
+from backend.app.services.validation.validation_engine import perform_cross_source_checks, normalize_missing
+
+def test_normalize_missing():
+    data = {
+        "field1": "value1",
+        "field2": None,
+        "field3": "",
+        "nested": {
+            "nested_field1": "nested_value1",
+            "nested_field2": None,
+            "nested_field3": ""
+        },
+        "list_field": [
+            "item1",
+            None,
+            "item3",
+            ""
+        ]
+    }
+
+    expected_normalized_data = {
+        "field1": "value1",
+        "field2": "N/A",
+        "field3": "N/A",
+        "nested": {
+            "nested_field1": "nested_value1",
+            "nested_field2": "N/A",
+            "nested_field3": "N/A"
+        },
+        "list_field": [
+            "item1",
+            "N/A",
+            "item3",
+            "N/A"
+        ],
+        "missing_data_report": {
+            "field2": "Missing or empty field replaced with 'N/A'.",
+            "field3": "Missing or empty field replaced with 'N/A'.",
+            "nested.nested_field2": "Missing or empty field replaced with 'N/A'.",
+            "nested.nested_field3": "Missing or empty field replaced with 'N/A'.",
+            "list_field[1]": "Missing or empty field replaced with 'N/A'.",
+            "list_field[3]": "Missing or empty field replaced with 'N/A'."
+        }
+    }
+
+    normalized_data = normalize_missing(data)
+    assert normalized_data == expected_normalized_data
 
 def test_circulating_supply_match():
     data = {

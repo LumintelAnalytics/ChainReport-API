@@ -2,6 +2,7 @@
 Validation engine for ensuring data quality and consistency before NLG and summary generation.
 """
 
+import re
 from typing import Dict, Any, Optional, List
 from copy import deepcopy
 
@@ -161,17 +162,58 @@ def normalize_missing(data: Dict[str, Any]) -> Dict[str, Any]:
                 new_path = f"{path}[{index}]"
                 if item is None or (isinstance(item, str) and item.strip() == ""):
                     normalized_data_ref = normalized_data
-                    path_parts = new_path.replace(']', '').split('[')
-                    # Navigate to the correct nested structure in normalized_data
-                    for i, part in enumerate(path_parts[:-1]):
-                        if part.isdigit():
-                            normalized_data_ref = normalized_data_ref[int(part)]
-                        else:
-                            normalized_data_ref = normalized_data_ref.setdefault(part, {})
-                    if path_parts[-1].isdigit():
-                        normalized_data_ref[int(path_parts[-1])] = "N/A"
-                    else:
-                        normalized_data_ref[path_parts[-1]] = "N/A"
+                    path_segments = [s for s in re.split(r'(\[\d+\])', new_path) if s]
+
+                    for _i, segment in enumerate(path_segments):
+                        is_last_segment = (_i == len(path_segments) - 1)
+
+                        if segment.startswith('['):  # List index, e.g., '[0]'
+                            index = int(segment[1:-1])
+                            # Ensure normalized_data_ref is a list and has enough elements
+                            if not isinstance(normalized_data_ref, list):
+                                # If it's not a list, and it's an empty dict, convert to list
+                                if isinstance(normalized_data_ref, dict) and not normalized_data_ref:
+                                    normalized_data_ref = []
+                                else:
+                                    # If it's not a list and not an empty dict, this is an error in path or structure
+                                    # For now, let's assume the path is well-formed and the type matches
+                                    pass
+
+                            while len(normalized_data_ref) <= index:
+                                normalized_data_ref.append(None) # Pad with None
+
+                            if is_last_segment:
+                                normalized_data_ref[index] = "N/A"
+                            else:
+                                if normalized_data_ref[index] is None:
+                                    # If the next level is None, default to a dictionary
+                                    normalized_data_ref[index] = {}
+                                normalized_data_ref = normalized_data_ref[index]
+
+                        else:  # Dictionary key(s), e.g., 'root.key' or '.nested_key'
+                            # Remove leading dot if present, then split by dot
+                            keys_str = segment[1:] if segment.startswith('.') else segment
+                            keys = keys_str.split('.')
+
+                            for _j, key in enumerate(keys):
+                                is_last_key_in_segment = (_j == len(keys) - 1)
+
+                                if not isinstance(normalized_data_ref, dict):
+                                    # If it's not a dict, and it's an empty list, convert to dict
+                                    if isinstance(normalized_data_ref, list) and not normalized_data_ref:
+                                        normalized_data_ref = {}
+                                    else:
+                                        # If it's not a dict and not an empty list, this is an error in path or structure
+                                        # For now, let's assume the path is well-formed and the type matches
+                                        pass
+
+                                if is_last_segment and is_last_key_in_segment:
+                                    normalized_data_ref.setdefault(key, "N/A")
+                                else:
+                                    # If the next level is None or not a dict, default to a dictionary
+                                    if normalized_data_ref.get(key) is None or not isinstance(normalized_data_ref.get(key), dict):
+                                        normalized_data_ref.setdefault(key, {})
+                                    normalized_data_ref = normalized_data_ref[key]
                     missing_data_report[new_path] = "Missing or empty field replaced with 'N/A'."
                 elif isinstance(item, (dict, list)):
                     _traverse_and_normalize(item, new_path)

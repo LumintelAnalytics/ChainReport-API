@@ -211,7 +211,7 @@ def normalize_missing(data: Dict[str, Any]) -> Dict[str, Any]:
                                     normalized_data_ref.setdefault(key, "N/A")
                                 else:
                                     # If the next level is None or not a dict, default to a dictionary
-                                    if normalized_data_ref.get(key) is None or not isinstance(normalized_data_ref.get(key), dict):
+                                    if normalized_data_ref.get(key) is None:
                                         normalized_data_ref.setdefault(key, {})
                                     normalized_data_ref = normalized_data_ref[key]
                     missing_data_report[new_path] = "Missing or empty field replaced with 'N/A'."

@@ -2,7 +2,9 @@
 Validation engine for ensuring data quality and consistency before NLG and summary generation.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
+
+DEFAULT_ESSENTIAL_FIELDS = ["report_id", "project_name", "summary"] # Example default essential fields
 
 def validate_field_consistency(data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -15,30 +17,36 @@ def validate_field_consistency(data: Dict[str, Any]) -> Dict[str, Any]:
 
     Returns:
         A dictionary containing validation results, including any inconsistencies found.
-    """
-    validation_results = {"field_consistency": "PASSED"}
-    # Placeholder for actual field consistency validation logic
-    # Example: Check if 'start_date' is before 'end_date' if both exist
-    # if 'start_date' in data and 'end_date' in data:
-    #     if data['start_date'] > data['end_date']:
-    #         validation_results["field_consistency"] = "FAILED: start_date after end_date"
-    return validation_results
 
-def check_missing_values(data: Dict[str, Any]) -> Dict[str, Any]:
+    Raises:
+        NotImplementedError: This function is not yet implemented.
+    """
+    raise NotImplementedError('validate_field_consistency is not yet implemented')
+
+def check_missing_values(data: Dict[str, Any], essential_fields: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     Checks for missing essential values in the provided data.
     This function identifies any critical fields that are empty or None.
 
     Args:
         data: The input data dictionary to check.
+        essential_fields: Optional list of essential fields to check. If None, uses DEFAULT_ESSENTIAL_FIELDS.
 
     Returns:
         A dictionary containing validation results, including any missing values found.
+
+    Raises:
+        TypeError: If data is not a dictionary.
+        ValueError: If data is None.
     """
+    if data is None:
+        raise ValueError('data must not be None')
+    if not isinstance(data, dict):
+        raise TypeError('data must be a dict')
+
     missing_values = []
-    # Define essential fields that should not be missing
-    essential_fields = ["report_id", "project_name", "summary"] # Example fields
-    for field in essential_fields:
+    fields_to_check = essential_fields if essential_fields is not None else DEFAULT_ESSENTIAL_FIELDS
+    for field in fields_to_check:
         if field not in data or data[field] is None or data[field] == "":
             missing_values.append(field)
 
@@ -58,12 +66,10 @@ def perform_cross_source_checks(data: Dict[str, Any]) -> Dict[str, Any]:
 
     Returns:
         A dictionary containing validation results for cross-source checks.
+
+    Raises:
+        NotImplementedError: This function is not yet implemented.
     """
-    cross_source_results = {"cross_source_checks": "PASSED"}
-    # Placeholder for actual cross-source validation logic
-    # Example: Compare 'total_volume' from on-chain data with 'total_volume' from price agent data
-    # if data.get('onchain_data', {}).get('total_volume') != data.get('price_agent_data', {}).get('total_volume'):
-    #     cross_source_results["cross_source_checks"] = "FAILED: Volume mismatch between sources"
-    return cross_source_results
+    raise NotImplementedError('perform_cross_source_checks is not yet implemented')
 
 # You can add more validation functions as needed.

@@ -2,7 +2,9 @@
 Validation engine for ensuring data quality and consistency before NLG and summary generation.
 """
 
+import re
 from typing import Dict, Any, Optional, List
+from copy import deepcopy
 
 DEFAULT_ESSENTIAL_FIELDS = ["report_id", "project_name", "summary"] # Example default essential fields
 
@@ -119,6 +121,51 @@ def perform_cross_source_checks(data: Dict[str, Any]) -> Dict[str, Any]:
             "INFO: Documentation circulating supply not found."
         )
 
+    if validation_results["alerts"]:
+        validation_results["cross_source_checks"] = "COMPLETED_WITH_ALERTS"
+    else:
+        validation_results["cross_source_checks"] = "PASSED"
+
     return validation_results
+
+
+def normalize_missing(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Normalizes the input data by replacing missing or empty fields with explicit placeholders
+    and generates a `missing_data_report` explaining the gaps.
+
+    Args:
+        data: The input data dictionary to normalize.
+
+    Returns:
+        A new dictionary with missing fields normalized and a `missing_data_report`."""
+    normalized_data = deepcopy(data)
+    missing_data_report = {}
+
+    def _traverse_and_normalize(parent, key_or_index, current_data, path):
+        if isinstance(current_data, dict):
+            for key, value in current_data.items():
+                new_path = f"{path}.{key}" if path else key
+                if value is None or (isinstance(value, str) and value.strip() == ""):
+                    parent[key_or_index][key] = "N/A"  # Replace with placeholder
+                    missing_data_report[new_path] = "Missing or empty field replaced with 'N/A'."
+                elif isinstance(value, (dict, list)):
+                    _traverse_and_normalize(current_data, key, value, new_path)
+        elif isinstance(current_data, list):
+            for index, item in enumerate(current_data):
+                new_path = f"{path}[{index}]"
+                if item is None or (isinstance(item, str) and item.strip() == ""):
+                    parent[key_or_index][index] = "N/A"  # Replace with placeholder
+                    missing_data_report[new_path] = "Missing or empty field replaced with 'N/A'."
+                elif isinstance(item, (dict, list)):
+                    _traverse_and_normalize(current_data, index, item, new_path)
+
+    # Initial call to _traverse_and_normalize
+    # We use a temporary key '__root__' to hold the original data for the initial call
+    temp_root = {'__root__': normalized_data}
+    _traverse_and_normalize(temp_root, '__root__', normalized_data, "")
+    normalized_data.update(temp_root['__root__']) # Update normalized_data with the modified content
+    normalized_data["missing_data_report"] = missing_data_report
+    return normalized_data
 
 # You can add more validation functions as needed.

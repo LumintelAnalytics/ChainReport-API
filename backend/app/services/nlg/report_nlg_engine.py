@@ -52,9 +52,9 @@ class ReportNLGEngine(BaseNLGEngine):
             generator = section_info["generator"]
 
             if isinstance(data_key, list): # For methods that take multiple data arguments
-                # Assuming data_key[0] is for code_data and data_key[1] is for audit_data
+                # Assuming data_key[0] maps to code_audit.code_metrics and data_key[1] maps to code_audit.audit_summary
                 code_data = data.get(data_key[0], {}).get("code_metrics", {})
-                audit_data = data.get(data_key[0], {}).get("audit_summary", [])
+                audit_data = data.get(data_key[0], {}).get(data_key[1], [])
                 tasks.append(asyncio.create_task(generator(code_data, audit_data)))
             else:
                 section_data = data.get(data_key, {})
@@ -218,9 +218,19 @@ class ReportNLGEngine(BaseNLGEngine):
             "whitepaper_summary": json.dumps(whitepaper_summary, indent=2) if whitepaper_summary else "N/A",
         }
 
-        return await self._generate_section_with_llm(
-            section_id="team_documentation",
-            data=combined_data,
-            not_available_msg="Team and documentation data is not available at this time. Please check back later for updates.",
-            error_msg="Failed to generate team and documentation summary due to an internal error. Please try again later."
-        )
+        template = get_template("team_documentation")
+        prompt = fill_template(template, **combined_data)
+
+        async with LLMClient() as llm_client:
+            try:
+                response = await llm_client.generate_text(prompt)
+                generated_text = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                if not generated_text:
+                    raise ValueError("LLM returned empty content for team_documentation.")
+                return self._format_output({"section_id": "team_documentation", "text": generated_text})
+            except Exception as e:
+                logger.error(f"Error generating team_documentation text with LLM: {e}", exc_info=True)
+                return self._format_output({
+                    "section_id": "team_documentation",
+                    "text": "Failed to generate team and documentation summary due to an internal error. Please try again later."
+                })

@@ -9,7 +9,7 @@ from backend.app.services.agents.team_doc_agent import TeamDocAgent
 from backend.app.services.agents.code_audit_agent import CodeAuditAgent # Import CodeAuditAgent
 from backend.app.core.config import settings
 from backend.app.services.summary import ReportSummaryEngine
-from backend.app.services.nlg.nlg_engine import NLGEngine
+from backend.app.services.nlg.report_nlg_engine import ReportNLGEngine
 
 async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
     """
@@ -105,7 +105,7 @@ class Orchestrator(AIOrchestrator):
 
         # Initialize SummaryEngine and NLGEngine
         summary_engine = ReportSummaryEngine()
-        nlg_engine = NLGEngine() # Assuming NLGEngine is initialized here
+        nlg_engine = ReportNLGEngine() # Assuming NLGEngine is initialized here
 
         # Generate NLG outputs (placeholder for actual NLG generation)
         # In a real scenario, nlg_engine would process aggregated_data to produce text

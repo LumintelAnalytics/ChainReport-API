@@ -138,87 +138,33 @@ def normalize_missing(data: Dict[str, Any]) -> Dict[str, Any]:
         data: The input data dictionary to normalize.
 
     Returns:
-        A new dictionary with missing fields normalized and a `missing_data_report`.
-    """
+        A new dictionary with missing fields normalized and a `missing_data_report`."""
     normalized_data = deepcopy(data)
     missing_data_report = {}
 
-    def _traverse_and_normalize(current_data, path):
+    def _traverse_and_normalize(parent, key_or_index, current_data, path):
         if isinstance(current_data, dict):
             for key, value in current_data.items():
                 new_path = f"{path}.{key}" if path else key
                 if value is None or (isinstance(value, str) and value.strip() == ""):
-                    normalized_data_ref = normalized_data
-                    path_parts = new_path.split('.')
-                    # Navigate to the correct nested dictionary in normalized_data
-                    for part in path_parts[:-1]:
-                        normalized_data_ref = normalized_data_ref.setdefault(part, {})
-                    normalized_data_ref[path_parts[-1]] = "N/A"  # Replace with placeholder
+                    parent[key_or_index][key] = "N/A"  # Replace with placeholder
                     missing_data_report[new_path] = "Missing or empty field replaced with 'N/A'."
                 elif isinstance(value, (dict, list)):
-                    _traverse_and_normalize(value, new_path)
+                    _traverse_and_normalize(current_data, key, value, new_path)
         elif isinstance(current_data, list):
             for index, item in enumerate(current_data):
                 new_path = f"{path}[{index}]"
                 if item is None or (isinstance(item, str) and item.strip() == ""):
-                    normalized_data_ref = normalized_data
-                    path_segments = [s for s in re.split(r'(\[\d+\])', new_path) if s]
-
-                    for _i, segment in enumerate(path_segments):
-                        is_last_segment = (_i == len(path_segments) - 1)
-
-                        if segment.startswith('['):  # List index, e.g., '[0]'
-                            index = int(segment[1:-1])
-                            # Ensure normalized_data_ref is a list and has enough elements
-                            if not isinstance(normalized_data_ref, list):
-                                # If it's not a list, and it's an empty dict, convert to list
-                                if isinstance(normalized_data_ref, dict) and not normalized_data_ref:
-                                    normalized_data_ref = []
-                                else:
-                                    # If it's not a list and not an empty dict, this is an error in path or structure
-                                    # For now, let's assume the path is well-formed and the type matches
-                                    pass
-
-                            while len(normalized_data_ref) <= index:
-                                normalized_data_ref.append(None) # Pad with None
-
-                            if is_last_segment:
-                                normalized_data_ref[index] = "N/A"
-                            else:
-                                if normalized_data_ref[index] is None:
-                                    # If the next level is None, default to a dictionary
-                                    normalized_data_ref[index] = {}
-                                normalized_data_ref = normalized_data_ref[index]
-
-                        else:  # Dictionary key(s), e.g., 'root.key' or '.nested_key'
-                            # Remove leading dot if present, then split by dot
-                            keys_str = segment[1:] if segment.startswith('.') else segment
-                            keys = keys_str.split('.')
-
-                            for _j, key in enumerate(keys):
-                                is_last_key_in_segment = (_j == len(keys) - 1)
-
-                                if not isinstance(normalized_data_ref, dict):
-                                    # If it's not a dict, and it's an empty list, convert to dict
-                                    if isinstance(normalized_data_ref, list) and not normalized_data_ref:
-                                        normalized_data_ref = {}
-                                    else:
-                                        # If it's not a dict and not an empty list, this is an error in path or structure
-                                        # For now, let's assume the path is well-formed and the type matches
-                                        pass
-
-                                if is_last_segment and is_last_key_in_segment:
-                                    normalized_data_ref.setdefault(key, "N/A")
-                                else:
-                                    # If the next level is None or not a dict, default to a dictionary
-                                    if normalized_data_ref.get(key) is None:
-                                        normalized_data_ref.setdefault(key, {})
-                                    normalized_data_ref = normalized_data_ref[key]
+                    parent[key_or_index][index] = "N/A"  # Replace with placeholder
                     missing_data_report[new_path] = "Missing or empty field replaced with 'N/A'."
                 elif isinstance(item, (dict, list)):
-                    _traverse_and_normalize(item, new_path)
+                    _traverse_and_normalize(current_data, index, item, new_path)
 
-    _traverse_and_normalize(data, "")
+    # Initial call to _traverse_and_normalize
+    # We use a temporary key '__root__' to hold the original data for the initial call
+    temp_root = {'__root__': normalized_data}
+    _traverse_and_normalize(temp_root, '__root__', normalized_data, "")
+    normalized_data.update(temp_root['__root__']) # Update normalized_data with the modified content
     normalized_data["missing_data_report"] = missing_data_report
     return normalized_data
 

@@ -58,7 +58,7 @@ def test_invalid_onchain_supply():
     }
     result = perform_cross_source_checks(data)
     assert result["cross_source_checks"] == "COMPLETED_WITH_ALERTS"
-    assert len(result["alerts"]) == 2 # One for invalid onchain, one for mismatch (since doc is valid)
+    assert len(result["alerts"]) == 2 # One WARNING for invalid onchain, one INFO for onchain not found
     assert "WARNING: Onchain circulating supply is not a valid number." in result["alerts"]
     assert "INFO: Onchain circulating supply not found." in result["alerts"]
 

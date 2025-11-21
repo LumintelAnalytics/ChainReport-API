@@ -70,6 +70,9 @@ def perform_cross_source_checks(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     validation_results: Dict[str, Any] = {"alerts": []}
 
+    has_invalid_onchain = False
+    has_invalid_doc = False
+
     onchain_supply_str = data.get("tokenomics", {}).get("data", {}).get("circulating_supply")
     doc_supply_str = data.get("team_documentation", {}).get("whitepaper_summary", {}).get("circulating_supply")
 
@@ -83,6 +86,7 @@ def perform_cross_source_checks(data: Dict[str, Any]) -> Dict[str, Any]:
         validation_results["alerts"].append(
             "WARNING: Onchain circulating supply is not a valid number."
         )
+        has_invalid_onchain = True
 
     try:
         if doc_supply_str:
@@ -91,6 +95,7 @@ def perform_cross_source_checks(data: Dict[str, Any]) -> Dict[str, Any]:
         validation_results["alerts"].append(
             "WARNING: Documentation circulating supply is not a valid number."
         )
+        has_invalid_doc = True
 
     if onchain_supply is not None and doc_supply is not None:
         if onchain_supply != doc_supply:
@@ -101,8 +106,7 @@ def perform_cross_source_checks(data: Dict[str, Any]) -> Dict[str, Any]:
             validation_results["circulating_supply_consistency"] = "PASSED"
     elif onchain_supply is None and doc_supply is None:
         # Only add this info if no specific invalid number warnings were already added for both
-        if not any("Onchain circulating supply is not a valid number" in alert for alert in validation_results["alerts"]) and \
-           not any("Documentation circulating supply is not a valid number" in alert for alert in validation_results["alerts"]):
+        if not (has_invalid_onchain and has_invalid_doc):
             validation_results["alerts"].append(
                 "INFO: Circulating supply not found in both onchain and documentation sources."
             )

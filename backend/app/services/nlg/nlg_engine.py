@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
@@ -30,10 +31,10 @@ class NLGEngine(ABC):
         """
         pass
 
-    @abstractmethod
-    def generate_full_report(self, data: dict) -> str:
+    async def generate_full_report(self, data: dict) -> str:
         """
         Generates a complete natural language report based on a comprehensive data structure.
+        Gathers text outputs from all section generators and merges them into a final multi-section narrative.
 
         Args:
             data (dict): A dictionary containing all necessary data for generating the full report.
@@ -43,7 +44,60 @@ class NLGEngine(ABC):
                   structured with sections and their respective texts.
                   Example: `return self._format_output({"report_title": "...", "sections": [{"section_id": "...", "text": "..."}]})`
         """
-        pass
+        sections_to_generate = [
+            {
+                "section_id": "tokenomics",
+                "generator": self.generate_tokenomics_text,
+                "data": data.get("tokenomics_data", {}),
+                "fallback": {"section_id": "tokenomics", "text": "Failed to generate tokenomics summary due to an internal error."}
+            },
+            {
+                "section_id": "onchain_metrics",
+                "generator": self.generate_onchain_text,
+                "data": data.get("onchain_data", {}),
+                "fallback": {"section_id": "onchain_metrics", "text": "Failed to generate on-chain metrics summary due to an internal error."}
+            },
+            {
+                "section_id": "social_sentiment",
+                "generator": self.generate_sentiment_text,
+                "data": data.get("sentiment_data", {}),
+                "fallback": {"section_id": "social_sentiment", "text": "Failed to generate social sentiment summary due to an internal error."}
+            },
+            {
+                "section_id": "code_audit_summary",
+                "generator": self.generate_code_audit_text,
+                "data": (data.get("code_data", {}), data.get("audit_data", {})), # Pass as tuple for multiple args
+                "fallback": {"section_id": "code_audit_summary", "text": "Failed to generate code audit summary due to an internal error."}
+            },
+        ]
+
+        tasks = []
+        for section_info in sections_to_generate:
+            if section_info["section_id"] == "code_audit_summary":
+                # Handle code_audit_summary with two arguments
+                tasks.append(asyncio.create_task(section_info["generator"](*section_info["data"])))
+            else:
+                tasks.append(asyncio.create_task(section_info["generator"](section_info["data"])))
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        sections = []
+        for i, result in enumerate(results):
+            section_info = sections_to_generate[i]
+            section_id = section_info["section_id"]
+            fallback_dict = section_info["fallback"]
+
+            if isinstance(result, Exception):
+                logger.error(f"Error generating {section_id} section: {result}", exc_info=True)
+                sections.append(fallback_dict)
+            else:
+                try:
+                    sections.append(json.loads(result))
+                except json.JSONDecodeError as e:
+                    logger.error(f"JSON decoding error for {section_id} section: {e}. Raw result: {result}", exc_info=True)
+                    sections.append(fallback_dict)
+
+        return self._format_output({"sections": sections})
 
     def _format_output(self, content: dict) -> str:
         """

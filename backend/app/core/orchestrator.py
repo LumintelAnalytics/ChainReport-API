@@ -111,8 +111,16 @@ class Orchestrator(AIOrchestrator):
         # In a real scenario, nlg_engine would process aggregated_data to produce text
         nlg_outputs = await nlg_engine.generate_nlg_outputs(aggregated_data) # Assuming this method exists
 
+        # Prepare score_input for the summary engine
+        score_input = {
+            "tokenomics_data": aggregated_data.get("tokenomics", {}),
+            "sentiment_data": aggregated_data.get("social_sentiment", {}),
+            "code_audit_data": aggregated_data.get("code_audit", {}),
+            "team_data": aggregated_data.get("team_documentation", {}),
+        }
+
         # Generate scores
-        scores = summary_engine.generate_scores(aggregated_data)
+        scores = summary_engine.generate_scores(score_input)
 
         # Build final summary
         final_summary = summary_engine.build_final_summary(nlg_outputs, scores)

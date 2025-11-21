@@ -41,7 +41,7 @@ class ReportNLGEngine(BaseNLGEngine):
             {"section_id": "tokenomics", "data_key": "tokenomics", "generator": self.generate_tokenomics_text},
             {"section_id": "onchain_metrics", "data_key": "onchain_metrics", "generator": self.generate_onchain_text},
             {"section_id": "social_sentiment", "data_key": "social_sentiment", "generator": self.generate_sentiment_text},
-            {"section_id": "code_audit_summary", "data_key": ["code_audit", "audit_data"], "generator": self.generate_code_audit_text}, # code_audit_text takes two args
+            {"section_id": "code_audit_summary", "data_key": ["code_audit", "audit_summary"], "generator": self.generate_code_audit_text}, # code_audit_text takes two args
             {"section_id": "team_documentation", "data_key": "team_documentation", "generator": self.generate_team_documentation_text},
         ]
 

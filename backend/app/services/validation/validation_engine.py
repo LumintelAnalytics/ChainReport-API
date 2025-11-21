@@ -58,18 +58,72 @@ def check_missing_values(data: Dict[str, Any], essential_fields: Optional[List[s
 def perform_cross_source_checks(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Performs cross-source validation checks to ensure consistency across different data sources.
-    This is a placeholder for future implementation where data from multiple sources
-    would be compared and validated against each other.
+    Compares tokenomics.circulating_supply from onchain sources with supply values extracted
+    from documentation or whitepapers. If mismatched, creates warning entries stored under
+    `alerts` in the validation results.
 
     Args:
         data: The aggregated data dictionary from various sources.
 
     Returns:
-        A dictionary containing validation results for cross-source checks.
-
-    Raises:
-        NotImplementedError: This function is not yet implemented.
+        A dictionary containing validation results for cross-source checks, including alerts.
     """
-    raise NotImplementedError('perform_cross_source_checks is not yet implemented')
+    validation_results: Dict[str, Any] = {"alerts": []}
+
+    has_invalid_onchain = False
+    has_invalid_doc = False
+
+    onchain_supply_str = data.get("tokenomics", {}).get("data", {}).get("circulating_supply")
+    doc_supply_str = data.get("team_documentation", {}).get("whitepaper_summary", {}).get("circulating_supply")
+
+    onchain_supply: Optional[float] = None
+    doc_supply: Optional[float] = None
+
+    try:
+        if onchain_supply_str:
+            onchain_supply = float(onchain_supply_str.replace(",", ""))
+    except ValueError:
+        validation_results["alerts"].append(
+            "WARNING: Onchain circulating supply is not a valid number."
+        )
+        has_invalid_onchain = True
+
+    try:
+        if doc_supply_str:
+            doc_supply = float(doc_supply_str.replace(",", ""))
+    except ValueError:
+        validation_results["alerts"].append(
+            "WARNING: Documentation circulating supply is not a valid number."
+        )
+        has_invalid_doc = True
+
+    if onchain_supply is not None and doc_supply is not None:
+        if onchain_supply != doc_supply:
+            validation_results["alerts"].append(
+                f"WARNING: Circulating supply mismatch: Onchain ({onchain_supply}) vs. Documentation ({doc_supply})."
+            )
+        else:
+            validation_results["circulating_supply_consistency"] = "PASSED"
+    elif onchain_supply is None and doc_supply is None:
+        # Only add this info if no specific invalid number warnings were already added for both
+        if not (has_invalid_onchain and has_invalid_doc):
+            validation_results["alerts"].append(
+                "INFO: Circulating supply not found in both onchain and documentation sources."
+            )
+    elif onchain_supply is None:
+        validation_results["alerts"].append(
+            "INFO: Onchain circulating supply not found."
+        )
+    elif doc_supply is None:
+        validation_results["alerts"].append(
+            "INFO: Documentation circulating supply not found."
+        )
+
+    if not validation_results["alerts"]:
+        validation_results["cross_source_checks"] = "PASSED"
+    else:
+        validation_results["cross_source_checks"] = "COMPLETED_WITH_ALERTS"
+
+    return validation_results
 
 # You can add more validation functions as needed.

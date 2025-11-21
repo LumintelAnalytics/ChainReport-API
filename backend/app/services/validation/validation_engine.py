@@ -119,11 +119,6 @@ def perform_cross_source_checks(data: Dict[str, Any]) -> Dict[str, Any]:
             "INFO: Documentation circulating supply not found."
         )
 
-    if not validation_results["alerts"]:
-        validation_results["cross_source_checks"] = "PASSED"
-    else:
-        validation_results["cross_source_checks"] = "COMPLETED_WITH_ALERTS"
-
     return validation_results
 
 # You can add more validation functions as needed.

@@ -44,8 +44,11 @@ def test_normalize_missing():
         }
     }
 
+    import copy
+    original_data = copy.deepcopy(data)
     normalized_data = normalize_missing(data)
     assert normalized_data == expected_normalized_data
+    assert data == original_data
 
 def test_circulating_supply_match():
     data = {

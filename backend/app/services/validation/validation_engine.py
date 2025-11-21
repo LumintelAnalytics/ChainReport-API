@@ -3,6 +3,7 @@ Validation engine for ensuring data quality and consistency before NLG and summa
 """
 
 from typing import Dict, Any, Optional, List
+from copy import deepcopy
 
 DEFAULT_ESSENTIAL_FIELDS = ["report_id", "project_name", "summary"] # Example default essential fields
 
@@ -138,7 +139,7 @@ def normalize_missing(data: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         A new dictionary with missing fields normalized and a `missing_data_report`.
     """
-    normalized_data = data.copy()
+    normalized_data = deepcopy(data)
     missing_data_report = {}
 
     def _traverse_and_normalize(current_data, path):

@@ -16,17 +16,10 @@ class ReportNLGEngine(BaseNLGEngine):
 
     def generate_section_text(self, section_id: str, raw_data: dict) -> str:
         """
-        Generates natural language text for a specific report section based on raw data.
-        This method is abstract in the base class and needs to be implemented.
-        For simplicity, it will delegate to the async _generate_section_with_llm.
+        Synchronous section generation is intentionally unsupported.
+        `generate_nlg_outputs` is the primary entry point for generating report sections.
         """
-        # This method is synchronous, but _generate_section_with_llm is async.
-        # In a real application, you might want to refactor generate_section_text
-        # to be async or handle the async call differently if it's called from a sync context.
-        # For now, we'll assume it's called in an async context or can be awaited.
-        # However, the orchestrator expects an async method for generate_nlg_outputs.
-        # So, we'll make generate_nlg_outputs the primary entry point.
-        raise NotImplementedError("generate_section_text should not be called directly. Use generate_nlg_outputs.")
+        raise NotImplementedError("Synchronous section generation is not supported. Use generate_nlg_outputs.")
 
     async def generate_nlg_outputs(self, data: Dict[str, Any]) -> Dict[str, str]:
         """
@@ -53,8 +46,8 @@ class ReportNLGEngine(BaseNLGEngine):
 
             if isinstance(data_key, list): # For methods that take multiple data arguments
                 # Assuming data_key[0] maps to code_audit.code_metrics and data_key[1] maps to code_audit.audit_summary
-                code_data = data.get(data_key[0], {}).get("code_metrics", {})
-                audit_data = data.get(data_key[0], {}).get(data_key[1], [])
+                code_data = (data.get(data_key[0]) or {}).get("code_metrics", {})
+                audit_data = (data.get(data_key[0]) or {}).get(data_key[1], [])
                 tasks.append(asyncio.create_task(generator(code_data, audit_data)))
             else:
                 section_data = data.get(data_key, {})
@@ -78,93 +71,11 @@ class ReportNLGEngine(BaseNLGEngine):
 
         return nlg_outputs
 
-    # The following methods are copied from the base NLGEngine,
-    # as they are concrete implementations that use _generate_section_with_llm.
-    # In a more complex scenario, these might be moved to a utility or a mixin.
+    def _empty_llm_content_error(self, section_id: str) -> ValueError:
+        return ValueError(f"LLM returned empty content for {section_id}.")
 
-    def _format_output(self, content: dict) -> str:
-        """
-        Helper method to ensure all outputs are structured as JSON.
-        """
-        return json.dumps(content)
-
-    async def _generate_section_with_llm(self, section_id: str, data: Dict[str, Any], not_available_msg: str, error_msg: str) -> str:
-        if not data:
-            return self._format_output({
-                "section_id": section_id,
-                "text": not_available_msg
-            })
-
-        template = get_template(section_id)
-        prompt = fill_template(template, data=json.dumps(data, indent=2))
-
-        async with LLMClient() as llm_client:
-            try:
-                response = await llm_client.generate_text(prompt)
-                generated_text = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-                if not generated_text:
-                    raise ValueError(f"LLM returned empty content for {section_id}.")
-                return self._format_output({"section_id": section_id, "text": generated_text})
-            except Exception as e:
-                logger.error(f"Error generating {section_id} text with LLM: {e}", exc_info=True)
-                return self._format_output({
-                    "section_id": section_id,
-                    "text": error_msg
-                })
-
-    async def generate_tokenomics_text(self, raw_data: Dict[str, Any]) -> str:
-        """
-        Generates natural language text for tokenomics based on raw data.
-        Includes fallback logic for missing data.
-        """
-        return await self._generate_section_with_llm(
-            section_id="tokenomics",
-            data=raw_data,
-            not_available_msg="Tokenomics data is not available at this time. Please check back later for updates.",
-            error_msg="Failed to generate tokenomics summary due to an internal error. Please try again later."
-        )
-
-    async def generate_onchain_text(self, raw_data: Dict[str, Any]) -> str:
-        """
-        Generates natural language text for on-chain metrics based on raw data.
-        Collects metrics like active addresses, holders, transaction flows, and liquidity
-        and converts them into narrative form using the LLM. Handles incomplete fields safely.
-        """
-        if not raw_data or raw_data.get("status") == "failed":
-            return self._format_output({
-                "section_id": "onchain_metrics",
-                "text": "On-chain metrics data is not available at this time. Please check back later for updates."
-            })
-
-        # Extract relevant metrics, handling potential missing fields safely
-        onchain_metrics_data = {
-            "active_addresses": raw_data.get("active_addresses", "N/A"),
-            "holders": raw_data.get("holders", "N/A"),
-            "transaction_flows": raw_data.get("transaction_flows", "N/A"),
-            "liquidity": raw_data.get("liquidity", "N/A"),
-        }
-
-        return await self._generate_section_with_llm(
-            section_id="onchain_metrics",
-            data=onchain_metrics_data,
-            not_available_msg="On-chain metrics data is not available at this time. Please check back later for updates.",
-            error_msg="Failed to generate on-chain metrics summary due to an internal error. Please try again later."
-        )
-
-    async def generate_sentiment_text(self, raw_data: Dict[str, Any]) -> str:
-        """
-        Generates natural language text for social sentiment based on raw data.
-        Converts sentiment scores and community perception into a written summary,
-        highlighting trends and community direction.
-        """
-        return await self._generate_section_with_llm(
-            section_id="social_sentiment",
-            data=raw_data,
-            not_available_msg="Social sentiment data is not available at this time. Please check back later for updates.",
-            error_msg="Failed to generate social sentiment summary due to an internal error. Please try again later."
-        )
-
-    async def generate_code_audit_text(self, code_data: Dict[str, Any], audit_data: Dict[str, Any]) -> str:
+    # The following methods are inherited from BaseNLGEngine and use _generate_section_with_llm.
+    async def generate_code_audit_text(self, code_data: Dict[str, Any], audit_data: Any) -> str:
         """
         Generates a comprehensive code audit summary using LLM prompts.
         Includes clarity points, risk highlights, code activity, and repository quality indicators.
@@ -190,7 +101,7 @@ class ReportNLGEngine(BaseNLGEngine):
                 response = await llm_client.generate_text(prompt)
                 generated_text = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
                 if not generated_text:
-                    raise ValueError("LLM returned empty content for code_audit_summary.")
+                    raise self._empty_llm_content_error("code_audit_summary")
                 return self._format_output({"section_id": "code_audit_summary", "text": generated_text})
             except Exception as e:
                 logger.error(f"Error generating code_audit_summary text with LLM: {e}", exc_info=True)
@@ -226,7 +137,7 @@ class ReportNLGEngine(BaseNLGEngine):
                 response = await llm_client.generate_text(prompt)
                 generated_text = response.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
                 if not generated_text:
-                    raise ValueError("LLM returned empty content for team_documentation.")
+                    raise self._empty_llm_content_error("team_documentation")
                 return self._format_output({"section_id": "team_documentation", "text": generated_text})
             except Exception as e:
                 logger.error(f"Error generating team_documentation text with LLM: {e}", exc_info=True)

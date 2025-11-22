@@ -45,8 +45,14 @@ async def process_report(report_id: str, token_id: str) -> bool:
 
         # Generate summary
         summary_engine = ReportSummaryEngine()
-        scores = summary_engine.generate_scores(combined_report_data)
-        final_narrative_summary = await summary_engine.build_final_summary(nlg_outputs, scores)
+        scores_input = {
+            "tokenomics_data": combined_report_data.get("tokenomics", {}),
+            "sentiment_data": combined_report_data.get("social_sentiment", {}),
+            "code_audit_data": combined_report_data.get("code_audit", {}),
+            "team_data": combined_report_data.get("team_documentation", {})
+        }
+        scores = summary_engine.generate_scores(scores_input)
+        final_narrative_summary = summary_engine.build_final_summary(nlg_outputs, scores)
 
         # Determine overall status based on agent results
         overall_status = "completed"

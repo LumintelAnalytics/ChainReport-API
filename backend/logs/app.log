@@ -7879,3 +7879,37 @@ Exception: Agent failed
 2025-11-22 14:09:05,329 - services - WARNING - Report with id non_existent_report not found when attempting to retrieve data.
 2025-11-22 14:09:05,329 - api - ERROR - Report with id non_existent_report not found or not completed for data request.
 2025-11-22 14:09:05,329 - api - ERROR - ReportNotFoundException: Report not found or not completed
+2025-11-22 14:48:46,941 - orchestrator - INFO - Registering agent: price_agent
+2025-11-22 14:48:46,941 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-22 14:48:46,941 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-22 14:48:46,941 - orchestrator - INFO - Executing agents for report_id: test_report_1, token_id: test_token_1
+2025-11-22 14:48:46,941 - orchestrator - INFO - Agent price_agent completed for report test_report_1.
+2025-11-22 14:48:46,941 - orchestrator - INFO - Agent trend_agent completed for report test_report_1.
+2025-11-22 14:48:46,941 - orchestrator - INFO - Agent volume_agent completed for report test_report_1.
+2025-11-22 14:48:46,941 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:48:46,945 - orchestrator - INFO - Registering agent: price_agent
+2025-11-22 14:48:46,946 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-22 14:48:46,946 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-22 14:48:46,946 - orchestrator - INFO - Executing agents for report_id: test_report_3, token_id: test_token_3
+2025-11-22 14:48:46,946 - orchestrator - ERROR - Agent price_agent failed for report test_report_3
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/core/orchestrator.py", line 56, in execute_agents
+    result = await asyncio.wait_for(task, timeout=settings.AGENT_TIMEOUT) # Added timeout
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/asyncio/tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    raise effect
+Exception: Agent error
+2025-11-22 14:48:47,046 - orchestrator - INFO - Agent trend_agent completed for report test_report_3.
+2025-11-22 14:48:47,047 - orchestrator - INFO - Agent volume_agent completed for report test_report_3.
+2025-11-22 14:48:47,047 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:48:47,052 - orchestrator - INFO - Registering agent: price_agent
+2025-11-22 14:48:47,052 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-22 14:48:47,052 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-22 14:48:47,052 - orchestrator - INFO - Executing agents for report_id: concurrent_report, token_id: concurrent_token
+2025-11-22 14:48:47,055 - orchestrator - INFO - Agent price_agent completed for report concurrent_report.
+2025-11-22 14:48:47,055 - orchestrator - INFO - Agent trend_agent completed for report concurrent_report.
+2025-11-22 14:48:47,055 - orchestrator - INFO - Agent volume_agent completed for report concurrent_report.
+2025-11-22 14:48:47,055 - orchestrator - INFO - Aggregating results from executed agents.

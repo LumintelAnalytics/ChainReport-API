@@ -5,6 +5,8 @@ from backend.app.services.agents.price_agent import run as price_agent_run
 from backend.app.services.agents.trend_agent import run as trend_agent_run
 from backend.app.services.agents.volume_agent import run as volume_agent_run
 from backend.app.core.storage import save_report_data, set_report_status, try_set_processing
+from backend.app.services.nlg.report_nlg_engine import ReportNLGEngine
+from backend.app.services.summary.report_summary_engine import ReportSummaryEngine
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,29 @@ async def process_report(report_id: str, token_id: str) -> bool:
             logger.error(f"Report {report_id} completed with failures from one or more agents.")
 
         save_report_data(report_id, combined_report_data)
+
+        # Initialize NLG and Summary Engines
+        nlg_engine = ReportNLGEngine()
+        summary_engine = ReportSummaryEngine()
+
+        # Generate NLG outputs (section texts)
+        nlg_outputs = await nlg_engine.generate_nlg_outputs(combined_report_data)
+
+        # Generate scores
+        scores = summary_engine.generate_scores(combined_report_data)
+
+        # Build final narrative summary
+        final_narrative_summary = summary_engine.build_final_summary(nlg_outputs, scores)
+
+        # Combine all into final_report
+        final_report_content = {
+            "section_texts": nlg_outputs,
+            "final_summary": final_narrative_summary
+        }
+
+        # Save the final report content
+        save_report_data(report_id, final_report_content, key="final_report")
+
         set_report_status(report_id, overall_status)
 
         logger.info("Report %s %s.", report_id, overall_status)

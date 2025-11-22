@@ -7447,3 +7447,120 @@ Exception: Agent failed
 2025-11-21 16:55:51,979 - services - WARNING - Report with id non_existent_report not found when attempting to retrieve data.
 2025-11-21 16:55:51,979 - api - ERROR - Report with id non_existent_report not found or not completed for data request.
 2025-11-21 16:55:51,979 - api - ERROR - ReportNotFoundException: Report not found or not completed
+2025-11-22 08:47:46,348 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-22 08:47:46,349 - orchestrator - INFO - Registering agent: AgentTwo
+2025-11-22 08:47:46,349 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_id_success, token_id: test_token_id
+2025-11-22 08:47:46,349 - orchestrator - INFO - Executing agents for report_id: test_report_id_success, token_id: test_token_id
+2025-11-22 08:47:46,349 - orchestrator - INFO - Agent AgentOne completed for report test_report_id_success.
+2025-11-22 08:47:46,349 - orchestrator - INFO - Agent AgentTwo completed for report test_report_id_success.
+2025-11-22 08:47:46,349 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 08:47:46,349 - orchestrator - INFO - Report test_report_id_success status updated to completed.
+2025-11-22 08:47:46,352 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-22 08:47:46,352 - orchestrator - INFO - Registering agent: AgentFailing
+2025-11-22 08:47:46,352 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_id_failure, token_id: test_token_id
+2025-11-22 08:47:46,352 - orchestrator - INFO - Executing agents for report_id: test_report_id_failure, token_id: test_token_id
+2025-11-22 08:47:46,352 - orchestrator - INFO - Agent AgentOne completed for report test_report_id_failure.
+2025-11-22 08:47:46,352 - orchestrator - ERROR - Agent AgentFailing failed for report test_report_id_failure
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/core/orchestrator.py", line 56, in execute_agents
+    result = await asyncio.wait_for(task, timeout=settings.AGENT_TIMEOUT) # Added timeout
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/asyncio/tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    raise effect
+Exception: Agent failed
+2025-11-22 08:47:46,356 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 08:47:46,356 - orchestrator - ERROR - Report test_report_id_failure failed due to one or more agent failures.
+2025-11-22 08:47:46,356 - orchestrator - INFO - Report test_report_id_failure status updated to failed.
+2025-11-22 08:47:46,358 - orchestrator - INFO - Registering agent: a
+2025-11-22 08:47:46,359 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-22 08:47:46,359 - orchestrator - WARNING - Onchain Data Agent will not be registered due to invalid configuration.
+2025-11-22 08:47:46,359 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 08:47:46,359 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 08:47:46,359 - orchestrator - WARNING - Configuration Error: CODE_AUDIT_REPO_URL is missing. Skipping agent registration.
+2025-11-22 08:47:46,359 - orchestrator - WARNING - Code/Audit Agent will not be registered due to invalid CODE_AUDIT_REPO_URL configuration.
+2025-11-22 08:47:46,360 - orchestrator - INFO - Registering agent: dummy_agent
+2025-11-22 08:47:46,360 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-22 08:47:46,360 - orchestrator - WARNING - Onchain Data Agent will not be registered due to invalid configuration.
+2025-11-22 08:47:46,360 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 08:47:46,360 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 08:47:46,360 - orchestrator - WARNING - Configuration Error: CODE_AUDIT_REPO_URL is missing. Skipping agent registration.
+2025-11-22 08:47:46,361 - orchestrator - WARNING - Code/Audit Agent will not be registered due to invalid CODE_AUDIT_REPO_URL configuration.
+2025-11-22 08:47:46,381 - orchestrator - INFO - Registering agent: onchain_data_agent
+2025-11-22 08:47:46,381 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 08:47:46,381 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 08:47:46,381 - orchestrator - INFO - Registering agent: code_audit_agent
+2025-11-22 08:47:46,381 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:46,381 - orchestrator - INFO - Executing agents for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:46,381 - orchestrator - INFO - Calling Onchain Data Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:46,381 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:46,381 - orchestrator - INFO - Social Sentiment Agent completed for report test_report_123.
+2025-11-22 08:47:46,381 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:46,381 - orchestrator - INFO - Scraping team profiles for token ethereum from URLs: ['http://mock-team-profile.com']
+2025-11-22 08:47:46,383 - orchestrator - INFO - Calling Code/Audit Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:46,397 - orchestrator - INFO - Fetching repository metrics for http://mock-code-audit.com/repo
+2025-11-22 08:47:46,397 - orchestrator - INFO - Analyzing code activity for http://mock-code-audit.com/repo
+2025-11-22 08:47:46,397 - orchestrator - INFO - Searching and summarizing audit reports for http://mock-code-audit.com/repo
+2025-11-22 08:47:46,410 - orchestrator - INFO - Team profile scraping completed for token ethereum.
+2025-11-22 08:47:46,410 - orchestrator - INFO - Analyzing whitepaper for token ethereum from source: mock whitepaper text
+2025-11-22 08:47:46,410 - orchestrator - INFO - Agent onchain_data_agent completed for report test_report_123.
+2025-11-22 08:47:46,410 - orchestrator - INFO - Agent social_sentiment_agent completed for report test_report_123.
+2025-11-22 08:47:46,411 - orchestrator - INFO - Whitepaper analysis completed for token ethereum.
+2025-11-22 08:47:46,411 - orchestrator - INFO - Agent team_documentation_agent completed for report test_report_123.
+2025-11-22 08:47:46,411 - orchestrator - INFO - Agent code_audit_agent completed for report test_report_123.
+2025-11-22 08:47:46,411 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 08:47:54,033 - orchestrator - INFO - Report test_report_123 status updated to completed.
+2025-11-22 08:47:54,048 - orchestrator - INFO - Registering agent: onchain_data_agent
+2025-11-22 08:47:54,048 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 08:47:54,048 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 08:47:54,048 - orchestrator - INFO - Registering agent: code_audit_agent
+2025-11-22 08:47:54,048 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:54,048 - orchestrator - INFO - Executing agents for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:54,049 - orchestrator - INFO - Calling Onchain Data Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:54,049 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:54,049 - orchestrator - INFO - Social Sentiment Agent completed for report test_report_123.
+2025-11-22 08:47:54,049 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:54,049 - orchestrator - INFO - Scraping team profiles for token ethereum from URLs: ['http://mock-team-profile.com']
+2025-11-22 08:47:54,049 - orchestrator - INFO - Calling Code/Audit Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:47:54,061 - orchestrator - INFO - Fetching repository metrics for http://mock-code-audit.com/repo
+2025-11-22 08:47:54,061 - orchestrator - INFO - Analyzing code activity for http://mock-code-audit.com/repo
+2025-11-22 08:47:54,061 - orchestrator - INFO - Searching and summarizing audit reports for http://mock-code-audit.com/repo
+2025-11-22 08:47:54,063 - orchestrator - INFO - Team profile scraping completed for token ethereum.
+2025-11-22 08:47:54,063 - orchestrator - INFO - Analyzing whitepaper for token ethereum from source: mock whitepaper text
+2025-11-22 08:47:54,063 - orchestrator - ERROR - Onchain metrics fetch timed out for report test_report_123
+2025-11-22 08:47:54,063 - orchestrator - INFO - Agent onchain_data_agent completed for report test_report_123.
+2025-11-22 08:47:54,063 - orchestrator - INFO - Agent social_sentiment_agent completed for report test_report_123.
+2025-11-22 08:47:54,064 - orchestrator - INFO - Whitepaper analysis completed for token ethereum.
+2025-11-22 08:47:54,064 - orchestrator - INFO - Agent team_documentation_agent completed for report test_report_123.
+2025-11-22 08:47:54,064 - orchestrator - INFO - Agent code_audit_agent completed for report test_report_123.
+2025-11-22 08:47:54,064 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 08:47:54,064 - orchestrator - ERROR - Report test_report_123 failed due to one or more agent failures.
+2025-11-22 08:48:00,450 - orchestrator - INFO - Report test_report_123 status updated to failed.
+2025-11-22 08:48:00,456 - orchestrator - INFO - Registering agent: onchain_data_agent
+2025-11-22 08:48:00,456 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 08:48:00,456 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 08:48:00,456 - orchestrator - INFO - Registering agent: code_audit_agent
+2025-11-22 08:48:00,456 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:48:00,456 - orchestrator - INFO - Executing agents for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:48:00,456 - orchestrator - INFO - Calling Onchain Data Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:48:00,457 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:48:00,457 - orchestrator - INFO - Social Sentiment Agent completed for report test_report_123.
+2025-11-22 08:48:00,457 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:48:00,457 - orchestrator - INFO - Scraping team profiles for token ethereum from URLs: ['http://mock-team-profile.com']
+2025-11-22 08:48:00,457 - orchestrator - INFO - Calling Code/Audit Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 08:48:00,473 - orchestrator - INFO - Fetching repository metrics for http://mock-code-audit.com/repo
+2025-11-22 08:48:00,474 - orchestrator - INFO - Analyzing code activity for http://mock-code-audit.com/repo
+2025-11-22 08:48:00,474 - orchestrator - INFO - Searching and summarizing audit reports for http://mock-code-audit.com/repo
+2025-11-22 08:48:00,475 - orchestrator - INFO - Team profile scraping completed for token ethereum.
+2025-11-22 08:48:00,475 - orchestrator - INFO - Analyzing whitepaper for token ethereum from source: mock whitepaper text
+2025-11-22 08:48:00,476 - orchestrator - ERROR - Tokenomics fetch failed for report test_report_123
+2025-11-22 08:48:00,476 - orchestrator - INFO - Agent onchain_data_agent completed for report test_report_123.
+2025-11-22 08:48:00,476 - orchestrator - INFO - Agent social_sentiment_agent completed for report test_report_123.
+2025-11-22 08:48:00,476 - orchestrator - INFO - Whitepaper analysis completed for token ethereum.
+2025-11-22 08:48:00,476 - orchestrator - INFO - Agent team_documentation_agent completed for report test_report_123.
+2025-11-22 08:48:00,476 - orchestrator - INFO - Agent code_audit_agent completed for report test_report_123.
+2025-11-22 08:48:00,476 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 08:48:00,476 - orchestrator - ERROR - Report test_report_123 failed due to one or more agent failures.
+2025-11-22 08:48:05,319 - orchestrator - INFO - Report test_report_123 status updated to failed.

@@ -109,7 +109,7 @@ class Orchestrator(AIOrchestrator):
 
         # Generate NLG outputs (placeholder for actual NLG generation)
         # In a real scenario, nlg_engine would process aggregated_data to produce text
-        nlg_outputs = await nlg_engine.generate_nlg_outputs(aggregated_data) # Assuming this method exists
+        nlg_sections = await nlg_engine.generate_nlg_outputs(aggregated_data) # Assuming this method exists
 
         # Prepare score_input for the summary engine
         score_input = {
@@ -123,7 +123,7 @@ class Orchestrator(AIOrchestrator):
         scores = summary_engine.generate_scores(score_input)
 
         # Build final summary
-        final_summary = summary_engine.build_final_summary(nlg_outputs, scores)
+        final_summary = summary_engine.build_final_summary(nlg_sections, scores)
 
         # Update in_memory_reports
         if report_id in in_memory_reports:
@@ -131,6 +131,7 @@ class Orchestrator(AIOrchestrator):
                 "status": overall_status,
                 "data": aggregated_data,
                 "scores": scores,  # Add scores to the report
+                "nlg_sections": nlg_sections, # Add NLG generated sections to the report
                 "summary": final_summary # Add final summary to the report
             })
             orchestrator_logger.info(f"Report {report_id} status updated to {overall_status}.")

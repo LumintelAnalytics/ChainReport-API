@@ -39,6 +39,15 @@ async def process_report(report_id: str, token_id: str) -> bool:
         agent_results = await orchestrator.execute_agents(report_id, token_id)
         combined_report_data = orchestrator.aggregate_results(agent_results)
 
+        # Generate NLG outputs
+        nlg_engine = ReportNLGEngine()
+        nlg_outputs = await nlg_engine.generate_nlg_outputs(combined_report_data)
+
+        # Generate summary
+        summary_engine = ReportSummaryEngine()
+        scores = summary_engine.generate_scores(combined_report_data)
+        final_narrative_summary = await summary_engine.build_final_summary(nlg_outputs, scores)
+
         # Determine overall status based on agent results
         overall_status = "completed"
         if any(result["status"] == "failed" for result in agent_results.values()):
@@ -52,9 +61,9 @@ async def process_report(report_id: str, token_id: str) -> bool:
         }
 
         # Save the combined_report_data first
-        save_report_data(report_id, combined_report_data)
+        save_report_data(report_id, combined_report_data, update_status=False)
         # Then save the final report content
-        save_report_data(report_id, final_report_content, key="final_report")
+        save_report_data(report_id, final_report_content, key="final_report", update_status=False)
 
         set_report_status(report_id, overall_status)
 

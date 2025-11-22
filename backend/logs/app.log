@@ -7564,3 +7564,352 @@ Exception: Agent failed
 2025-11-22 08:48:00,476 - orchestrator - INFO - Aggregating results from executed agents.
 2025-11-22 08:48:00,476 - orchestrator - ERROR - Report test_report_123 failed due to one or more agent failures.
 2025-11-22 08:48:05,319 - orchestrator - INFO - Report test_report_123 status updated to failed.
+2025-11-22 14:08:19,076 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-22 14:08:19,076 - orchestrator - WARNING - Onchain Data Agent will not be registered due to invalid configuration.
+2025-11-22 14:08:19,076 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 14:08:19,076 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 14:08:19,076 - orchestrator - WARNING - Configuration Error: CODE_AUDIT_REPO_URL is missing. Skipping agent registration.
+2025-11-22 14:08:19,076 - orchestrator - WARNING - Code/Audit Agent will not be registered due to invalid CODE_AUDIT_REPO_URL configuration.
+2025-11-22 14:08:19,076 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-22 14:08:19,076 - orchestrator - INFO - Registering agent: AgentTwo
+2025-11-22 14:08:19,301 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:19,302 - services - ERROR - [Token ID: test_token_id] Timeout fetching on-chain metrics from http://test.com/onchain: Read timeout
+2025-11-22 14:08:19,312 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:19,313 - services - ERROR - [Token ID: test_token_id] Timeout fetching on-chain metrics from http://test.com/onchain: Read timeout
+2025-11-22 14:08:19,324 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:19,324 - services - INFO - [Token ID: test_token_id] API call to http://test.com/onchain successful. Status: 200, Response size: 0 bytes
+2025-11-22 14:08:20,330 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:20,331 - services - ERROR - [Token ID: test_token_id] Network error fetching on-chain metrics from http://test.com/onchain: Network error
+2025-11-22 14:08:20,341 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:20,342 - services - ERROR - [Token ID: test_token_id] Network error fetching on-chain metrics from http://test.com/onchain: Network error
+2025-11-22 14:08:20,352 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:20,353 - services - INFO - [Token ID: test_token_id] API call to http://test.com/onchain successful. Status: 200, Response size: 0 bytes
+2025-11-22 14:08:21,361 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:21,361 - services - ERROR - [Token ID: test_token_id] HTTP error fetching on-chain metrics from http://test.com/onchain: 500. Response text truncated: 
+2025-11-22 14:08:21,372 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:21,373 - services - ERROR - [Token ID: test_token_id] HTTP error fetching on-chain metrics from http://test.com/onchain: 500. Response text truncated: 
+2025-11-22 14:08:21,383 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:21,384 - services - INFO - [Token ID: test_token_id] API call to http://test.com/onchain successful. Status: 200, Response size: 0 bytes
+2025-11-22 14:08:22,389 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:22,390 - services - ERROR - [Token ID: test_token_id] Timeout fetching on-chain metrics from http://test.com/onchain: Read timeout
+2025-11-22 14:08:22,400 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:22,401 - services - ERROR - [Token ID: test_token_id] Timeout fetching on-chain metrics from http://test.com/onchain: Read timeout
+2025-11-22 14:08:22,411 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:22,412 - services - ERROR - [Token ID: test_token_id] Timeout fetching on-chain metrics from http://test.com/onchain: Read timeout
+2025-11-22 14:08:22,420 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:22,420 - services - ERROR - [Token ID: test_token_id] HTTP error fetching on-chain metrics from http://test.com/onchain: 429. Response text truncated: Too Many Requests
+2025-11-22 14:08:22,431 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:22,431 - services - ERROR - [Token ID: test_token_id] HTTP error fetching on-chain metrics from http://test.com/onchain: 429. Response text truncated: Too Many Requests
+2025-11-22 14:08:22,442 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:22,443 - services - INFO - [Token ID: test_token_id] API call to http://test.com/onchain successful. Status: 200, Response size: 0 bytes
+2025-11-22 14:08:23,450 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:23,451 - services - ERROR - [Token ID: test_token] HTTP error fetching tokenomics data from http://test.com/tokenomics: 429. Response text truncated: Too Many Requests
+2025-11-22 14:08:23,461 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:23,462 - services - ERROR - [Token ID: test_token] HTTP error fetching tokenomics data from http://test.com/tokenomics: 429. Response text truncated: Too Many Requests
+2025-11-22 14:08:23,473 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:23,473 - services - INFO - [Token ID: test_token] API call to http://test.com/tokenomics successful. Status: 200, Output size: 22 bytes
+2025-11-22 14:08:24,486 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:24,487 - services - ERROR - [Token ID: test_token] Timeout fetching tokenomics data from http://test.com/tokenomics: Read timeout
+2025-11-22 14:08:24,498 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:24,498 - services - ERROR - [Token ID: test_token] Timeout fetching tokenomics data from http://test.com/tokenomics: Read timeout
+2025-11-22 14:08:24,509 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:24,509 - services - INFO - [Token ID: test_token] API call to http://test.com/tokenomics successful. Status: 200, Output size: 22 bytes
+2025-11-22 14:08:25,514 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:25,515 - services - ERROR - [Token ID: test_token] Network error fetching tokenomics data from http://test.com/tokenomics: Network error
+2025-11-22 14:08:25,525 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:25,526 - services - ERROR - [Token ID: test_token] Network error fetching tokenomics data from http://test.com/tokenomics: Network error
+2025-11-22 14:08:25,536 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:25,537 - services - ERROR - [Token ID: test_token] Network error fetching tokenomics data from http://test.com/tokenomics: Network error
+2025-11-22 14:08:25,546 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:25,547 - services - ERROR - [Token ID: test_token_id] HTTP error fetching on-chain metrics from http://test.com/onchain: 404. Response text truncated: 
+2025-11-22 14:08:25,557 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:25,558 - services - ERROR - [Token ID: test_token_id] HTTP error fetching on-chain metrics from http://test.com/onchain: 404. Response text truncated: 
+2025-11-22 14:08:25,568 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:25,569 - services - ERROR - [Token ID: test_token_id] HTTP error fetching on-chain metrics from http://test.com/onchain: 404. Response text truncated: 
+2025-11-22 14:08:25,572 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:25,583 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:25,594 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:25,600 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:25,601 - services - ERROR - [Token ID: test_token] HTTP error fetching tokenomics data from http://test.com/tokenomics: 403. Response text truncated: 
+2025-11-22 14:08:25,612 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:25,612 - services - ERROR - [Token ID: test_token] HTTP error fetching tokenomics data from http://test.com/tokenomics: 403. Response text truncated: 
+2025-11-22 14:08:25,623 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:25,623 - services - ERROR - [Token ID: test_token] HTTP error fetching tokenomics data from http://test.com/tokenomics: 403. Response text truncated: 
+2025-11-22 14:08:25,627 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:25,627 - services - ERROR - [Token ID: test_token] An unexpected error occurred while fetching tokenomics data from http://test.com/tokenomics
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/services/agents/onchain_agent.py", line 111, in fetch_tokenomics
+    response = await client.get(url, params=params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2330, in _execute_mock_call
+    raise result
+Exception: Another unexpected error
+2025-11-22 14:08:25,641 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:25,641 - services - ERROR - [Token ID: test_token] An unexpected error occurred while fetching tokenomics data from http://test.com/tokenomics
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/services/agents/onchain_agent.py", line 111, in fetch_tokenomics
+    response = await client.get(url, params=params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2330, in _execute_mock_call
+    raise result
+Exception: Another unexpected error
+2025-11-22 14:08:25,652 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:25,652 - services - ERROR - [Token ID: test_token] An unexpected error occurred while fetching tokenomics data from http://test.com/tokenomics
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/services/agents/onchain_agent.py", line 111, in fetch_tokenomics
+    response = await client.get(url, params=params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2330, in _execute_mock_call
+    raise result
+Exception: Another unexpected error
+2025-11-22 14:08:25,657 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:25,658 - services - INFO - [Token ID: test_token_id] API call to http://test.com/onchain successful. Status: 200, Response size: 0 bytes
+2025-11-22 14:08:26,665 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:26,666 - services - INFO - [Token ID: test_token] API call to http://test.com/tokenomics successful. Status: 200, Output size: 167 bytes
+2025-11-22 14:08:27,674 - services - INFO - [Token ID: test_token_id] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:27,675 - services - INFO - [Token ID: test_token_id] API call to http://test.com/onchain successful. Status: 200, Response size: 0 bytes
+2025-11-22 14:08:28,684 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {}
+2025-11-22 14:08:28,684 - services - INFO - [Token ID: test_token] API call to http://test.com/tokenomics successful. Status: 200, Output size: 56 bytes
+2025-11-22 14:08:29,690 - services - INFO - [Token ID: invalid] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:29,691 - services - ERROR - [Token ID: invalid] HTTP error fetching on-chain metrics from http://test.com/onchain: 400. Response text truncated: 
+2025-11-22 14:08:30,692 - services - INFO - [Token ID: invalid] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:30,693 - services - ERROR - [Token ID: invalid] HTTP error fetching on-chain metrics from http://test.com/onchain: 400. Response text truncated: 
+2025-11-22 14:08:32,695 - services - INFO - [Token ID: invalid] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:32,696 - services - ERROR - [Token ID: invalid] HTTP error fetching on-chain metrics from http://test.com/onchain: 400. Response text truncated: 
+2025-11-22 14:08:36,700 - services - INFO - [Token ID: invalid] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:36,701 - services - ERROR - [Token ID: invalid] HTTP error fetching on-chain metrics from http://test.com/onchain: 400. Response text truncated: 
+2025-11-22 14:08:44,709 - services - INFO - [Token ID: invalid] Initiating API call to http://test.com/onchain with params: {}
+2025-11-22 14:08:44,710 - services - ERROR - [Token ID: invalid] HTTP error fetching on-chain metrics from http://test.com/onchain: 400. Response text truncated: 
+2025-11-22 14:08:44,714 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {'token_id': 'nonexistent'}
+2025-11-22 14:08:44,715 - services - ERROR - [Token ID: test_token] HTTP error fetching tokenomics data from http://test.com/tokenomics: 404. Response text truncated: 
+2025-11-22 14:08:45,717 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {'token_id': 'nonexistent'}
+2025-11-22 14:08:45,717 - services - ERROR - [Token ID: test_token] HTTP error fetching tokenomics data from http://test.com/tokenomics: 404. Response text truncated: 
+2025-11-22 14:08:47,720 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {'token_id': 'nonexistent'}
+2025-11-22 14:08:47,720 - services - ERROR - [Token ID: test_token] HTTP error fetching tokenomics data from http://test.com/tokenomics: 404. Response text truncated: 
+2025-11-22 14:08:51,725 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {'token_id': 'nonexistent'}
+2025-11-22 14:08:51,725 - services - ERROR - [Token ID: test_token] HTTP error fetching tokenomics data from http://test.com/tokenomics: 404. Response text truncated: 
+2025-11-22 14:08:59,734 - services - INFO - [Token ID: test_token] Initiating API call to http://test.com/tokenomics with params: {'token_id': 'nonexistent'}
+2025-11-22 14:08:59,734 - services - ERROR - [Token ID: test_token] HTTP error fetching tokenomics data from http://test.com/tokenomics: 404. Response text truncated: 
+2025-11-22 14:09:01,819 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-22 14:09:01,821 - orchestrator - ERROR - Error scraping http://example.com/team/network-error: Network is unreachable
+2025-11-22 14:09:01,822 - orchestrator - ERROR - Error scraping http://example.com/team/404: HTTP Error: 404
+2025-11-22 14:09:01,822 - orchestrator - ERROR - Error scraping http://example.com/team/connection-refused: Connection refused
+2025-11-22 14:09:01,826 - orchestrator - INFO - Generating team and documentation analysis using LLM.
+2025-11-22 14:09:02,085 - orchestrator - INFO - Registering agent: price_agent
+2025-11-22 14:09:02,085 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-22 14:09:02,085 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-22 14:09:02,085 - orchestrator - INFO - Executing agents for report_id: test_report_1, token_id: test_token_1
+2025-11-22 14:09:02,086 - orchestrator - INFO - Agent price_agent completed for report test_report_1.
+2025-11-22 14:09:02,086 - orchestrator - INFO - Agent trend_agent completed for report test_report_1.
+2025-11-22 14:09:02,086 - orchestrator - INFO - Agent volume_agent completed for report test_report_1.
+2025-11-22 14:09:02,086 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:09:02,090 - orchestrator - INFO - Registering agent: price_agent
+2025-11-22 14:09:02,090 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-22 14:09:02,090 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-22 14:09:02,090 - orchestrator - INFO - Executing agents for report_id: test_report_3, token_id: test_token_3
+2025-11-22 14:09:02,090 - orchestrator - ERROR - Agent price_agent failed for report test_report_3
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/core/orchestrator.py", line 56, in execute_agents
+    result = await asyncio.wait_for(task, timeout=settings.AGENT_TIMEOUT) # Added timeout
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/asyncio/tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    raise effect
+Exception: Agent error
+2025-11-22 14:09:02,191 - orchestrator - INFO - Agent trend_agent completed for report test_report_3.
+2025-11-22 14:09:02,191 - orchestrator - INFO - Agent volume_agent completed for report test_report_3.
+2025-11-22 14:09:02,191 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:09:02,199 - orchestrator - INFO - Registering agent: price_agent
+2025-11-22 14:09:02,199 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-22 14:09:02,199 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-22 14:09:02,199 - orchestrator - INFO - Executing agents for report_id: concurrent_report, token_id: concurrent_token
+2025-11-22 14:09:02,202 - orchestrator - INFO - Agent price_agent completed for report concurrent_report.
+2025-11-22 14:09:02,202 - orchestrator - INFO - Agent trend_agent completed for report concurrent_report.
+2025-11-22 14:09:02,202 - orchestrator - INFO - Agent volume_agent completed for report concurrent_report.
+2025-11-22 14:09:02,202 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:09:02,205 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-22 14:09:02,205 - orchestrator - INFO - Registering agent: AgentTwo
+2025-11-22 14:09:02,205 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_id_success, token_id: test_token_id
+2025-11-22 14:09:02,205 - orchestrator - INFO - Executing agents for report_id: test_report_id_success, token_id: test_token_id
+2025-11-22 14:09:02,205 - orchestrator - INFO - Agent AgentOne completed for report test_report_id_success.
+2025-11-22 14:09:02,205 - orchestrator - INFO - Agent AgentTwo completed for report test_report_id_success.
+2025-11-22 14:09:02,205 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:09:02,205 - orchestrator - INFO - Report test_report_id_success status updated to completed.
+2025-11-22 14:09:02,208 - orchestrator - INFO - Registering agent: AgentOne
+2025-11-22 14:09:02,208 - orchestrator - INFO - Registering agent: AgentFailing
+2025-11-22 14:09:02,208 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_id_failure, token_id: test_token_id
+2025-11-22 14:09:02,208 - orchestrator - INFO - Executing agents for report_id: test_report_id_failure, token_id: test_token_id
+2025-11-22 14:09:02,208 - orchestrator - INFO - Agent AgentOne completed for report test_report_id_failure.
+2025-11-22 14:09:02,208 - orchestrator - ERROR - Agent AgentFailing failed for report test_report_id_failure
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/core/orchestrator.py", line 56, in execute_agents
+    result = await asyncio.wait_for(task, timeout=settings.AGENT_TIMEOUT) # Added timeout
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/asyncio/tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    raise effect
+Exception: Agent failed
+2025-11-22 14:09:02,209 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:09:02,209 - orchestrator - ERROR - Report test_report_id_failure failed due to one or more agent failures.
+2025-11-22 14:09:02,209 - orchestrator - INFO - Report test_report_id_failure status updated to failed.
+2025-11-22 14:09:02,211 - orchestrator - INFO - Registering agent: a
+2025-11-22 14:09:02,212 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-22 14:09:02,212 - orchestrator - WARNING - Onchain Data Agent will not be registered due to invalid configuration.
+2025-11-22 14:09:02,212 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 14:09:02,212 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 14:09:02,212 - orchestrator - WARNING - Configuration Error: CODE_AUDIT_REPO_URL is missing. Skipping agent registration.
+2025-11-22 14:09:02,212 - orchestrator - WARNING - Code/Audit Agent will not be registered due to invalid CODE_AUDIT_REPO_URL configuration.
+2025-11-22 14:09:02,213 - orchestrator - INFO - Registering agent: dummy_agent
+2025-11-22 14:09:02,213 - orchestrator - WARNING - Configuration Error: ONCHAIN_METRICS_URL is missing. Skipping agent registration.
+2025-11-22 14:09:02,213 - orchestrator - WARNING - Onchain Data Agent will not be registered due to invalid configuration.
+2025-11-22 14:09:02,213 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 14:09:02,213 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 14:09:02,213 - orchestrator - WARNING - Configuration Error: CODE_AUDIT_REPO_URL is missing. Skipping agent registration.
+2025-11-22 14:09:02,213 - orchestrator - WARNING - Code/Audit Agent will not be registered due to invalid CODE_AUDIT_REPO_URL configuration.
+2025-11-22 14:09:02,237 - orchestrator - INFO - Registering agent: onchain_data_agent
+2025-11-22 14:09:02,237 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 14:09:02,237 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 14:09:02,237 - orchestrator - INFO - Registering agent: code_audit_agent
+2025-11-22 14:09:02,237 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,237 - orchestrator - INFO - Executing agents for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,237 - orchestrator - INFO - Calling Onchain Data Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,237 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,237 - orchestrator - INFO - Social Sentiment Agent completed for report test_report_123.
+2025-11-22 14:09:02,237 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,238 - orchestrator - INFO - Scraping team profiles for token ethereum from URLs: ['http://mock-team-profile.com']
+2025-11-22 14:09:02,240 - orchestrator - INFO - Calling Code/Audit Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,250 - orchestrator - INFO - Fetching repository metrics for http://mock-code-audit.com/repo
+2025-11-22 14:09:02,251 - orchestrator - INFO - Analyzing code activity for http://mock-code-audit.com/repo
+2025-11-22 14:09:02,251 - orchestrator - INFO - Searching and summarizing audit reports for http://mock-code-audit.com/repo
+2025-11-22 14:09:02,252 - orchestrator - INFO - Team profile scraping completed for token ethereum.
+2025-11-22 14:09:02,252 - orchestrator - INFO - Analyzing whitepaper for token ethereum from source: mock whitepaper text
+2025-11-22 14:09:02,253 - orchestrator - INFO - Agent onchain_data_agent completed for report test_report_123.
+2025-11-22 14:09:02,253 - orchestrator - INFO - Agent social_sentiment_agent completed for report test_report_123.
+2025-11-22 14:09:02,253 - orchestrator - INFO - Whitepaper analysis completed for token ethereum.
+2025-11-22 14:09:02,253 - orchestrator - INFO - Agent team_documentation_agent completed for report test_report_123.
+2025-11-22 14:09:02,253 - orchestrator - INFO - Agent code_audit_agent completed for report test_report_123.
+2025-11-22 14:09:02,253 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:09:02,254 - orchestrator - INFO - Report test_report_123 status updated to completed.
+2025-11-22 14:09:02,260 - orchestrator - INFO - Registering agent: onchain_data_agent
+2025-11-22 14:09:02,260 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 14:09:02,260 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 14:09:02,260 - orchestrator - INFO - Registering agent: code_audit_agent
+2025-11-22 14:09:02,260 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,260 - orchestrator - INFO - Executing agents for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,260 - orchestrator - INFO - Calling Onchain Data Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,260 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,260 - orchestrator - INFO - Social Sentiment Agent completed for report test_report_123.
+2025-11-22 14:09:02,260 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,260 - orchestrator - INFO - Scraping team profiles for token ethereum from URLs: ['http://mock-team-profile.com']
+2025-11-22 14:09:02,261 - orchestrator - INFO - Calling Code/Audit Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,270 - orchestrator - INFO - Fetching repository metrics for http://mock-code-audit.com/repo
+2025-11-22 14:09:02,271 - orchestrator - INFO - Analyzing code activity for http://mock-code-audit.com/repo
+2025-11-22 14:09:02,271 - orchestrator - INFO - Searching and summarizing audit reports for http://mock-code-audit.com/repo
+2025-11-22 14:09:02,273 - orchestrator - INFO - Team profile scraping completed for token ethereum.
+2025-11-22 14:09:02,273 - orchestrator - INFO - Analyzing whitepaper for token ethereum from source: mock whitepaper text
+2025-11-22 14:09:02,273 - orchestrator - ERROR - Onchain metrics fetch timed out for report test_report_123
+2025-11-22 14:09:02,273 - orchestrator - INFO - Agent onchain_data_agent completed for report test_report_123.
+2025-11-22 14:09:02,273 - orchestrator - INFO - Agent social_sentiment_agent completed for report test_report_123.
+2025-11-22 14:09:02,273 - orchestrator - INFO - Whitepaper analysis completed for token ethereum.
+2025-11-22 14:09:02,273 - orchestrator - INFO - Agent team_documentation_agent completed for report test_report_123.
+2025-11-22 14:09:02,273 - orchestrator - INFO - Agent code_audit_agent completed for report test_report_123.
+2025-11-22 14:09:02,273 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:09:02,273 - orchestrator - ERROR - Report test_report_123 failed due to one or more agent failures.
+2025-11-22 14:09:02,274 - orchestrator - INFO - Report test_report_123 status updated to failed.
+2025-11-22 14:09:02,280 - orchestrator - INFO - Registering agent: onchain_data_agent
+2025-11-22 14:09:02,280 - orchestrator - INFO - Registering agent: social_sentiment_agent
+2025-11-22 14:09:02,281 - orchestrator - INFO - Registering agent: team_documentation_agent
+2025-11-22 14:09:02,281 - orchestrator - INFO - Registering agent: code_audit_agent
+2025-11-22 14:09:02,281 - orchestrator - INFO - Executing agents concurrently for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,281 - orchestrator - INFO - Executing agents for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,281 - orchestrator - INFO - Calling Onchain Data Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,281 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,281 - orchestrator - INFO - Social Sentiment Agent completed for report test_report_123.
+2025-11-22 14:09:02,281 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,281 - orchestrator - INFO - Scraping team profiles for token ethereum from URLs: ['http://mock-team-profile.com']
+2025-11-22 14:09:02,281 - orchestrator - INFO - Calling Code/Audit Agent for report_id: test_report_123, token_id: ethereum
+2025-11-22 14:09:02,292 - orchestrator - INFO - Fetching repository metrics for http://mock-code-audit.com/repo
+2025-11-22 14:09:02,292 - orchestrator - INFO - Analyzing code activity for http://mock-code-audit.com/repo
+2025-11-22 14:09:02,292 - orchestrator - INFO - Searching and summarizing audit reports for http://mock-code-audit.com/repo
+2025-11-22 14:09:02,293 - orchestrator - INFO - Team profile scraping completed for token ethereum.
+2025-11-22 14:09:02,294 - orchestrator - INFO - Analyzing whitepaper for token ethereum from source: mock whitepaper text
+2025-11-22 14:09:02,294 - orchestrator - ERROR - Tokenomics fetch failed for report test_report_123
+2025-11-22 14:09:02,294 - orchestrator - INFO - Agent onchain_data_agent completed for report test_report_123.
+2025-11-22 14:09:02,294 - orchestrator - INFO - Agent social_sentiment_agent completed for report test_report_123.
+2025-11-22 14:09:02,294 - orchestrator - INFO - Whitepaper analysis completed for token ethereum.
+2025-11-22 14:09:02,294 - orchestrator - INFO - Agent team_documentation_agent completed for report test_report_123.
+2025-11-22 14:09:02,294 - orchestrator - INFO - Agent code_audit_agent completed for report test_report_123.
+2025-11-22 14:09:02,294 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:09:02,294 - orchestrator - ERROR - Report test_report_123 failed due to one or more agent failures.
+2025-11-22 14:09:02,295 - orchestrator - INFO - Report test_report_123 status updated to failed.
+2025-11-22 14:09:02,303 - api - INFO - Received report generation request for token_id: test_token
+2025-11-22 14:09:02,303 - services - INFO - Generating new report for token_id: test_token
+2025-11-22 14:09:02,305 - api - INFO - Received data request for report_id: d6230c2c-b0d8-47f9-aca1-d497d66dc846
+2025-11-22 14:09:02,305 - services - INFO - Attempting to retrieve data for report_id: d6230c2c-b0d8-47f9-aca1-d497d66dc846
+2025-11-22 14:09:02,305 - services - INFO - Report d6230c2c-b0d8-47f9-aca1-d497d66dc846 is in status: processing, returning status only.
+2025-11-22 14:09:02,305 - api - WARNING - Report d6230c2c-b0d8-47f9-aca1-d497d66dc846 is still processing.
+2025-11-22 14:09:02,311 - api - INFO - Received report generation request for token_id: test_token
+2025-11-22 14:09:02,311 - services - INFO - Generating new report for token_id: test_token
+2025-11-22 14:09:02,311 - orchestrator - INFO - Executing agents concurrently for report_id: f5814b9b-4c26-4959-9fe5-9630bc911a6b, token_id: test_token
+2025-11-22 14:09:02,311 - orchestrator - INFO - Executing agents for report_id: f5814b9b-4c26-4959-9fe5-9630bc911a6b, token_id: test_token
+2025-11-22 14:09:02,311 - orchestrator - INFO - Calling Social Sentiment Agent for report_id: f5814b9b-4c26-4959-9fe5-9630bc911a6b, token_id: test_token
+2025-11-22 14:09:02,311 - orchestrator - INFO - Calling Team and Documentation Agent for report_id: f5814b9b-4c26-4959-9fe5-9630bc911a6b, token_id: test_token
+2025-11-22 14:09:02,311 - orchestrator - INFO - Scraping team profiles for token test_token from URLs: []
+2025-11-22 14:09:02,312 - orchestrator - INFO - Team profile scraping completed for token test_token.
+2025-11-22 14:09:02,312 - orchestrator - WARNING - No whitepaper text source provided for token test_token. Skipping whitepaper analysis.
+2025-11-22 14:09:05,317 - orchestrator - INFO - Social Sentiment Agent completed for report f5814b9b-4c26-4959-9fe5-9630bc911a6b.
+2025-11-22 14:09:05,317 - orchestrator - INFO - Agent social_sentiment_agent completed for report f5814b9b-4c26-4959-9fe5-9630bc911a6b.
+2025-11-22 14:09:05,318 - orchestrator - INFO - Agent team_documentation_agent completed for report f5814b9b-4c26-4959-9fe5-9630bc911a6b.
+2025-11-22 14:09:05,318 - orchestrator - INFO - Agent AgentOne completed for report f5814b9b-4c26-4959-9fe5-9630bc911a6b.
+2025-11-22 14:09:05,318 - orchestrator - INFO - Agent AgentTwo completed for report f5814b9b-4c26-4959-9fe5-9630bc911a6b.
+2025-11-22 14:09:05,318 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:09:05,318 - orchestrator - INFO - Report f5814b9b-4c26-4959-9fe5-9630bc911a6b status updated to completed.
+2025-11-22 14:09:05,320 - api - INFO - Received status request for report_id: f5814b9b-4c26-4959-9fe5-9630bc911a6b
+2025-11-22 14:09:05,320 - services - INFO - Retrieving status for report_id: f5814b9b-4c26-4959-9fe5-9630bc911a6b from memory.
+2025-11-22 14:09:05,321 - api - INFO - Received data request for report_id: f5814b9b-4c26-4959-9fe5-9630bc911a6b
+2025-11-22 14:09:05,322 - services - INFO - Attempting to retrieve data for report_id: f5814b9b-4c26-4959-9fe5-9630bc911a6b
+2025-11-22 14:09:05,322 - services - INFO - Report f5814b9b-4c26-4959-9fe5-9630bc911a6b is completed, returning data.
+2025-11-22 14:09:05,322 - api - INFO - Returning data for report_id: f5814b9b-4c26-4959-9fe5-9630bc911a6b
+2025-11-22 14:09:05,329 - api - INFO - Received data request for report_id: non_existent_report
+2025-11-22 14:09:05,329 - services - INFO - Attempting to retrieve data for report_id: non_existent_report
+2025-11-22 14:09:05,329 - services - WARNING - Report with id non_existent_report not found when attempting to retrieve data.
+2025-11-22 14:09:05,329 - api - ERROR - Report with id non_existent_report not found or not completed for data request.
+2025-11-22 14:09:05,329 - api - ERROR - ReportNotFoundException: Report not found or not completed
+2025-11-22 14:48:46,941 - orchestrator - INFO - Registering agent: price_agent
+2025-11-22 14:48:46,941 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-22 14:48:46,941 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-22 14:48:46,941 - orchestrator - INFO - Executing agents for report_id: test_report_1, token_id: test_token_1
+2025-11-22 14:48:46,941 - orchestrator - INFO - Agent price_agent completed for report test_report_1.
+2025-11-22 14:48:46,941 - orchestrator - INFO - Agent trend_agent completed for report test_report_1.
+2025-11-22 14:48:46,941 - orchestrator - INFO - Agent volume_agent completed for report test_report_1.
+2025-11-22 14:48:46,941 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:48:46,945 - orchestrator - INFO - Registering agent: price_agent
+2025-11-22 14:48:46,946 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-22 14:48:46,946 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-22 14:48:46,946 - orchestrator - INFO - Executing agents for report_id: test_report_3, token_id: test_token_3
+2025-11-22 14:48:46,946 - orchestrator - ERROR - Agent price_agent failed for report test_report_3
+Traceback (most recent call last):
+  File "/home/repositories/LumintelAnalytics/ChainReport-API/backend/app/core/orchestrator.py", line 56, in execute_agents
+    result = await asyncio.wait_for(task, timeout=settings.AGENT_TIMEOUT) # Added timeout
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/asyncio/tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.13/unittest/mock.py", line 2321, in _execute_mock_call
+    raise effect
+Exception: Agent error
+2025-11-22 14:48:47,046 - orchestrator - INFO - Agent trend_agent completed for report test_report_3.
+2025-11-22 14:48:47,047 - orchestrator - INFO - Agent volume_agent completed for report test_report_3.
+2025-11-22 14:48:47,047 - orchestrator - INFO - Aggregating results from executed agents.
+2025-11-22 14:48:47,052 - orchestrator - INFO - Registering agent: price_agent
+2025-11-22 14:48:47,052 - orchestrator - INFO - Registering agent: trend_agent
+2025-11-22 14:48:47,052 - orchestrator - INFO - Registering agent: volume_agent
+2025-11-22 14:48:47,052 - orchestrator - INFO - Executing agents for report_id: concurrent_report, token_id: concurrent_token
+2025-11-22 14:48:47,055 - orchestrator - INFO - Agent price_agent completed for report concurrent_report.
+2025-11-22 14:48:47,055 - orchestrator - INFO - Agent trend_agent completed for report concurrent_report.
+2025-11-22 14:48:47,055 - orchestrator - INFO - Agent volume_agent completed for report concurrent_report.
+2025-11-22 14:48:47,055 - orchestrator - INFO - Aggregating results from executed agents.

@@ -41,19 +41,41 @@ def test_build_final_summary(summary_engine):
     nlg_outputs = {
         "tokenomics": "Tokenomics insights text.",
         "social_sentiment": "Social sentiment insights text.",
+        "code_audit": "Code audit insights text.",
     }
     scores = {
         "tokenomics_strength": 7.5,
-        "sentiment_health": 8.2,
+        "sentiment_health": 4.2,
+        "code_maturity": 8.9,
+        "audit_confidence": 3.0,
     }
     summary = summary_engine.build_final_summary(nlg_outputs, scores)
 
-    assert "--- Comprehensive Report Summary ---" in summary
-    assert "Tokenomics Insights:" in summary
-    assert "Tokenomics insights text." in summary
-    assert "Social Sentiment Insights:" in summary
-    assert "Social sentiment insights text." in summary
-    assert "--- Overall Scores (out of 10) ---" in summary
-    assert "Tokenomics Strength: 7.50/10" in summary
-    assert "Sentiment Health: 8.20/10" in summary
-    assert "--- End of Report ---" in summary
+    assert isinstance(summary, dict)
+    assert "overall_summary" in summary
+    assert "scores" in summary
+    assert "weaknesses" in summary
+    assert "strengths" in summary
+
+    # Verify overall_summary content
+    assert "Tokenomics Insights: Tokenomics insights text." in summary["overall_summary"]
+    assert "Social Sentiment Insights: Social sentiment insights text." in summary["overall_summary"]
+    assert "Code Audit Insights: Code audit insights text." in summary["overall_summary"]
+
+    # Verify scores content
+    assert summary["scores"] == {
+        "Tokenomics Strength": 7.5,
+        "Sentiment Health": 4.2,
+        "Code Maturity": 8.9,
+        "Audit Confidence": 3.0,
+    }
+
+    # Verify weaknesses
+    assert "Sentiment Health" in summary["weaknesses"]
+    assert "Audit Confidence" in summary["weaknesses"]
+    assert len(summary["weaknesses"]) == 2
+
+    # Verify strengths
+    assert "Tokenomics Strength" in summary["strengths"]
+    assert "Code Maturity" in summary["strengths"]
+    assert len(summary["strengths"]) == 2

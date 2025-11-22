@@ -45,17 +45,28 @@ class ReportSummaryEngine(SummaryEngine):
 
         return scores
 
-    def build_final_summary(self, nlg_outputs: Dict[str, str], scores: Dict[str, float]) -> str:
-        summary_parts = []
-        summary_parts.append("--- Comprehensive Report Summary ---")
-
+    def build_final_summary(self, nlg_outputs: Dict[str, str], scores: Dict[str, float]) -> Dict[str, Any]:
+        overall_summary_parts = []
         for agent, output in nlg_outputs.items():
-            summary_parts.append(f"\n{agent.replace('_', ' ').title()} Insights:")
-            summary_parts.append(output)
+            overall_summary_parts.append(f"{agent.replace('_', ' ').title()} Insights: {output}")
+        overall_summary = "\n\n".join(overall_summary_parts)
 
-        summary_parts.append("\n--- Overall Scores (out of 10) ---")
-        for score_name, score_value in scores.items():
-            summary_parts.append(f"{score_name.replace('_', ' ').title()}: {score_value:.2f}/10")
+        weaknesses = [
+            score_name.replace('_', ' ').title()
+            for score_name, score_value in scores.items()
+            if score_value < 5.0
+        ]
 
-        summary_parts.append("\n--- End of Report ---")
-        return "\n".join(summary_parts)
+        strengths = [
+            score_name.replace('_', ' ').title()
+            for score_name, score_value in scores.items()
+            if score_value >= 7.0
+        ]
+
+        final_summary = {
+            "overall_summary": overall_summary,
+            "scores": {score_name.replace('_', ' ').title(): round(score_value, 2) for score_name, score_value in scores.items()},
+            "weaknesses": weaknesses,
+            "strengths": strengths,
+        }
+        return final_summary

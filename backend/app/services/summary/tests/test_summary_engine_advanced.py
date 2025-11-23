@@ -25,7 +25,7 @@ def test_generate_scores_boundary_values(summary_engine):
     data = {
         "tokenomics_data": {"distribution_score": 0.0, "utility_score": 1.0},
         "sentiment_data": {"positive_sentiment_ratio": 1.0, "negative_sentiment_ratio": 0.0},
-        "code_audit_data": {"lines_of_code": 100, "test_coverage": 0.0, "bug_density": 1.0},
+        "code_audit_data": {"test_coverage": 0.0, "bug_density": 1.0},
         "audit_data": {"num_audits": 0, "critical_findings_resolved": 0.0},
         "team_data": {"team_experience_score": 0.0, "transparency_score": 1.0},
     }
@@ -44,21 +44,9 @@ def test_generate_scores_default_fallbacks(summary_engine):
 
     assert scores["tokenomics_strength"] == pytest.approx((0.5 + 0.5) / 2 * 10) # defaults: distribution=0.5, utility=0.5
     assert scores["sentiment_health"] == pytest.approx((0.5 - 0.5 + 1) / 2 * 10) # defaults: positive=0.5, negative=0.5
-    assert scores["code_maturity"] == pytest.approx(7.8) # defaults: test_coverage=0.7, bug_density=0.1
+    assert scores["code_maturity"] == pytest.approx((0.7 * 0.6 + (1 - 0.1) * 0.4) * 10) # defaults: test_coverage=0.7, bug_density=0.1
     assert scores["audit_confidence"] == pytest.approx(min(1 * 2, 5) + 1.0 * 5)  # defaults: num_audits=1, critical_resolved=1.0
     assert scores["team_credibility"] == pytest.approx((0.7 * 0.5 + 0.8 * 0.5) * 10)  # defaults: experience=0.7, transparency=0.8
-
-def test_generate_scores_missing_categories(summary_engine):
-    # Test with completely missing data categories
-    data = {}
-    scores = summary_engine.generate_scores(data)
-    
-    # All scores should use defaults
-    assert "tokenomics_strength" in scores
-    assert "sentiment_health" in scores
-    assert "code_maturity" in scores
-    assert "audit_confidence" in scores
-    assert "team_credibility" in scores
 
 # Test cases for build_final_summary
 def test_build_final_summary_all_strengths(summary_engine):

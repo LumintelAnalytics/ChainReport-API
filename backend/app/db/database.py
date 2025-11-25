@@ -4,6 +4,10 @@ from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
 from backend.app.core.config import settings
 
+# Import all models to ensure they are registered with SQLAlchemy Base
+from backend.app.db.models import report  # Import Report first
+from backend.app.db.models import report_state # Then import ReportState
+
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):

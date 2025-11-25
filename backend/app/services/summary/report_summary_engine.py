@@ -22,7 +22,7 @@ class ReportSummaryEngine(SummaryEngine):
         # Code Maturity Score
         # Assuming 'code_audit_data' contains 'lines_of_code', 'test_coverage', 'bug_density'
         code_audit_data = data.get("code_audit_data", {})
-        lines_of_code = code_audit_data.get("lines_of_code", 1000) # Placeholder
+
         test_coverage = code_audit_data.get("test_coverage", 0.7) # Placeholder
         bug_density = code_audit_data.get("bug_density", 0.1) # Placeholder
         # Simple rule: higher coverage, lower bug density, reasonable LOC

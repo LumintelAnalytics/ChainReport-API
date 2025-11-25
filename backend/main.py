@@ -4,12 +4,15 @@ from backend.app.core.config import settings
 from backend.app.api.v1.routes import router as v1_router
 from backend.app.core.exceptions import ReportNotFoundException, AgentExecutionException
 from backend.app.core.logger import api_logger
+from backend.app.core.orchestrator import create_orchestrator, Orchestrator
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
+
+orchestrator_instance: Orchestrator | None = None
 
 @app.exception_handler(ReportNotFoundException)
 async def report_not_found_exception_handler(request: Request, exc: ReportNotFoundException):
@@ -56,6 +59,12 @@ async def generic_exception_handler(request: Request, exc: Exception):
     )
 
 app.include_router(v1_router, prefix="/api/v1")
+
+@app.on_event("startup")
+async def startup_event():
+    global orchestrator_instance
+    orchestrator_instance = await create_orchestrator()
+    api_logger.info("Orchestrator instance initialized.")
 
 @app.get("/health")
 async def health_check():

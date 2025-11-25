@@ -10,6 +10,14 @@ class ReportStatusEnum(PyEnum):
     RUNNING = "running"
     FAILED = "failed"
     COMPLETED = "completed"
+    RUNNING_AGENTS = "running_agents"
+    AGENTS_COMPLETED = "agents_completed"
+    AGENTS_FAILED = "agents_failed"
+    AGENTS_PARTIAL_SUCCESS = "agents_partial_success"
+    GENERATING_NLG = "generating_nlg"
+    NLG_COMPLETED = "nlg_completed"
+    GENERATING_SUMMARY = "generating_summary"
+    SUMMARY_COMPLETED = "summary_completed"
 
 
 
@@ -24,3 +32,4 @@ class ReportState(Base):
     partial_agent_output = Column(JSON, nullable=True)  # Stores partial outputs from agents
     raw_data = Column(JSON, nullable=True)  # Stores raw data collected by agents
     final_report_json = Column(JSON, nullable=True)  # Stores the final generated report JSON
+    error_message = Column(String, nullable=True) # New column for error messages

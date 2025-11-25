@@ -2,28 +2,11 @@ from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import JSONResponse
 from backend.app.models.report_models import ReportRequest, ReportResponse
 from backend.app.services.report_service import generate_report, in_memory_reports, get_report_status_from_memory, get_report_data
-from backend.app.core.orchestrator import create_orchestrator
 from backend.app.core.logger import api_logger
 from backend.app.core.exceptions import ReportNotFoundException
-import asyncio
+from backend.main import orchestrator_instance
 
 router = APIRouter()
-
-# Dummy Agent for demonstration
-async def dummy_agent_one(report_id: str, token_id: str) -> dict:
-    print(f"Dummy Agent One running for report {report_id} and token {token_id}")
-    await asyncio.sleep(2) # Simulate async work
-    return {"agent_one_data": "data_from_agent_one"}
-
-async def dummy_agent_two(report_id: str, token_id: str) -> dict:
-    print(f"Dummy Agent Two running for report {report_id} and token {token_id}")
-    await asyncio.sleep(1.5) # Simulate async work
-    return {"agent_two_data": "data_from_agent_two"}
-
-# Register agents
-orchestrator_instance = create_orchestrator()
-orchestrator_instance.register_agent("AgentOne", dummy_agent_one)
-orchestrator_instance.register_agent("AgentTwo", dummy_agent_two)
 
 @router.get("/")
 async def read_root():

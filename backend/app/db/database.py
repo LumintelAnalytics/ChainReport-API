@@ -6,7 +6,7 @@ from backend.app.core.config import settings
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
-    # Use aiohttp for SQLite with asyncpg driver
+    # SQLite async support via aiosqlite driver
     engine = create_async_engine(
         SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
     )
@@ -21,7 +21,7 @@ AsyncSessionLocal = async_sessionmaker(
     expire_on_commit=False,
 )
 
-Base = declarative_base()
+
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:

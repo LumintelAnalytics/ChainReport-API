@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "ChainReport API"
     DEBUG: bool = False
     API_V1_PREFIX: str = "/api/v1"
-    DATABASE_URL: str = "sqlite:///./sql_app.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./sql_app.db"
     ONCHAIN_METRICS_URL: str | None = None
     TOKENOMICS_URL: str | None = None
     TWITTER_API_KEY: str = ""
@@ -22,6 +22,20 @@ class Settings(BaseSettings):
     TEAM_PROFILE_URLS: Dict[str, List[str]] = {}
     WHITEPAPER_TEXT_SOURCES: Dict[str, str] = {}
     CODE_AUDIT_REPO_URL: str | None = None
+
+    # Database connection settings for PostgreSQL (if used)
+    DB_USER: str | None = None
+    DB_PASSWORD: str | None = None
+    DB_HOST: str | None = None
+    DB_PORT: str | None = None
+    DB_NAME: str | None = None
+
+    # Test database connection settings
+    TEST_DB_USER: str | None = None
+    TEST_DB_PASSWORD: str | None = None
+    TEST_DB_HOST: str | None = None
+    TEST_DB_PORT: str | None = None
+    TEST_DB_NAME: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env")
 

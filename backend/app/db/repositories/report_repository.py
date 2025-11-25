@@ -69,3 +69,14 @@ class ReportRepository:
         stmt = select(ReportState).where(ReportState.report_id == report_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def update_partial(self, report_id: str, data: Dict[str, Any]) -> ReportState | None:
+        try:
+            stmt = update(ReportState).where(ReportState.report_id == report_id).values(**data).returning(ReportState)
+            result = await self.session.execute(stmt)
+            updated_report_state = result.scalar_one_or_none()
+            await self.session.commit()
+            return updated_report_state
+        except Exception:
+            await self.session.rollback()
+            raise

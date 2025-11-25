@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from backend.app.core.orchestrator import AIOrchestrator, Orchestrator # Import Orchestrator
+from backend.app.core.orchestrator import Orchestrator
 from backend.app.services.agents.price_agent import run as price_agent_run
 from backend.app.services.agents.trend_agent import run as trend_agent_run
 from backend.app.services.agents.volume_agent import run as volume_agent_run
@@ -49,7 +49,7 @@ async def process_report(report_id: str, token_id: str, report_repository: Repor
             await report_repository.update_report_status(report_id, ReportStatusEnum.NLG_COMPLETED)
         except Exception as e:
             logger.exception("Error generating NLG outputs for report %s", report_id)
-            await report_repository.update_partial(report_id, {"status": ReportStatusEnum.NLG_FAILED, "error": str(e)})
+            await report_repository.update_partial(report_id, {"status": ReportStatusEnum.FAILED, "error": str(e)})
             raise
 
         # Generate summary
@@ -67,7 +67,7 @@ async def process_report(report_id: str, token_id: str, report_repository: Repor
             await report_repository.update_report_status(report_id, ReportStatusEnum.SUMMARY_COMPLETED)
         except Exception as e:
             logger.exception("Error generating summary for report %s", report_id)
-            await report_repository.update_partial(report_id, {"status": ReportStatusEnum.SUMMARY_FAILED, "error": str(e)})
+            await report_repository.update_partial(report_id, {"status": ReportStatusEnum.FAILED, "error": str(e)})
             raise
 
         # Determine overall status based on agent results
@@ -83,16 +83,16 @@ async def process_report(report_id: str, token_id: str, report_repository: Repor
         }
 
         # Save the combined_report_data first
-        save_report_data(report_id, combined_report_data, update_status=False)
+        await report_repository.store_partial_report_results(report_id, combined_report_data)
         # Then save the final report content
-        save_report_data(report_id, final_report_content, key="final_report", update_status=False)
+        await report_repository.save_final_report(report_id, final_report_content)
 
         await report_repository.update_report_status(report_id, overall_status)
 
         logger.info("Report %s %s.", report_id, overall_status)
         return True
     except asyncio.CancelledError:
-        await report_repository.update_report_status(report_id, ReportStatusEnum.CANCELLED)
+        await report_repository.update_report_status(report_id, ReportStatusEnum.FAILED)
         raise
     except Exception:
         logger.exception("Error processing report %s for token %s", report_id, token_id)

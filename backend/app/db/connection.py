@@ -20,17 +20,43 @@ class DatabaseConnection:
             async with cls._pool_lock:
                 if cls._pool is None:
                     try:
+                        db_user = os.getenv("DB_USER")
+                        db_password = os.getenv("DB_PASSWORD")
+                        db_host = os.getenv("DB_HOST")
+                        db_port_str = os.getenv("DB_PORT")
+                        db_name = os.getenv("DB_NAME")
+
+                        missing_vars = [
+                            name for name, value in {
+                                "DB_USER": db_user,
+                                "DB_PASSWORD": db_password,
+                                "DB_HOST": db_host,
+                                "DB_PORT": db_port_str,
+                                "DB_NAME": db_name,
+                            }.items() if not value
+                        ]
+
+                        if missing_vars:
+                            raise ValueError(
+                                f"Missing or empty database environment variables: {', '.join(missing_vars)}"
+                            )
+
+                        try:
+                            db_port = int(db_port_str)
+                        except (TypeError, ValueError) as e:
+                            raise ValueError(f"DB_PORT must be an integer: {e}") from e
+
                         cls._pool = await asyncpg.create_pool(
-                            user=os.getenv("DB_USER"),
-                            password=os.getenv("DB_PASSWORD"),
-                            host=os.getenv("DB_HOST"),
-                            port=os.getenv("DB_PORT"),
-                            database=os.getenv("DB_NAME"),
+                            user=db_user,
+                            password=db_password,
+                            host=db_host,
+                            port=db_port,
+                            database=db_name,
                             min_size=1,
                             max_size=10,
                         )
                         logger.info("Database connection pool created successfully.")
-                    except Exception as e:
+                    except Exception:
                         logger.error("Error connecting to the database.", exc_info=True)
                         raise
         return cls._pool
@@ -47,7 +73,7 @@ class DatabaseConnection:
     async def get_connection(cls):
         if cls._pool is None:
             await cls.connect()
-        return await cls._pool.acquire()
+        return await cls._pool.acquire(timeout=30)
 
     @classmethod
     async def release_connection(cls, conn):

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.app.db.connection import get_session
+from backend.app.db.database import get_db
 from backend.app.db.repositories.report_repository import ReportRepository
 from backend.app.models.report_models import ReportRequest, ReportResponse
 from backend.app.services.report_service import generate_report, get_report_status, get_report_data
@@ -16,18 +16,18 @@ router = APIRouter()
 async def read_root():
     return {"message": "Welcome to API v1"}
 
-from backend.app.db.connection import get_session # Added for background task
-
 async def _run_agents_in_background(report_id: str, token_id: str):
-    async for session in get_session():
+    async for session in get_db():
         report_repository = ReportRepository(session)
         try:
             await report_repository.update_report_status(report_id, ReportStatusEnum.RUNNING_AGENTS)
-        await process_report(report_id, token_id, report_repository)
-        await report_repository.update_report_status(report_id, ReportStatusEnum.COMPLETED)
-    except Exception as e:
-        api_logger.error(f"Report processing failed for report {report_id}: {e}")
-        await report_repository.update_partial(report_id, {"status": ReportStatusEnum.FAILED, "error": str(e)})
+            await process_report(report_id, token_id, report_repository)
+            await report_repository.update_report_status(report_id, ReportStatusEnum.COMPLETED)
+            break  # Exit the async for loop after successful processing
+        except Exception as e:
+            api_logger.error(f"Report processing failed for report {report_id}: {e}")
+            await report_repository.update_partial(report_id, {"status": ReportStatusEnum.FAILED, "error_message": str(e)})
+            break # Exit the async for loop on failure
 
 @router.post("/report/generate", response_model=ReportResponse)
 async def generate_report_endpoint(request: ReportRequest, background_tasks: BackgroundTasks, session: AsyncSession = Depends(get_session)):
@@ -66,13 +66,13 @@ async def get_report_data_endpoint(report_id: str, session: AsyncSession = Depen
                 },
             )
         elif report_result.get("status") == ReportStatusEnum.FAILED.value:
-            api_logger.error(f"Report {report_id} failed with detail: {report_result.get("detail", "N/A")}")
+            api_logger.error(f"Report {report_id} failed with detail: {report_result.get('detail', 'N/A')}")
             return JSONResponse(
                 status_code=409,
                 content={
                     "report_id": report_id,
                     "message": "Report failed",
-                    "detail": report_result.get("detail", "Report processing failed."),
+                    "detail": report_result.get('detail', 'Report processing failed.'),
                 },
             )
     api_logger.error(f"Report with id {report_id} not found or not completed for data request.")

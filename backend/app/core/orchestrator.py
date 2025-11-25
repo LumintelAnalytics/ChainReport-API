@@ -10,7 +10,7 @@ from backend.app.core.config import settings
 from backend.app.db.repositories.report_repository import ReportRepository
 from backend.app.db.models.report_state import ReportStatusEnum
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.app.db.connection import get_session # Added for agent functions
+from backend.app.db.database import get_db, AsyncSessionLocal # Added for agent functions
 
 async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
     """
@@ -25,9 +25,9 @@ class Orchestrator:
     Concrete implementation of AIOrchestrator.
     Instances of Orchestrator should be created using the `create_orchestrator` factory function.
     """
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session_factory: Callable[..., AsyncSession]):
         self._agents: Dict[str, Callable] = {}
-        self.report_repository = ReportRepository(session)
+        self.report_repository = ReportRepository(session_factory)
 
     def register_agent(self, name: str, agent_func: Callable):
         self._agents[name] = agent_func
@@ -62,19 +62,11 @@ def _is_valid_url(url: str | None, url_name: str) -> bool:
         return False
     return True
 
-from backend.app.db.connection import get_session # Added for agent functions
-
 async def create_orchestrator() -> Orchestrator:
     """
     Factory function to create and configure an Orchestrator instance.
     """
-    # A session is needed for the Orchestrator constructor, but agents will create their own.
-    # For the factory, we can pass a dummy session or refactor Orchestrator to not require it initially.
-    # Given the current Orchestrator __init__ requires a session, we'll create a temporary one.
-    # However, the agents themselves will manage their sessions.
-    async for session in get_session():
-        orch = Orchestrator(session)
-        break # We only need one session for the orchestrator instance itself
+    orch = Orchestrator(AsyncSessionLocal)
 
     # Configure and register Onchain Data Agent
     onchain_metrics_url = settings.ONCHAIN_METRICS_URL
@@ -83,9 +75,9 @@ async def create_orchestrator() -> Orchestrator:
     if _is_valid_url(onchain_metrics_url, "ONCHAIN_METRICS_URL") and _is_valid_url(tokenomics_url, "TOKENOMICS_URL"):
         async def onchain_data_agent(report_id: str, token_id: str) -> Dict[str, Any]:
             orchestrator_logger.info(f"Calling Onchain Data Agent for report_id: {report_id}, token_id: {token_id}")
-            async for session in get_session(): # New session for agent
+            async with get_db() as session: # New session for agent
                 report_repository = ReportRepository(session)
-                await report_repository.update_report_status(report_id, ReportStatusEnum.RUNNING_AGENTS, agent_name="onchain_data_agent")
+                await report_repository.update_report_status(report_id, ReportStatusEnum.RUNNING_AGENTS)
                 onchain_metrics_params = {"token_id": token_id, "report_id": report_id}
                 tokenomics_params = {"token_id": token_id}
 
@@ -128,18 +120,20 @@ async def create_orchestrator() -> Orchestrator:
                             "tokenomics": tokenomics_result
                         }
                     }
+                    existing_report = await report_repository.get_report_by_id(report_id)
+                    existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
                     if overall_agent_status == "completed":
-                        await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_COMPLETED, "agents": {"onchain_data_agent": result}})
+                        await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_COMPLETED, "partial_agent_output": {**existing_partial_agent_output, "onchain_data_agent": result}})
                     else:
-                        await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error": "Onchain Data Agent failed", "agents": {"onchain_data_agent": result}})
+                        await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error_message": "Onchain Data Agent failed", "partial_agent_output": {**existing_partial_agent_output, "onchain_data_agent": result}})
                     return result
                 except asyncio.TimeoutError as e:
                     orchestrator_logger.error("Onchain Data Agent timed out for report %s", report_id)
-                    await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error": str(e)})
+                    await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error_message": str(e)})
                     return {"status": "failed", "error": "Agent timed out"}
                 except Exception as e:
                     orchestrator_logger.exception("Onchain Data Agent failed for report %s", report_id)
-                    await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error": str(e)})
+                    await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error_message": str(e)})
                     return {"status": "failed", "error": str(e)}
         orch.register_agent('onchain_data_agent', onchain_data_agent)
     else:
@@ -148,9 +142,9 @@ async def create_orchestrator() -> Orchestrator:
     # Configure and register Social Sentiment Agent
     async def social_sentiment_agent_func(report_id: str, token_id: str) -> Dict[str, Any]:
         orchestrator_logger.info(f"Calling Social Sentiment Agent for report_id: {report_id}, token_id: {token_id}")
-        async for session in get_session(): # New session for agent
+        async with get_db() as session: # New session for agent
             report_repository = ReportRepository(session)
-            await report_repository.update_report_status(report_id, ReportStatusEnum.RUNNING_AGENTS, agent_name="social_sentiment_agent")
+            await report_repository.update_report_status(report_id, ReportStatusEnum.RUNNING_AGENTS)
             agent = SocialSentimentAgent()
             try:
                 social_data = await asyncio.wait_for(agent.fetch_social_data(token_id), timeout=settings.AGENT_TIMEOUT - 1)
@@ -166,24 +160,26 @@ async def create_orchestrator() -> Orchestrator:
                         }
                     }
                 }
-                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_COMPLETED, "agents": {"social_sentiment_agent": result}})
+                existing_report = await report_repository.get_report_by_id(report_id)
+                existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
+                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_COMPLETED, "partial_agent_output": {**existing_partial_agent_output, "social_sentiment_agent": result}})
                 return result
             except asyncio.TimeoutError as e:
                 orchestrator_logger.error("Social Sentiment Agent timed out for report %s", report_id)
-                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error": str(e)})
+                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error_message": str(e)})
                 return {"status": "failed", "error": "Agent timed out"}
             except Exception as e:
                 orchestrator_logger.exception("Social Sentiment Agent failed for report %s", report_id)
-                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error": str(e)})
+                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error_message": str(e)})
                 return {"status": "failed", "error": str(e)}
     orch.register_agent('social_sentiment_agent', social_sentiment_agent_func)
 
     # Configure and register Team and Documentation Agent
     async def team_documentation_agent(report_id: str, token_id: str) -> Dict[str, Any]:
         orchestrator_logger.info(f"Calling Team and Documentation Agent for report_id: {report_id}, token_id: {token_id}")
-        async for session in get_session(): # New session for agent
+        async with get_db() as session: # New session for agent
             report_repository = ReportRepository(session)
-            await report_repository.update_report_status(report_id, ReportStatusEnum.RUNNING_AGENTS, agent_name="team_documentation_agent")
+            await report_repository.update_report_status(report_id, ReportStatusEnum.RUNNING_AGENTS)
             agent = TeamDocAgent()
             team_analysis = []
             whitepaper_summary = {}
@@ -223,15 +219,17 @@ async def create_orchestrator() -> Orchestrator:
                         }
                     }
                 }
-                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_COMPLETED, "agents": {"team_documentation_agent": result}})
+                existing_report = await report_repository.get_report_by_id(report_id)
+                existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
+                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_COMPLETED, "partial_agent_output": {**existing_partial_agent_output, "team_documentation_agent": result}})
                 return result
             except asyncio.TimeoutError as e:
                 orchestrator_logger.error("Team and Documentation Agent timed out for report %s", report_id)
-                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error": str(e)})
+                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error_message": str(e)})
                 return {"status": "failed", "error": "Agent timed out"}
             except Exception as e:
                 orchestrator_logger.exception("Team and Documentation Agent failed for report %s", report_id)
-                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error": str(e)})
+                await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error_message": str(e)})
                 return {"status": "failed", "error": str(e)}
     orch.register_agent('team_documentation_agent', team_documentation_agent)
 
@@ -240,9 +238,9 @@ async def create_orchestrator() -> Orchestrator:
     if _is_valid_url(code_audit_repo_url, "CODE_AUDIT_REPO_URL"):
         async def code_audit_agent_func(report_id: str, token_id: str) -> Dict[str, Any]:
             orchestrator_logger.info(f"Calling Code/Audit Agent for report_id: {report_id}, token_id: {token_id}")
-            async for session in get_session(): # New session for agent
+            async with get_db() as session: # New session for agent
                 report_repository = ReportRepository(session)
-                await report_repository.update_report_status(report_id, ReportStatusEnum.RUNNING_AGENTS, agent_name="code_audit_agent")
+                await report_repository.update_report_status(report_id, ReportStatusEnum.RUNNING_AGENTS)
                 code_metrics_data = {}
                 audit_summary_data = []
                 try:
@@ -280,15 +278,17 @@ async def create_orchestrator() -> Orchestrator:
                             }
                         }
                     }
-                    await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_COMPLETED, "agents": {"code_audit_agent": result}})
+                    existing_report = await report_repository.get_report_by_id(report_id)
+                    existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
+                    await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_COMPLETED, "partial_agent_output": {**existing_partial_agent_output, "code_audit_agent": result}})
                     return result
                 except asyncio.TimeoutError as e:
                     orchestrator_logger.error("Code/Audit Agent timed out for report %s", report_id)
-                    await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error": str(e)})
+                    await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error_message": str(e)})
                     return {"status": "failed", "error": "Agent timed out"}
                 except Exception as e:
                     orchestrator_logger.exception("Code/Audit Agent failed for report %s", report_id)
-                    await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error": str(e)})
+                    await report_repository.update_partial(report_id, {"status": ReportStatusEnum.AGENTS_FAILED, "error_message": str(e)})
                     return {"status": "failed", "error": str(e)}
         orch.register_agent('code_audit_agent', code_audit_agent_func)
     else:

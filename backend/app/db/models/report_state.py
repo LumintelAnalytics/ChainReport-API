@@ -32,3 +32,4 @@ class ReportState(Base):
     partial_agent_output = Column(JSON, nullable=True)  # Stores partial outputs from agents
     raw_data = Column(JSON, nullable=True)  # Stores raw data collected by agents
     final_report_json = Column(JSON, nullable=True)  # Stores the final generated report JSON
+    error_message = Column(String, nullable=True) # New column for error messages

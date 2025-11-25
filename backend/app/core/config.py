@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     TWITTER_API_KEY: str = ""
     REDDIT_API_KEY: str = ""
     NEWS_API_KEY: str = ""
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str | None = None
     USER_AGENT: str = "ChainReport-API/1.0 (https://lumintelanalytics.com)"
     REQUEST_DELAY_SECONDS: float = 1.0
     MAX_RETRIES: int = 5

@@ -1,46 +1,34 @@
 from backend.app.models.report_models import ReportRequest, ReportResponse
 from backend.app.utils.id_generator import generate_report_id
-from typing import Dict
+from typing import Dict, Any
 from backend.app.core.logger import services_logger
+from backend.app.db.repositories.report_repository import ReportRepository
+from backend.app.db.models.report_state import ReportStatusEnum
 
-# In-memory storage for reports (to be replaced with persistent storage)
-in_memory_reports: Dict[str, Dict] = {}
-
-async def generate_report(request: ReportRequest) -> ReportResponse:
+async def generate_report(request: ReportRequest, report_repository: ReportRepository) -> ReportResponse:
     services_logger.info(f"Generating new report for token_id: {request.token_id}")
     report_id = generate_report_id()
-    # Store a placeholder report object
-    in_memory_reports[report_id] = {
-        "token_id": request.token_id,
-        "parameters": request.parameters,
-        "status": "processing",
-        "report_id": report_id
-    }
-    return ReportResponse(report_id=report_id, status="processing")
+    await report_repository.create_report(report_id, request.token_id, request.parameters)
+    return ReportResponse(report_id=report_id, status=ReportStatusEnum.PENDING.value)
 
-async def save_report_data(report_id: str, data: Dict):
-    if report_id in in_memory_reports:
-        services_logger.info(f"Saving data for report_id: {report_id}")
-        in_memory_reports[report_id].update(data)
-    else:
-        # Handle case where report_id does not exist, or log a warning
-        services_logger.warning("Report ID %s not found for saving data.", report_id)
+async def get_report_status(report_id: str, report_repository: ReportRepository) -> Dict[str, Any] | None:
+    services_logger.info(f"Retrieving status for report_id: {report_id} from database.")
+    report = await report_repository.get_report_by_id(report_id)
+    if report:
+        return {"report_id": report.report_id, "status": report.status.value}
+    return None
 
-def get_report_status_from_memory(report_id: str) -> Dict | None:
-    services_logger.info(f"Retrieving status for report_id: {report_id} from memory.")
-    return in_memory_reports.get(report_id)
-
-def get_report_data(report_id: str) -> Dict | None:
+async def get_report_data(report_id: str, report_repository: ReportRepository) -> Dict[str, Any] | None:
     services_logger.info(f"Attempting to retrieve data for report_id: {report_id}")
-    report = in_memory_reports.get(report_id)
+    report = await report_repository.get_report_by_id(report_id)
     if not report:
         services_logger.warning(f"Report with id {report_id} not found when attempting to retrieve data.")
         return None
-    if report.get("status") == "completed":
+    if report.status == ReportStatusEnum.COMPLETED:
         services_logger.info(f"Report {report_id} is completed, returning data.")
         return {
-            "report_id": report_id,
-            "data": report.get("data", {}),
+            "report_id": report.report_id,
+            "data": report.final_report if report.final_report else report.raw_data,
         }
-    services_logger.info(f"Report {report_id} is in status: {report.get("status")}, returning status only.")
-    return {"report_id": report_id, "status": report.get("status")}
+    services_logger.info(f"Report {report_id} is in status: {report.status.value}, returning status only.")
+    return {"report_id": report.report_id, "status": report.status.value, "detail": report.error_message}

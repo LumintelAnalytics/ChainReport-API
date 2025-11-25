@@ -1,18 +1,20 @@
 import asyncio
 import logging
-from backend.app.core.orchestrator import AIOrchestrator
+from backend.app.core.orchestrator import AIOrchestrator, Orchestrator # Import Orchestrator
 from backend.app.services.agents.price_agent import run as price_agent_run
 from backend.app.services.agents.trend_agent import run as trend_agent_run
 from backend.app.services.agents.volume_agent import run as volume_agent_run
 from backend.app.core.storage import save_report_data, set_report_status, try_set_processing
 from backend.app.services.nlg.report_nlg_engine import ReportNLGEngine
 from backend.app.services.summary.report_summary_engine import ReportSummaryEngine
+from backend.app.db.repositories.report_repository import ReportRepository
+from backend.app.db.models.report_state import ReportStatusEnum # Import ReportStatusEnum
 
 logger = logging.getLogger(__name__)
 
 
 
-async def process_report(report_id: str, token_id: str) -> bool:
+async def process_report(report_id: str, token_id: str, report_repository: ReportRepository) -> bool:
     """
     Simulates a background report generation process.
     Updates report_status to 'processing' and then to 'completed' on success.
@@ -31,7 +33,7 @@ async def process_report(report_id: str, token_id: str) -> bool:
 
     logger.info("Processing report %s for token %s", report_id, token_id)
     try:
-        orchestrator = AIOrchestrator()
+        orchestrator = Orchestrator(report_repository.session)
         orchestrator.register_agent("price_agent", price_agent_run)
         orchestrator.register_agent("trend_agent", trend_agent_run)
         orchestrator.register_agent("volume_agent", volume_agent_run)
@@ -40,19 +42,33 @@ async def process_report(report_id: str, token_id: str) -> bool:
         combined_report_data = orchestrator.aggregate_results(agent_results)
 
         # Generate NLG outputs
+        await report_repository.update_report_status(report_id, ReportStatusEnum.GENERATING_NLG)
         nlg_engine = ReportNLGEngine()
-        nlg_outputs = await nlg_engine.generate_nlg_outputs(combined_report_data)
+        try:
+            nlg_outputs = await nlg_engine.generate_nlg_outputs(combined_report_data)
+            await report_repository.update_report_status(report_id, ReportStatusEnum.NLG_COMPLETED)
+        except Exception as e:
+            logger.exception("Error generating NLG outputs for report %s", report_id)
+            await report_repository.update_partial(report_id, {"status": ReportStatusEnum.NLG_FAILED, "error": str(e)})
+            raise
 
         # Generate summary
+        await report_repository.update_report_status(report_id, ReportStatusEnum.GENERATING_SUMMARY)
         summary_engine = ReportSummaryEngine()
-        scores_input = {
-            "tokenomics_data": combined_report_data.get("tokenomics", {}),
-            "sentiment_data": combined_report_data.get("social_sentiment", {}),
-            "code_audit_data": combined_report_data.get("code_audit", {}),
-            "team_data": combined_report_data.get("team_documentation", {})
-        }
-        scores = summary_engine.generate_scores(scores_input)
-        final_narrative_summary = summary_engine.build_final_summary(nlg_outputs, scores)
+        try:
+            scores_input = {
+                "tokenomics_data": combined_report_data.get("tokenomics", {}),
+                "sentiment_data": combined_report_data.get("social_sentiment", {}),
+                "code_audit_data": combined_report_data.get("code_audit", {}),
+                "team_data": combined_report_data.get("team_documentation", {})
+            }
+            scores = summary_engine.generate_scores(scores_input)
+            final_narrative_summary = summary_engine.build_final_summary(nlg_outputs, scores)
+            await report_repository.update_report_status(report_id, ReportStatusEnum.SUMMARY_COMPLETED)
+        except Exception as e:
+            logger.exception("Error generating summary for report %s", report_id)
+            await report_repository.update_partial(report_id, {"status": ReportStatusEnum.SUMMARY_FAILED, "error": str(e)})
+            raise
 
         # Determine overall status based on agent results
         overall_status = "completed"
@@ -71,14 +87,14 @@ async def process_report(report_id: str, token_id: str) -> bool:
         # Then save the final report content
         save_report_data(report_id, final_report_content, key="final_report", update_status=False)
 
-        set_report_status(report_id, overall_status)
+        await report_repository.update_report_status(report_id, overall_status)
 
         logger.info("Report %s %s.", report_id, overall_status)
         return True
     except asyncio.CancelledError:
-        set_report_status(report_id, "cancelled")
+        await report_repository.update_report_status(report_id, ReportStatusEnum.CANCELLED)
         raise
     except Exception:
         logger.exception("Error processing report %s for token %s", report_id, token_id)
-        set_report_status(report_id, "failed")
+        await report_repository.update_report_status(report_id, ReportStatusEnum.FAILED)
         raise

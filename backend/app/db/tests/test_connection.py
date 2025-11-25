@@ -2,22 +2,34 @@ import pytest
 import os
 from dotenv import load_dotenv
 from backend.app.db.connection import DatabaseConnection, initialize_db_connection, close_db_connection
+import unittest.mock
+import asyncpg
 
 # Load environment variables from .env file for testing
 load_dotenv()
 
 @pytest.fixture(scope="module", autouse=True)
 async def setup_and_teardown_db():
-    # Ensure environment variables are set for testing
-    os.environ["DB_USER"] = os.getenv("TEST_DB_USER", "postgres")
-    os.environ["DB_PASSWORD"] = os.getenv("TEST_DB_PASSWORD", "postgres")
-    os.environ["DB_HOST"] = os.getenv("TEST_DB_HOST", "localhost")
-    os.environ["DB_PORT"] = os.getenv("TEST_DB_PORT", "5432")
-    os.environ["DB_NAME"] = os.getenv("TEST_DB_NAME", "test_db")
+    # Mock asyncpg.create_pool and related methods
+    with unittest.mock.patch('asyncpg.create_pool', new_callable=unittest.mock.AsyncMock) as mock_create_pool:
+        mock_pool_instance = unittest.mock.AsyncMock()
+        mock_conn_instance = unittest.mock.AsyncMock()
+        mock_conn_instance.fetchval.return_value = 1
+        mock_pool_instance.acquire.return_value = mock_conn_instance
+        mock_pool_instance.get_size = unittest.mock.MagicMock(return_value=5)  # Mock the return value for get_size
+        mock_create_pool.return_value = mock_pool_instance
 
-    await initialize_db_connection()
-    yield
-    await close_db_connection()
+        # Use mock environment variables for testing database connection
+        with unittest.mock.patch.dict(os.environ, {
+            "DB_USER": "test_user",
+            "DB_PASSWORD": "test_password",
+            "DB_HOST": "mock_host",
+            "DB_PORT": "5432",
+            "DB_NAME": "mock_db",
+        }):
+            await initialize_db_connection()
+            yield
+            await close_db_connection()
 
 @pytest.mark.asyncio
 async def test_database_connection_pool():

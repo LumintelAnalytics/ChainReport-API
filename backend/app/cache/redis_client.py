@@ -1,6 +1,7 @@
 import redis
 import threading
 import logging
+from redis.exceptions import RedisError
 from backend.app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ class RedisClient:
 
     def _initialize_redis_client(self):
         try:
-            client = redis.StrictRedis(
+            client = redis.Redis(
                 host=settings.REDIS_HOST,
                 port=settings.REDIS_PORT,
                 db=settings.REDIS_DB,
@@ -27,10 +28,11 @@ class RedisClient:
                 decode_responses=True
             )
             client.ping()
-            return client
-        except Exception as e:
-            logger.warning(f"Redis unavailable, caching disabled: {e}")
+        except RedisError:
+            logger.warning("Redis unavailable, caching disabled", exc_info=True)
             return None
+        else:
+            return client
 
     def set_cache(self, key: str, value: str, ttl: int = 3600):
         """
@@ -39,11 +41,12 @@ class RedisClient:
         :param value: The value to store.
         :param ttl: Time-to-live in seconds. Defaults to 1 hour.
         """
-        if self.client:
-            try:
-                self.client.setex(key, ttl, value)
-            except Exception as e:
-                logger.warning(f"Error setting cache for key {key}: {e}")
+        if not self.client:
+            return
+        try:
+            self.client.setex(key, ttl, value)
+        except RedisError:
+            logger.warning("Error setting cache for key %s", key, exc_info=True)
 
     def get_cache(self, key: str):
         """
@@ -51,11 +54,12 @@ class RedisClient:
         :param key: The key to retrieve the value for.
         :return: The value associated with the key, or None if not found or an error occurs.
         """
-        if self.client:
-            try:
-                return self.client.get(key)
-            except Exception as e:
-                logger.warning(f"Error getting cache for key {key}: {e}")
+        if not self.client:
+            return None
+        try:
+            return self.client.get(key)
+        except RedisError:
+            logger.warning("Error getting cache for key %s", key, exc_info=True)
         return None
 
     def delete_cache(self, key: str):
@@ -63,10 +67,11 @@ class RedisClient:
         Deletes a key-value pair from Redis cache.
         :param key: The key to delete.
         """
-        if self.client:
-            try:
-                self.client.delete(key)
-            except Exception as e:
-                logger.warning(f"Error deleting cache for key {key}: {e}")
+        if not self.client:
+            return
+        try:
+            self.client.delete(key)
+        except RedisError:
+            logger.warning("Error deleting cache for key %s", key, exc_info=True)
 
 redis_client = RedisClient()

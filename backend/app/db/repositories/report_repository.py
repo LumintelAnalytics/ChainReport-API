@@ -44,18 +44,26 @@ class ReportRepository:
             raise
 
     async def store_partial_report_results(self, report_id: str, partial_data: Dict[str, Any]) -> ReportState | None:
-        stmt = update(ReportState).where(ReportState.report_id == report_id).values(partial_agent_output=partial_data).returning(ReportState)
-        result = await self.session.execute(stmt)
-        updated_report_state = result.scalar_one_or_none()
-        await self.session.commit()
-        return updated_report_state
+        try:
+            stmt = update(ReportState).where(ReportState.report_id == report_id).values(partial_agent_output=partial_data).returning(ReportState)
+            result = await self.session.execute(stmt)
+            updated_report_state = result.scalar_one_or_none()
+            await self.session.commit()
+            return updated_report_state
+        except Exception:
+            await self.session.rollback()
+            raise
 
     async def save_final_report(self, report_id: str, data: Dict[str, Any]) -> ReportState | None:
-        stmt = update(ReportState).where(ReportState.report_id == report_id).values(final_report_json=data, status=ReportStatusEnum.COMPLETED).returning(ReportState)
-        result = await self.session.execute(stmt)
-        updated_report_state = result.scalar_one_or_none()
-        await self.session.commit()
-        return updated_report_state
+        try:
+            stmt = update(ReportState).where(ReportState.report_id == report_id).values(final_report_json=data, status=ReportStatusEnum.COMPLETED).returning(ReportState)
+            result = await self.session.execute(stmt)
+            updated_report_state = result.scalar_one_or_none()
+            await self.session.commit()
+            return updated_report_state
+        except Exception:
+            await self.session.rollback()
+            raise
 
     async def get_report_state(self, report_id: str) -> ReportState | None:
         stmt = select(ReportState).where(ReportState.report_id == report_id)

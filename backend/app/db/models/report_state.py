@@ -3,7 +3,7 @@ from sqlalchemy import Column, String, DateTime, JSON, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.types import Enum as SQLEnum
 
-from backend.app.db.database import Base
+from backend.app.db.base import Base
 
 class ReportStatusEnum(PyEnum):
     PENDING = "pending"

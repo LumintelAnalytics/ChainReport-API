@@ -28,6 +28,10 @@ class OnchainAgentHTTPError(OnchainAgentException):
         super().__init__(message)
         self.status_code = status_code
 
+class OnchainAgentRateLimitExceeded(OnchainAgentException):
+    """Exception raised when rate limit is exceeded for OnchainAgent."""
+    pass
+
 @retry(
     stop=stop_after_attempt(settings.MAX_RETRIES),
     wait=wait_exponential(multiplier=settings.RETRY_MULTIPLIER, min=settings.MIN_RETRY_DELAY, max=settings.MAX_RETRY_DELAY),
@@ -57,11 +61,12 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
 
     logger.info(f"[Token ID: {token_id}] Initiating API call to {url} with params: {params}")
 
+    if not rate_limiter.check_rate_limit("onchain_agent"):
+        logger.warning(f"[Token ID: {token_id}] Rate limit exceeded for onchain_agent.")
+        raise OnchainAgentRateLimitExceeded("Rate limit exceeded for onchain_agent.")
+
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:
-            if not rate_limiter.check_rate_limit("onchain_agent"):
-                logger.warning(f"[Token ID: {token_id}] Rate limit exceeded for onchain_agent.")
-                raise OnchainAgentException("Rate limit exceeded for onchain_agent.")
             response = await client.get(url, params=params)
             response.raise_for_status()
             response_json = response.json()
@@ -110,11 +115,12 @@ async def fetch_tokenomics(url: str, token_id: str, params: dict | None = None) 
 
     logger.info(f"[Token ID: {token_id}] Initiating API call to {url} with params: {params}")
 
+    if not rate_limiter.check_rate_limit("onchain_agent"):
+        logger.warning(f"[Token ID: {token_id}] Rate limit exceeded for onchain_agent.")
+        raise OnchainAgentRateLimitExceeded("Rate limit exceeded for onchain_agent.")
+
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:
-            if not rate_limiter.check_rate_limit("onchain_agent"):
-                logger.warning(f"[Token ID: {token_id}] Rate limit exceeded for onchain_agent.")
-                raise OnchainAgentException("Rate limit exceeded for onchain_agent.")
             response = await client.get(url, params=params)
             response.raise_for_status()
             response_json = response.json()

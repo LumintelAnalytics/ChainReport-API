@@ -1,5 +1,6 @@
 import time
 import logging
+import threading
 from collections import defaultdict
 from backend.app.cache.redis_client import redis_client
 from backend.app.core.config import settings
@@ -49,16 +50,24 @@ class RateLimiter:
         key = f"rate_limit:{service}"
         current_time = int(time.time())
 
-        # Use a Redis pipeline for atomic operations
-        pipe = self.redis.pipeline()
-        pipe.zremrangebyscore(key, 0, current_time - window_seconds) # Remove old entries
-        pipe.zadd(key, {f"{current_time}:{time.time_ns()}": current_time}) # Add current request timestamp
-        pipe.zcard(key) # Get current count
-        pipe.expire(key, window_seconds) # Reset TTL
-
         try:
-            _, _, current_count, _ = pipe.execute()
-            if current_count + count -1 <= max_requests: # -1 because we already added the current request
+            # Read-phase: Remove old entries and get current count
+            pipe = self.redis.pipeline()
+            pipe.zremrangebyscore(key, 0, current_time - window_seconds)
+            pipe.zcard(key)
+            _, current_count = pipe.execute()
+
+            if current_count + count <= max_requests:
+                # Write-phase: Add new entries and set TTL
+                write_pipe = self.redis.pipeline()
+                members_to_add = {}
+                for i in range(count):
+                    # Generate unique members using current_time and a nanosecond/incremental suffix
+                    member = f"{current_time}:{time.time_ns() + i}"
+                    members_to_add[member] = current_time
+                write_pipe.zadd(key, members_to_add)
+                write_pipe.expire(key, window_seconds)
+                write_pipe.execute()
                 return True
             else:
                 logger.warning(f"Rate limit exceeded for service: {service}. Current count: {current_count}, Max: {max_requests}")

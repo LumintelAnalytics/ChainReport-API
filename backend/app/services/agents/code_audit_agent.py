@@ -6,6 +6,7 @@ import httpx
 from pydantic import BaseModel, Field
 import urllib.parse
 from backend.app.security.rate_limiter import rate_limiter
+from backend.app.utils.cache_utils import cache_request
 
 logger = logging.getLogger(__name__)
 

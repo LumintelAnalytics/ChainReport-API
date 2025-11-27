@@ -4,6 +4,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 
 from backend.app.core.config import settings
 from backend.app.core.logger import services_logger as logger
+from backend.app.security.rate_limiter import rate_limiter
 
 # Configure httpx timeouts and limits
 HTTP_TIMEOUT = httpx.Timeout(5.0, read=10.0, write=5.0, pool=5.0)
@@ -58,6 +59,9 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
 
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:
+            if not rate_limiter.check_rate_limit("onchain_agent"):
+                logger.warning(f"[Token ID: {token_id}] Rate limit exceeded for onchain_agent.")
+                raise OnchainAgentException("Rate limit exceeded for onchain_agent.")
             response = await client.get(url, params=params)
             response.raise_for_status()
             response_json = response.json()
@@ -108,6 +112,9 @@ async def fetch_tokenomics(url: str, token_id: str, params: dict | None = None) 
 
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:
+            if not rate_limiter.check_rate_limit("onchain_agent"):
+                logger.warning(f"[Token ID: {token_id}] Rate limit exceeded for onchain_agent.")
+                raise OnchainAgentException("Rate limit exceeded for onchain_agent.")
             response = await client.get(url, params=params)
             response.raise_for_status()
             response_json = response.json()

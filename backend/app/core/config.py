@@ -26,6 +26,15 @@ class Settings(BaseSettings):
     TEAM_PROFILE_URLS: Dict[str, List[str]] = {}
     WHITEPAPER_TEXT_SOURCES: Dict[str, str] = {}
     CODE_AUDIT_REPO_URL: str | None = None
+    RATE_LIMITS: Dict[str, Dict[str, int]] = {
+        "onchain_agent": {"max_requests": 100, "window_seconds": 60},
+        "price_agent": {"max_requests": 100, "window_seconds": 60},
+        "social_sentiment_agent": {"max_requests": 50, "window_seconds": 60},
+        "team_doc_agent": {"max_requests": 20, "window_seconds": 60},
+        "code_audit_agent": {"max_requests": 10, "window_seconds": 60},
+        "trend_agent": {"max_requests": 100, "window_seconds": 60},
+        "volume_agent": {"max_requests": 100, "window_seconds": 60},
+    }
 
     # Database connection settings for PostgreSQL (if used)
     DB_USER: str | None = None

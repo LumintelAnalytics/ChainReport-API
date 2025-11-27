@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 import httpx
 from textblob import TextBlob
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, RetryError
+from backend.app.security.rate_limiter import rate_limiter
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -35,6 +36,9 @@ class SocialSentimentAgent:
 
     @api_retry_decorator
     async def _fetch_twitter_data(self, token_id: str) -> List[Dict[str, Any]]:
+        if not rate_limiter.check_rate_limit("social_sentiment_agent"):
+            logger.warning(f"Rate limit exceeded for social_sentiment_agent (Twitter) for {token_id}.")
+            return []
         logger.info(f"Attempting to fetch Twitter data for {token_id}...")
         await asyncio.sleep(1) # Simulate network delay
         twitter_data = [{"source": "twitter", "text": f"Great news about {token_id}!", "id": "1"},
@@ -44,6 +48,9 @@ class SocialSentimentAgent:
 
     @api_retry_decorator
     async def _fetch_reddit_data(self, token_id: str) -> List[Dict[str, Any]]:
+        if not rate_limiter.check_rate_limit("social_sentiment_agent"):
+            logger.warning(f"Rate limit exceeded for social_sentiment_agent (Reddit) for {token_id}.")
+            return []
         logger.info(f"Attempting to fetch Reddit data for {token_id}...")
         await asyncio.sleep(1) # Simulate network delay
         reddit_data = [{"source": "reddit", "text": f"Loving the community around {token_id}.", "id": "3"},
@@ -53,6 +60,9 @@ class SocialSentimentAgent:
 
     @api_retry_decorator
     async def _fetch_news_data(self, token_id: str) -> List[Dict[str, Any]]:
+        if not rate_limiter.check_rate_limit("social_sentiment_agent"):
+            logger.warning(f"Rate limit exceeded for social_sentiment_agent (News) for {token_id}.")
+            return []
         logger.info(f"Attempting to fetch News data for {token_id}...")
         await asyncio.sleep(1) # Simulate network delay
         news_data = [{"source": "news", "text": f"Analyst predicts bright future for {token_id}.", "id": "5"},

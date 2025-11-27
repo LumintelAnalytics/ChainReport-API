@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 from backend.app.core.logger import orchestrator_logger
 from backend.app.services.nlg.llm_client import LLMClient
 from backend.app.services.nlg.prompt_templates import get_template, fill_template
+from backend.app.security.rate_limiter import rate_limiter
 
 class TeamDocAgent:
     """
@@ -110,6 +111,10 @@ class TeamDocAgent:
         """
         team_profiles = []
         for url in urls:
+            if not rate_limiter.check_rate_limit("team_doc_agent"):
+                orchestrator_logger.warning(f"Rate limit exceeded for team_doc_agent for URL: {url}. Skipping.")
+                team_profiles.append({"url": url, "error": "Rate limit exceeded", "source": url})
+                continue
             try:
                 response = requests.get(url, timeout=10)
                 response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)

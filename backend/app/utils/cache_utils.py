@@ -1,3 +1,4 @@
+import os
 import hashlib
 import json
 import logging
@@ -9,7 +10,7 @@ from backend.app.cache.redis_client import redis_client
 
 logger = logging.getLogger(__name__)
 
-CACHE_TTL = 3600  # Cache time-to-live in seconds (1 hour)
+CACHE_TTL = int(os.getenv("REDIS_CACHE_TTL", 3600))  # Cache time-to-live in seconds (1 hour)
 
 
 def _generate_cache_key(url: str, params: Optional[Dict[str, Any]]) -> str:
@@ -40,7 +41,7 @@ async def cache_request(
             try:
                 return deserializer(cached_response)
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to deserialize cached response for key {cache_key}: {e}")
+                logger.exception(f"Failed to deserialize cached response for key {cache_key}: {e}")
                 # If deserialization fails, treat as a cache miss
                 pass
     except RedisError as e:

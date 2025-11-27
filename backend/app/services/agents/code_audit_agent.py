@@ -2,6 +2,7 @@ import os
 import re
 import logging
 import json
+import hashlib
 from typing import Dict, Any, List
 import httpx
 from pydantic import BaseModel, Field
@@ -30,16 +31,13 @@ def deserialize_httpx_response(data_str: str) -> httpx.Response:
             self.text = text
 
         def json(self):
-            # Attempt to parse text as JSON, return empty dict if not valid JSON
-            try:
-                return json.loads(self.text)
-            except json.JSONDecodeError:
-                return {}
+            # Attempt to parse text as JSON, raise JSONDecodeError if not valid JSON
+            return json.loads(self.text)
 
         def raise_for_status(self):
             if self.status_code >= 400:
                 # Create a dummy request for the HTTPStatusError
-                request = httpx.Request("GET", "http://mock.url/error")
+                request = httpx.Request("GET", "http://cached-response/error")
                 raise httpx.HTTPStatusError(
                     f"Bad response: {self.status_code}", request=request, response=self
                 )
@@ -143,7 +141,8 @@ class CodeAuditAgent:
                 url=f"{base_url}/commits?per_page=1",
                 external_api_call=lambda: self.client.get(f"{base_url}/commits?per_page=1", headers=headers),
                 serializer=serialize_httpx_response,
-                deserializer=deserialize_httpx_response
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.github_token.encode()).hexdigest()[:8]} if self.github_token else {}
             )
             commits_resp.raise_for_status()
             link_header = commits_resp.headers.get('link') or commits_resp.headers.get('Link')
@@ -157,7 +156,8 @@ class CodeAuditAgent:
                 url=f"{base_url}/contributors?per_page=1",
                 external_api_call=lambda: self.client.get(f"{base_url}/contributors?per_page=1", headers=headers),
                 serializer=serialize_httpx_response,
-                deserializer=deserialize_httpx_response
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.github_token.encode()).hexdigest()[:8]} if self.github_token else {}
             )
             contributors_resp.raise_for_status()
             link_header = contributors_resp.headers.get('link') or contributors_resp.headers.get('Link')
@@ -171,7 +171,8 @@ class CodeAuditAgent:
                 url=f"{base_url}/releases/latest",
                 external_api_call=lambda: self.client.get(f"{base_url}/releases/latest", headers=headers),
                 serializer=serialize_httpx_response,
-                deserializer=deserialize_httpx_response
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.github_token.encode()).hexdigest()[:8]} if self.github_token else {}
             )
             if releases_resp.status_code == 200:
                 repo_data['latest_release'] = releases_resp.json().get('tag_name', 'N/A')
@@ -188,7 +189,8 @@ class CodeAuditAgent:
                 url=search_issues_url,
                 external_api_call=lambda: self.client.get(search_issues_url, headers=headers),
                 serializer=serialize_httpx_response,
-                deserializer=deserialize_httpx_response
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.github_token.encode()).hexdigest()[:8]} if self.github_token else {}
             )
             issues_search_resp.raise_for_status()
             issues_search_data = issues_search_resp.json()
@@ -202,7 +204,8 @@ class CodeAuditAgent:
                 url=f"{base_url}/pulls?state=all&per_page=1",
                 external_api_call=lambda: self.client.get(f"{base_url}/pulls?state=all&per_page=1", headers=headers),
                 serializer=serialize_httpx_response,
-                deserializer=deserialize_httpx_response
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.github_token.encode()).hexdigest()[:8]} if self.github_token else {}
             )
             pulls_resp.raise_for_status()
             link_header = pulls_resp.headers.get('link') or pulls_resp.headers.get('Link')
@@ -240,7 +243,8 @@ class CodeAuditAgent:
                 url=f"{base_url}/repository/commits?per_page=1",
                 external_api_call=lambda: self.client.get(f"{base_url}/repository/commits?per_page=1", headers=headers),
                 serializer=serialize_httpx_response,
-                deserializer=deserialize_httpx_response
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.gitlab_token.encode()).hexdigest()[:8]} if self.gitlab_token else {}
             )
             commits_resp.raise_for_status()
             repo_data['commits_count'] = int(commits_resp.headers.get('x-total', 0))
@@ -253,7 +257,8 @@ class CodeAuditAgent:
                 url=f"{base_url}/repository/contributors?per_page=1",
                 external_api_call=lambda: self.client.get(f"{base_url}/repository/contributors?per_page=1", headers=headers),
                 serializer=serialize_httpx_response,
-                deserializer=deserialize_httpx_response
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.gitlab_token.encode()).hexdigest()[:8]} if self.gitlab_token else {}
             )
             contributors_resp.raise_for_status()
             repo_data['contributors_count'] = int(contributors_resp.headers.get('x-total', 0))
@@ -266,7 +271,8 @@ class CodeAuditAgent:
                 url=f"{base_url}/repository/tags?per_page=1",
                 external_api_call=lambda: self.client.get(f"{base_url}/repository/tags?per_page=1", headers=headers),
                 serializer=serialize_httpx_response,
-                deserializer=deserialize_httpx_response
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.gitlab_token.encode()).hexdigest()[:8]} if self.gitlab_token else {}
             )
             if tags_resp.status_code == 200 and tags_resp.json():
                 repo_data['latest_release'] = tags_resp.json()[0].get('name', 'N/A')
@@ -281,7 +287,8 @@ class CodeAuditAgent:
                 url=f"{base_url}/issues?scope=all&per_page=1",
                 external_api_call=lambda: self.client.get(f"{base_url}/issues?scope=all&per_page=1", headers=headers),
                 serializer=serialize_httpx_response,
-                deserializer=deserialize_httpx_response
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.gitlab_token.encode()).hexdigest()[:8]} if self.gitlab_token else {}
             )
             issues_resp.raise_for_status()
             repo_data['issues_count'] = int(issues_resp.headers.get('x-total', 0))
@@ -294,7 +301,8 @@ class CodeAuditAgent:
                 url=f"{base_url}/merge_requests?scope=all&per_page=1",
                 external_api_call=lambda: self.client.get(f"{base_url}/merge_requests?scope=all&per_page=1", headers=headers),
                 serializer=serialize_httpx_response,
-                deserializer=deserialize_httpx_response
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.gitlab_token.encode()).hexdigest()[:8]} if self.gitlab_token else {}
             )
             merge_requests_resp.raise_for_status()
             repo_data['pull_requests_count'] = int(merge_requests_resp.headers.get('x-total', 0))

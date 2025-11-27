@@ -1,6 +1,5 @@
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from backend.app.db.base import Base
 from backend.app.core.config import settings
 
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL

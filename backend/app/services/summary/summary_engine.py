@@ -3,7 +3,7 @@ Base class for summary generation.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 class SummaryEngine(ABC):
     """

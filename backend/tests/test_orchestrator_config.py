@@ -108,6 +108,8 @@ async def test_create_orchestrator_with_no_urls():
     with patch('backend.app.core.orchestrator.orchestrator_logger') as mock_logger:
         settings.ONCHAIN_METRICS_URL = None
         orchestrator = create_orchestrator()
+        agents = orchestrator.get_agents()
+        assert agents == {}
         mock_logger.warning.assert_any_call(
             "Onchain Data Agent will not be registered due to invalid configuration."
         )

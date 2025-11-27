@@ -2,7 +2,6 @@
 Validation engine for ensuring data quality and consistency before NLG and summary generation.
 """
 
-import re
 from typing import Dict, Any, Optional, List
 from copy import deepcopy
 

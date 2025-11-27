@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 import respx
 from httpx import Response, Request, RequestError
-from backend.app.services.agents.code_audit_agent import CodeAuditAgent, CodeMetrics, AuditSummary, CodeAuditResult
+from backend.app.services.agents.code_audit_agent import CodeAuditAgent, CodeMetrics, AuditSummary
 
 
 @pytest_asyncio.fixture

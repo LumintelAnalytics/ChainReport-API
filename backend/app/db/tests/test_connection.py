@@ -3,7 +3,6 @@ import os
 from dotenv import load_dotenv
 from backend.app.db.connection import DatabaseConnection, initialize_db_connection, close_db_connection
 import unittest.mock
-import asyncpg
 
 # Load environment variables from .env file for testing
 load_dotenv()

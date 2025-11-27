@@ -1,13 +1,48 @@
 import os
 import re
 import logging
+import json
+import hashlib
 from typing import Dict, Any, List
 import httpx
 from pydantic import BaseModel, Field
 import urllib.parse
 from backend.app.security.rate_limiter import rate_limiter
+from backend.app.utils.cache_utils import cache_request
 
 logger = logging.getLogger(__name__)
+
+def serialize_httpx_response(response: httpx.Response) -> str:
+    """Serializes an httpx.Response object to a JSON string."""
+    return json.dumps({
+        "status_code": response.status_code,
+        "headers": dict(response.headers),
+        "text": response.text,
+    })
+
+def deserialize_httpx_response(data_str: str) -> httpx.Response:
+    """Deserializes a JSON string back into a mock httpx.Response object."""
+    data = json.loads(data_str)
+
+    class MockResponse:
+        def __init__(self, status_code, headers, text):
+            self.status_code = status_code
+            self.headers = headers
+            self.text = text
+
+        def json(self):
+            # Attempt to parse text as JSON, raise JSONDecodeError if not valid JSON
+            return json.loads(self.text)
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                # Create a dummy request for the HTTPStatusError
+                request = httpx.Request("GET", "http://cached-response/error")
+                raise httpx.HTTPStatusError(
+                    f"Bad response: {self.status_code}", request=request, response=self
+                )
+
+    return MockResponse(data["status_code"], data["headers"], data["text"])
 
 class CommitActivity(BaseModel):
     total: int
@@ -102,7 +137,13 @@ class CodeAuditAgent:
             if not rate_limiter.check_rate_limit("code_audit_agent"):
                 logger.warning("Rate limit exceeded for code_audit_agent (GitHub commits).")
                 return repo_data
-            commits_resp = await self.client.get(f"{base_url}/commits?per_page=1", headers=headers)
+            commits_resp = await cache_request(
+                url=f"{base_url}/commits?per_page=1",
+                external_api_call=lambda: self.client.get(f"{base_url}/commits?per_page=1", headers=headers),
+                serializer=serialize_httpx_response,
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.github_token.encode()).hexdigest()[:8]} if self.github_token else {}
+            )
             commits_resp.raise_for_status()
             link_header = commits_resp.headers.get('link') or commits_resp.headers.get('Link')
             repo_data['commits_count'] = parse_link_header(link_header, len(commits_resp.json()))
@@ -111,7 +152,13 @@ class CodeAuditAgent:
             if not rate_limiter.check_rate_limit("code_audit_agent"):
                 logger.warning("Rate limit exceeded for code_audit_agent (GitHub contributors).")
                 return repo_data
-            contributors_resp = await self.client.get(f"{base_url}/contributors?per_page=1", headers=headers)
+            contributors_resp = await cache_request(
+                url=f"{base_url}/contributors?per_page=1",
+                external_api_call=lambda: self.client.get(f"{base_url}/contributors?per_page=1", headers=headers),
+                serializer=serialize_httpx_response,
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.github_token.encode()).hexdigest()[:8]} if self.github_token else {}
+            )
             contributors_resp.raise_for_status()
             link_header = contributors_resp.headers.get('link') or contributors_resp.headers.get('Link')
             repo_data['contributors_count'] = parse_link_header(link_header, len(contributors_resp.json()))
@@ -120,7 +167,13 @@ class CodeAuditAgent:
             if not rate_limiter.check_rate_limit("code_audit_agent"):
                 logger.warning("Rate limit exceeded for code_audit_agent (GitHub releases).")
                 return repo_data
-            releases_resp = await self.client.get(f"{base_url}/releases/latest", headers=headers)
+            releases_resp = await cache_request(
+                url=f"{base_url}/releases/latest",
+                external_api_call=lambda: self.client.get(f"{base_url}/releases/latest", headers=headers),
+                serializer=serialize_httpx_response,
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.github_token.encode()).hexdigest()[:8]} if self.github_token else {}
+            )
             if releases_resp.status_code == 200:
                 repo_data['latest_release'] = releases_resp.json().get('tag_name', 'N/A')
             else:
@@ -132,7 +185,13 @@ class CodeAuditAgent:
                 return repo_data
             search_query = urllib.parse.quote_plus(f"repo:{owner}/{repo}+type:issue")
             search_issues_url = f"https://api.github.com/search/issues?q={search_query}&per_page=1"
-            issues_search_resp = await self.client.get(search_issues_url, headers=headers)
+            issues_search_resp = await cache_request(
+                url=search_issues_url,
+                external_api_call=lambda: self.client.get(search_issues_url, headers=headers),
+                serializer=serialize_httpx_response,
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.github_token.encode()).hexdigest()[:8]} if self.github_token else {}
+            )
             issues_search_resp.raise_for_status()
             issues_search_data = issues_search_resp.json()
             repo_data['issues_count'] = issues_search_data.get('total_count', 0)
@@ -141,7 +200,13 @@ class CodeAuditAgent:
             if not rate_limiter.check_rate_limit("code_audit_agent"):
                 logger.warning("Rate limit exceeded for code_audit_agent (GitHub pull requests).")
                 return repo_data
-            pulls_resp = await self.client.get(f"{base_url}/pulls?state=all&per_page=1", headers=headers)
+            pulls_resp = await cache_request(
+                url=f"{base_url}/pulls?state=all&per_page=1",
+                external_api_call=lambda: self.client.get(f"{base_url}/pulls?state=all&per_page=1", headers=headers),
+                serializer=serialize_httpx_response,
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.github_token.encode()).hexdigest()[:8]} if self.github_token else {}
+            )
             pulls_resp.raise_for_status()
             link_header = pulls_resp.headers.get('link') or pulls_resp.headers.get('Link')
             repo_data['pull_requests_count'] = parse_link_header(link_header, len(pulls_resp.json()))
@@ -174,7 +239,13 @@ class CodeAuditAgent:
             if not rate_limiter.check_rate_limit("code_audit_agent"):
                 logger.warning("Rate limit exceeded for code_audit_agent (GitLab commits).")
                 return repo_data
-            commits_resp = await self.client.get(f"{base_url}/repository/commits?per_page=1", headers=headers)
+            commits_resp = await cache_request(
+                url=f"{base_url}/repository/commits?per_page=1",
+                external_api_call=lambda: self.client.get(f"{base_url}/repository/commits?per_page=1", headers=headers),
+                serializer=serialize_httpx_response,
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.gitlab_token.encode()).hexdigest()[:8]} if self.gitlab_token else {}
+            )
             commits_resp.raise_for_status()
             repo_data['commits_count'] = int(commits_resp.headers.get('x-total', 0))
 
@@ -182,7 +253,13 @@ class CodeAuditAgent:
             if not rate_limiter.check_rate_limit("code_audit_agent"):
                 logger.warning("Rate limit exceeded for code_audit_agent (GitLab contributors).")
                 return repo_data
-            contributors_resp = await self.client.get(f"{base_url}/repository/contributors?per_page=1", headers=headers)
+            contributors_resp = await cache_request(
+                url=f"{base_url}/repository/contributors?per_page=1",
+                external_api_call=lambda: self.client.get(f"{base_url}/repository/contributors?per_page=1", headers=headers),
+                serializer=serialize_httpx_response,
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.gitlab_token.encode()).hexdigest()[:8]} if self.gitlab_token else {}
+            )
             contributors_resp.raise_for_status()
             repo_data['contributors_count'] = int(contributors_resp.headers.get('x-total', 0))
 
@@ -190,7 +267,13 @@ class CodeAuditAgent:
             if not rate_limiter.check_rate_limit("code_audit_agent"):
                 logger.warning("Rate limit exceeded for code_audit_agent (GitLab tags).")
                 return repo_data
-            tags_resp = await self.client.get(f"{base_url}/repository/tags?per_page=1", headers=headers)
+            tags_resp = await cache_request(
+                url=f"{base_url}/repository/tags?per_page=1",
+                external_api_call=lambda: self.client.get(f"{base_url}/repository/tags?per_page=1", headers=headers),
+                serializer=serialize_httpx_response,
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.gitlab_token.encode()).hexdigest()[:8]} if self.gitlab_token else {}
+            )
             if tags_resp.status_code == 200 and tags_resp.json():
                 repo_data['latest_release'] = tags_resp.json()[0].get('name', 'N/A')
             else:
@@ -200,7 +283,13 @@ class CodeAuditAgent:
             if not rate_limiter.check_rate_limit("code_audit_agent"):
                 logger.warning("Rate limit exceeded for code_audit_agent (GitLab issues).")
                 return repo_data
-            issues_resp = await self.client.get(f"{base_url}/issues?scope=all&per_page=1", headers=headers)
+            issues_resp = await cache_request(
+                url=f"{base_url}/issues?scope=all&per_page=1",
+                external_api_call=lambda: self.client.get(f"{base_url}/issues?scope=all&per_page=1", headers=headers),
+                serializer=serialize_httpx_response,
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.gitlab_token.encode()).hexdigest()[:8]} if self.gitlab_token else {}
+            )
             issues_resp.raise_for_status()
             repo_data['issues_count'] = int(issues_resp.headers.get('x-total', 0))
 
@@ -208,7 +297,13 @@ class CodeAuditAgent:
             if not rate_limiter.check_rate_limit("code_audit_agent"):
                 logger.warning("Rate limit exceeded for code_audit_agent (GitLab merge requests).")
                 return repo_data
-            merge_requests_resp = await self.client.get(f"{base_url}/merge_requests?scope=all&per_page=1", headers=headers)
+            merge_requests_resp = await cache_request(
+                url=f"{base_url}/merge_requests?scope=all&per_page=1",
+                external_api_call=lambda: self.client.get(f"{base_url}/merge_requests?scope=all&per_page=1", headers=headers),
+                serializer=serialize_httpx_response,
+                deserializer=deserialize_httpx_response,
+                params={"token_hash": hashlib.sha256(self.gitlab_token.encode()).hexdigest()[:8]} if self.gitlab_token else {}
+            )
             merge_requests_resp.raise_for_status()
             repo_data['pull_requests_count'] = int(merge_requests_resp.headers.get('x-total', 0))
 

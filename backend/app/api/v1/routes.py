@@ -30,7 +30,7 @@ async def _run_agents_in_background(report_id: str, token_id: str):
             break # Exit the async for loop on failure
 
 @router.post("/report/generate", response_model=ReportResponse)
-async def generate_report_endpoint(request: ReportRequest, background_tasks: BackgroundTasks, session: AsyncSession = Depends(get_session)):
+async def generate_report_endpoint(request: ReportRequest, background_tasks: BackgroundTasks, session: AsyncSession = Depends(get_db)):
     api_logger.info(f"Received report generation request for token_id: {request.token_id}")
     report_repository = ReportRepository(session)
     report_response = await generate_report(request, report_repository)
@@ -39,7 +39,7 @@ async def generate_report_endpoint(request: ReportRequest, background_tasks: Bac
     return report_response
 
 @router.get("/reports/{report_id}/status")
-async def get_report_status_endpoint(report_id: str, session: AsyncSession = Depends(get_session)):
+async def get_report_status_endpoint(report_id: str, session: AsyncSession = Depends(get_db)):
     api_logger.info(f"Received status request for report_id: {report_id}")
     report_repository = ReportRepository(session)
     report = await get_report_status(report_id, report_repository)
@@ -49,7 +49,7 @@ async def get_report_status_endpoint(report_id: str, session: AsyncSession = Dep
     return {"report_id": report_id, "status": report["status"]}
 
 @router.get("/reports/{report_id}/data")
-async def get_report_data_endpoint(report_id: str, session: AsyncSession = Depends(get_session)):
+async def get_report_data_endpoint(report_id: str, session: AsyncSession = Depends(get_db)):
     api_logger.info(f"Received data request for report_id: {report_id}")
     report_repository = ReportRepository(session)
     report_result = await get_report_data(report_id, report_repository)

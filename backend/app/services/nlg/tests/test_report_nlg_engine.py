@@ -2,7 +2,6 @@ import pytest
 import json
 from unittest.mock import AsyncMock, patch
 from backend.app.services.nlg.report_nlg_engine import ReportNLGEngine
-from backend.app.services.nlg.llm_client import LLMClient
 from backend.app.services.nlg.prompt_templates import get_template, fill_template
 
 # Mock the LLMClient for all tests in this module

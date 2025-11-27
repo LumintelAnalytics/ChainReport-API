@@ -1,4 +1,3 @@
-import pytest
 from backend.app.services.validation.validation_engine import perform_cross_source_checks, normalize_missing
 
 def test_normalize_missing():

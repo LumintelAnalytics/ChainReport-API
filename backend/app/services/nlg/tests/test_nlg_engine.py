@@ -2,7 +2,6 @@ import pytest
 import json
 from unittest.mock import AsyncMock, patch
 from backend.app.services.nlg.nlg_engine import NLGEngine
-from backend.app.services.nlg.llm_client import LLMClient
 from backend.app.services.nlg.prompt_templates import get_template, fill_template
 
 # Concrete implementation for testing purposes

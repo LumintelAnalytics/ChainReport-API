@@ -30,12 +30,13 @@ class OnchainAgentHTTPError(OnchainAgentException):
 
 class OnchainAgentRateLimitExceeded(OnchainAgentException):
     """Exception raised when rate limit is exceeded for OnchainAgent."""
-    pass
+    def __init__(self, message="Rate limit exceeded for onchain_agent."):
+        super().__init__(message)
 
 @retry(
     stop=stop_after_attempt(settings.MAX_RETRIES),
     wait=wait_exponential(multiplier=settings.RETRY_MULTIPLIER, min=settings.MIN_RETRY_DELAY, max=settings.MAX_RETRY_DELAY),
-    retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, OnchainAgentException, httpx.TimeoutException, httpx.RequestError)),
+    retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
 async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = None) -> dict:
@@ -63,7 +64,7 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
 
     if not rate_limiter.check_rate_limit("onchain_agent"):
         logger.warning(f"[Token ID: {token_id}] Rate limit exceeded for onchain_agent.")
-        raise OnchainAgentRateLimitExceeded("Rate limit exceeded for onchain_agent.")
+        raise OnchainAgentRateLimitExceeded()
 
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:
@@ -89,7 +90,7 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
 @retry(
     stop=stop_after_attempt(settings.MAX_RETRIES),
     wait=wait_exponential(multiplier=settings.RETRY_MULTIPLIER, min=settings.MIN_RETRY_DELAY, max=settings.MAX_RETRY_DELAY),
-    retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, OnchainAgentException, httpx.TimeoutException, httpx.RequestError)),
+    retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, httpx.TimeoutException, httpx.RequestError)),
     reraise=True
 )
 async def fetch_tokenomics(url: str, token_id: str, params: dict | None = None) -> dict:
@@ -117,7 +118,7 @@ async def fetch_tokenomics(url: str, token_id: str, params: dict | None = None) 
 
     if not rate_limiter.check_rate_limit("onchain_agent"):
         logger.warning(f"[Token ID: {token_id}] Rate limit exceeded for onchain_agent.")
-        raise OnchainAgentRateLimitExceeded("Rate limit exceeded for onchain_agent.")
+        raise OnchainAgentRateLimitExceeded()
 
     async with httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS, headers={"User-Agent": settings.USER_AGENT}) as client:
         try:

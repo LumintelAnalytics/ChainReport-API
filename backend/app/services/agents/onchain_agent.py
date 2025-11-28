@@ -7,7 +7,7 @@ from backend.app.core.logger import services_logger as logger
 from backend.app.security.rate_limiter import rate_limiter
 
 def log_retry_attempt(retry_state):
-    token_id = "unknown"
+    token_id = "unknown"  # noqa: S105
     try:
         if "token_id" in retry_state.kwargs:
             token_id = retry_state.kwargs["token_id"]
@@ -105,6 +105,10 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
             logger.error(f"[Token ID: {token_id}] HTTP error fetching on-chain metrics from {url}: {e.response.status_code}. Response text truncated: {e.response.text[:200]}")
             raise OnchainAgentHTTPError(f"HTTP error for {url}: {e.response.status_code}", e.response.status_code) from e
         except Exception as e:
+            logger.exception(
+                f"[Token ID: {token_id}] An unexpected error occurred while "
+                f"fetching on-chain metrics from {url}"
+            )
             raise OnchainAgentException(f"Unexpected error for {url}") from e
 
 @retry(
@@ -147,8 +151,11 @@ async def fetch_tokenomics(url: str, token_id: str, params: dict | None = None) 
             response = await client.get(url, params=params)
             response.raise_for_status()
             response_json = response.json()
-            output_size = len(str(response_json))
-            logger.info(f"[Token ID: {token_id}] API call to {url} successful. Status: {response.status_code}, Output size: {output_size} bytes")
+            output_size = len(response.content)
+            logger.info(
+                f"[Token ID: {token_id}] API call to {url} successful. "
+                f"Status: {response.status_code}, Response size: {output_size} bytes"
+            )
             await asyncio.sleep(settings.REQUEST_DELAY_SECONDS)
             logger.info(f"OnchainAgent: Completed fetch_tokenomics for token_id: {token_id}, URL: {url}")
             return response_json

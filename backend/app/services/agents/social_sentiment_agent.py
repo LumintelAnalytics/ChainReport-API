@@ -1,3 +1,4 @@
+import os
 import asyncio
 from typing import List, Dict, Any
 import httpx
@@ -8,8 +9,18 @@ from backend.app.core.logger import services_logger
 from backend.app.security.rate_limiter import rate_limiter
 
 def log_retry_attempt(retry_state):
+    token_id = "unknown"
+    try:
+        if "token_id" in retry_state.kwargs:
+            token_id = retry_state.kwargs["token_id"]
+        elif len(retry_state.args) > 1:
+            token_id = retry_state.args[1]
+    except (IndexError, KeyError):
+        pass  # token_id remains "unknown"
+
     services_logger.warning(
-        f"Retrying: attempt {retry_state.attempt_number}, "
+        f"SocialSentimentAgent: Retrying for token_id: {token_id}, "
+        f"attempt {retry_state.attempt_number}, "
         f"exception: {retry_state.outcome.exception()}, "
         f"next backoff: {retry_state.next_action.sleep} seconds."
     )
@@ -24,12 +35,14 @@ api_retry_decorator = retry(
 )
 
 class SocialSentimentAgent:
+    # Sentiment analysis thresholds
+    POSITIVE_THRESHOLD = 0.1
+    NEGATIVE_THRESHOLD = -0.1
     def __init__(self):
-        # Placeholder for API key management. In a real application, use a secure method
-        # to load API keys (e.g., environment variables, a secrets manager).
-        self.twitter_api_key = "YOUR_TWITTER_API_KEY"
-        self.reddit_api_key = "YOUR_REDDIT_API_KEY"
-        self.news_api_key = "YOUR_NEWS_API_KEY"
+        # Load API keys from environment variables or secrets manager
+        self.twitter_api_key = os.getenv("TWITTER_API_KEY")
+        self.reddit_api_key = os.getenv("REDDIT_API_KEY")
+        self.news_api_key = os.getenv("NEWS_API_KEY")
 
     @api_retry_decorator
     async def _fetch_twitter_data(self, token_id: str) -> List[Dict[str, Any]]:
@@ -41,7 +54,7 @@ class SocialSentimentAgent:
         await asyncio.sleep(1) # Simulate network delay
         twitter_data = [{"source": "twitter", "text": f"Great news about {token_id}!", "id": "1"},
                         {"source": "twitter", "text": f"{token_id} is a scam.", "id": "2"}]
-        services_logger.info(f"SocialSentimentAgent: Successfully fetched Twitter data for {token_id}. Response size: {len(str(twitter_data))} bytes")
+        services_logger.info(f"SocialSentimentAgent: Successfully fetched Twitter data for {token_id}. Records: {len(twitter_data)}")
         return twitter_data
 
     @api_retry_decorator
@@ -54,7 +67,7 @@ class SocialSentimentAgent:
         await asyncio.sleep(1) # Simulate network delay
         reddit_data = [{"source": "reddit", "text": f"Loving the community around {token_id}.", "id": "3"},
                        {"source": "reddit", "text": f"Is {token_id} going to zero?", "id": "4"}]
-        services_logger.info(f"SocialSentimentAgent: Successfully fetched Reddit data for {token_id}. Response size: {len(str(reddit_data))} bytes")
+        services_logger.info(f"SocialSentimentAgent: Successfully fetched Reddit data for {token_id}. Records: {len(reddit_data)}")
         return reddit_data
 
     @api_retry_decorator
@@ -67,7 +80,7 @@ class SocialSentimentAgent:
         await asyncio.sleep(1) # Simulate network delay
         news_data = [{"source": "news", "text": f"Analyst predicts bright future for {token_id}.", "id": "5"},
                      {"source": "news", "text": f"Concerns raised over {token_id} security.", "id": "6"}]
-        services_logger.info(f"SocialSentimentAgent: Successfully fetched News data for {token_id}. Response size: {len(str(news_data))} bytes")
+        services_logger.info(f"SocialSentimentAgent: Successfully fetched News data for {token_id}. Records: {len(news_data)}")
         return news_data
 
     async def fetch_social_data(self, token_id: str) -> List[Dict[str, Any]]:
@@ -128,9 +141,9 @@ class SocialSentimentAgent:
                 polarity = analysis.sentiment.polarity # -1.0 to +1.0
                 
                 sentiment_label = "neutral"
-                if polarity > 0.1: # Threshold for positive sentiment
+                if polarity > self.POSITIVE_THRESHOLD: # Threshold for positive sentiment
                     sentiment_label = "positive"
-                elif polarity < -0.1: # Threshold for negative sentiment
+                elif polarity < self.NEGATIVE_THRESHOLD: # Threshold for negative sentiment
                     sentiment_label = "negative"
                 
                 sentiments.append(polarity)
@@ -156,9 +169,9 @@ class SocialSentimentAgent:
         average_polarity = sum(sentiments) / len(sentiments)
 
         overall_sentiment_label = "neutral"
-        if average_polarity > 0.1:
+        if average_polarity > self.POSITIVE_THRESHOLD:
             overall_sentiment_label = "positive"
-        elif average_polarity < -0.1:
+        elif average_polarity < self.NEGATIVE_THRESHOLD:
             overall_sentiment_label = "negative"
 
         services_logger.info(f"SocialSentimentAgent: Sentiment analysis complete. Overall sentiment: {overall_sentiment_label} (Score: {average_polarity:.2f})")

@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 from typing import List, Dict, Any
-from backend.app.core.logger import orchestrator_logger
+from backend.app.core.logger import services_logger
 from backend.app.services.nlg.llm_client import LLMClient
 from backend.app.services.nlg.prompt_templates import get_template, fill_template
 from backend.app.security.rate_limiter import rate_limiter
@@ -24,7 +24,7 @@ class TeamDocAgent:
         Returns:
             A structured string containing the summarized analysis.
         """
-        orchestrator_logger.info("Generating team and documentation analysis using LLM.")
+        services_logger.info("TeamDocAgent: Starting generate_team_doc_text. Analyzing team and documentation data.")
         summary_parts = []
 
         async with LLMClient() as client:
@@ -33,14 +33,16 @@ class TeamDocAgent:
                 get_template("team_roles_summary"),
                 team_data=json.dumps(team_data, indent=2)
             )
+            services_logger.debug("TeamDocAgent: Calling LLM for team roles summary.")
             try:
                 team_roles_response = await client.generate_text(team_roles_prompt)
                 choices = team_roles_response.get("choices") or []
                 content = choices[0].get("message", {}).get("content", "N/A") if choices else "N/A"
+                services_logger.info(f"TeamDocAgent: LLM generated team roles summary. Response size: {len(str(team_roles_response))} bytes")
                 summary_parts.append("### Team Roles and Responsibilities\n")
                 summary_parts.append(content)
             except Exception as e:
-                orchestrator_logger.error(f"Error generating team roles summary: {e}")
+                services_logger.error(f"TeamDocAgent: Error generating team roles summary: {e}")
                 summary_parts.append("### Team Roles and Responsibilities\n")
                 summary_parts.append("N/A (Failed to generate team roles summary)")
             summary_parts.append("\n\n")
@@ -50,14 +52,16 @@ class TeamDocAgent:
                 get_template("team_experience_summary"),
                 team_data=json.dumps(team_data, indent=2)
             )
+            services_logger.debug("TeamDocAgent: Calling LLM for team experience summary.")
             try:
                 team_experience_response = await client.generate_text(team_experience_prompt)
                 choices = team_experience_response.get("choices") or []
                 content = choices[0].get("message", {}).get("content", "N/A") if choices else "N/A"
+                services_logger.info(f"TeamDocAgent: LLM generated team experience summary. Response size: {len(str(team_experience_response))} bytes")
                 summary_parts.append("### Team Experience and Expertise\n")
                 summary_parts.append(content)
             except Exception as e:
-                orchestrator_logger.error(f"Error generating team experience summary: {e}")
+                services_logger.error(f"TeamDocAgent: Error generating team experience summary: {e}")
                 summary_parts.append("### Team Experience and Expertise\n")
                 summary_parts.append("N/A (Failed to generate team experience summary)")
             summary_parts.append("\n\n")
@@ -67,14 +71,16 @@ class TeamDocAgent:
                 get_template("team_credibility_summary"),
                 team_data=json.dumps(team_data, indent=2)
             )
+            services_logger.debug("TeamDocAgent: Calling LLM for team credibility summary.")
             try:
                 team_credibility_response = await client.generate_text(team_credibility_prompt)
                 choices = team_credibility_response.get("choices") or []
                 content = choices[0].get("message", {}).get("content", "N/A") if choices else "N/A"
+                services_logger.info(f"TeamDocAgent: LLM generated team credibility summary. Response size: {len(str(team_credibility_response))} bytes")
                 summary_parts.append("### Team Credibility\n")
                 summary_parts.append(content)
             except Exception as e:
-                orchestrator_logger.error(f"Error generating team credibility summary: {e}")
+                services_logger.error(f"TeamDocAgent: Error generating team credibility summary: {e}")
                 summary_parts.append("### Team Credibility\n")
                 summary_parts.append("N/A (Failed to generate team credibility summary)")
             summary_parts.append("\n\n")
@@ -84,18 +90,21 @@ class TeamDocAgent:
                 get_template("documentation_strength_summary"),
                 doc_data=json.dumps(doc_data, indent=2)
             )
+            services_logger.debug("TeamDocAgent: Calling LLM for documentation strength summary.")
             try:
                 doc_strength_response = await client.generate_text(doc_strength_prompt)
                 choices = doc_strength_response.get("choices") or []
                 content = choices[0].get("message", {}).get("content", "N/A") if choices else "N/A"
+                services_logger.info(f"TeamDocAgent: LLM generated documentation strength summary. Response size: {len(str(doc_strength_response))} bytes")
                 summary_parts.append("### Documentation Strength\n")
                 summary_parts.append(content)
             except Exception as e:
-                orchestrator_logger.error(f"Error generating documentation strength summary: {e}")
+                services_logger.error(f"TeamDocAgent: Error generating documentation strength summary: {e}")
                 summary_parts.append("### Documentation Strength\n")
                 summary_parts.append("N/A (Failed to generate documentation strength summary)")
             summary_parts.append("\n\n")
-
+        
+        services_logger.info("TeamDocAgent: Completed generate_team_doc_text.")
         return "".join(summary_parts)
 
     def scrape_team_profiles(self, urls: List[str]) -> List[Dict[str, Any]]:
@@ -109,15 +118,19 @@ class TeamDocAgent:
         Returns:
             A list of dictionaries, each representing a team member's profile in JSON format.
         """
+        services_logger.info(f"TeamDocAgent: Starting scrape_team_profiles. URLs: {urls}")
         team_profiles = []
         for url in urls:
+            services_logger.debug(f"TeamDocAgent: Checking rate limit for URL: {url}")
             if not rate_limiter.check_rate_limit("team_doc_agent"):
-                orchestrator_logger.warning(f"Rate limit exceeded for team_doc_agent for URL: {url}. Skipping.")
+                services_logger.warning(f"TeamDocAgent: Rate limit exceeded for team_doc_agent for URL: {url}. Skipping.")
                 team_profiles.append({"url": url, "error": "Rate limit exceeded", "source": url})
                 continue
             try:
+                services_logger.debug(f"TeamDocAgent: Attempting to scrape URL: {url}")
                 response = requests.get(url, timeout=10)
                 response.raise_for_status()  # Raise an HTTPError for bad responses (4xx or 5xx)
+                services_logger.info(f"TeamDocAgent: Successfully scraped URL: {url}. Response size: {len(response.text)} bytes")
                 soup = BeautifulSoup(response.text, 'html.parser')
 
                 # Placeholder for actual scraping logic
@@ -135,19 +148,20 @@ class TeamDocAgent:
                     "source": url
                 })
             except requests.exceptions.RequestException as e:
-                orchestrator_logger.error("Error scraping %s: %s", url, e)
+                services_logger.error("TeamDocAgent: Error scraping %s: %s", url, e)
                 team_profiles.append({
                     "url": url,
                     "error": str(e),
                     "source": url
                 })
             except Exception as e:
-                orchestrator_logger.error("An unexpected error occurred while processing %s: %s", url, e)
+                services_logger.error("TeamDocAgent: An unexpected error occurred while processing %s: %s", url, e)
                 team_profiles.append({
                     "url": url,
                     "error": f"Unexpected error: {e}",
                     "source": url
                 })
+        services_logger.info("TeamDocAgent: Completed scrape_team_profiles.")
         return team_profiles
 
     def analyze_whitepaper(self, text: str) -> Dict[str, Any]:
@@ -161,6 +175,7 @@ class TeamDocAgent:
         Returns:
             A dictionary containing extracted whitepaper details in JSON format.
         """
+        services_logger.info("TeamDocAgent: Starting analyze_whitepaper.")
         try:
             # Placeholder for actual NLP/text analysis logic
             # In a real scenario, you would use NLP techniques to extract information
@@ -174,17 +189,20 @@ class TeamDocAgent:
             # Simulate extraction based on keywords or patterns
             if "Q1 2026" in text:
                 extracted_data["project_timelines"].append({"event": "Phase 1 Completion", "date": "Q1 2026"})
+                services_logger.debug("TeamDocAgent: Identified 'Q1 2026' in whitepaper text.")
             if "mainnet launch" in text.lower():
                 extracted_data["roadmap_items"].append("Mainnet Launch")
+                services_logger.debug("TeamDocAgent: Identified 'mainnet launch' in whitepaper text.")
             if "our vision is" in text.lower():
                 start = text.lower().find("our vision is")
                 end = text.lower().find(".", start)
                 if start != -1 and end != -1:
                     extracted_data["public_statements"].append(text[start:end+1].strip())
-
+                    services_logger.debug("TeamDocAgent: Identified 'our vision is' statement in whitepaper text.")
+            services_logger.info("TeamDocAgent: Completed analyze_whitepaper successfully.")
             return extracted_data
         except Exception as e:
-            orchestrator_logger.error("Error analyzing whitepaper: %s", e)
+            services_logger.error("TeamDocAgent: Error analyzing whitepaper: %s", e)
             return {
                 "project_timelines": [],
                 "roadmap_items": [],

@@ -1,17 +1,8 @@
 import asyncio
-import logging
-from typing import List, Dict, Any
-import httpx
-from textblob import TextBlob
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, RetryError
-from backend.app.security.rate_limiter import rate_limiter
-
-# Configure logger
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+from backend.app.core.services_logger import services_services_logger
 
 def log_retry_attempt(retry_state):
-    logger.warning(
+    services_logger.warning(
         f"Retrying: attempt {retry_state.attempt_number}, "
         f"exception: {retry_state.outcome.exception()}, "
         f"next backoff: {retry_state.next_action.sleep} seconds."
@@ -37,37 +28,40 @@ class SocialSentimentAgent:
     @api_retry_decorator
     async def _fetch_twitter_data(self, token_id: str) -> List[Dict[str, Any]]:
         if not rate_limiter.check_rate_limit("social_sentiment_agent"):
-            logger.warning(f"Rate limit exceeded for social_sentiment_agent (Twitter) for {token_id}.")
+            services_logger.warning(f"Rate limit exceeded for social_sentiment_agent (Twitter) for {token_id}.")
             return []
-        logger.info(f"Attempting to fetch Twitter data for {token_id}...")
+        services_logger.info(f"Attempting to fetch Twitter data for {token_id}...")
+        services_logger.debug(f"SocialSentimentAgent: Simulating API call for Twitter data for {token_id}")
         await asyncio.sleep(1) # Simulate network delay
         twitter_data = [{"source": "twitter", "text": f"Great news about {token_id}!", "id": "1"},
                         {"source": "twitter", "text": f"{token_id} is a scam.", "id": "2"}]
-        logger.info(f"Successfully fetched Twitter data for {token_id}.")
+        services_logger.info(f"SocialSentimentAgent: Successfully fetched Twitter data for {token_id}. Response size: {len(str(twitter_data))} bytes")
         return twitter_data
 
     @api_retry_decorator
     async def _fetch_reddit_data(self, token_id: str) -> List[Dict[str, Any]]:
         if not rate_limiter.check_rate_limit("social_sentiment_agent"):
-            logger.warning(f"Rate limit exceeded for social_sentiment_agent (Reddit) for {token_id}.")
+            services_logger.warning(f"Rate limit exceeded for social_sentiment_agent (Reddit) for {token_id}.")
             return []
-        logger.info(f"Attempting to fetch Reddit data for {token_id}...")
+        services_logger.info(f"Attempting to fetch Reddit data for {token_id}...")
+        services_logger.debug(f"SocialSentimentAgent: Simulating API call for Reddit data for {token_id}")
         await asyncio.sleep(1) # Simulate network delay
         reddit_data = [{"source": "reddit", "text": f"Loving the community around {token_id}.", "id": "3"},
                        {"source": "reddit", "text": f"Is {token_id} going to zero?", "id": "4"}]
-        logger.info(f"Successfully fetched Reddit data for {token_id}.")
+        services_logger.info(f"SocialSentimentAgent: Successfully fetched Reddit data for {token_id}. Response size: {len(str(reddit_data))} bytes")
         return reddit_data
 
     @api_retry_decorator
     async def _fetch_news_data(self, token_id: str) -> List[Dict[str, Any]]:
         if not rate_limiter.check_rate_limit("social_sentiment_agent"):
-            logger.warning(f"Rate limit exceeded for social_sentiment_agent (News) for {token_id}.")
+            services_logger.warning(f"Rate limit exceeded for social_sentiment_agent (News) for {token_id}.")
             return []
-        logger.info(f"Attempting to fetch News data for {token_id}...")
+        services_logger.info(f"Attempting to fetch News data for {token_id}...")
+        services_logger.debug(f"SocialSentimentAgent: Simulating API call for News data for {token_id}")
         await asyncio.sleep(1) # Simulate network delay
         news_data = [{"source": "news", "text": f"Analyst predicts bright future for {token_id}.", "id": "5"},
                      {"source": "news", "text": f"Concerns raised over {token_id} security.", "id": "6"}]
-        logger.info(f"Successfully fetched News data for {token_id}.")
+        services_logger.info(f"SocialSentimentAgent: Successfully fetched News data for {token_id}. Response size: {len(str(news_data))} bytes")
         return news_data
 
     async def fetch_social_data(self, token_id: str) -> List[Dict[str, Any]]:
@@ -75,29 +69,37 @@ class SocialSentimentAgent:
         Fetches social media data (posts, tweets, comments) for a given token_id.
         Includes rate-limit handling and error logging.
         """
+        services_logger.info(f"SocialSentimentAgent: Starting fetch_social_data for token_id: {token_id}")
         all_data = []
         
         # --- Twitter API integration ---
+        services_logger.debug(f"SocialSentimentAgent: Fetching Twitter data for {token_id}")
         try:
             twitter_data = await self._fetch_twitter_data(token_id)
             all_data.extend(twitter_data)
+            services_logger.debug(f"SocialSentimentAgent: Twitter data fetched for {token_id}. Records: {len(twitter_data)}")
         except RetryError:
-            logger.exception(f"Failed to fetch Twitter data for {token_id} after multiple retries.")
+            services_logger.exception(f"SocialSentimentAgent: Failed to fetch Twitter data for {token_id} after multiple retries.")
 
         # --- Reddit API integration ---
+        services_logger.debug(f"SocialSentimentAgent: Fetching Reddit data for {token_id}")
         try:
             reddit_data = await self._fetch_reddit_data(token_id)
             all_data.extend(reddit_data)
+            services_logger.debug(f"SocialSentimentAgent: Reddit data fetched for {token_id}. Records: {len(reddit_data)}")
         except RetryError:
-            logger.exception(f"Failed to fetch Reddit data for {token_id} after multiple retries.")
+            services_logger.exception(f"SocialSentimentAgent: Failed to fetch Reddit data for {token_id} after multiple retries.")
 
         # --- News Aggregator API integration ---
+        services_logger.debug(f"SocialSentimentAgent: Fetching News data for {token_id}")
         try:
             news_data = await self._fetch_news_data(token_id)
             all_data.extend(news_data)
+            services_logger.debug(f"SocialSentimentAgent: News data fetched for {token_id}. Records: {len(news_data)}")
         except RetryError:
-            logger.exception(f"Failed to fetch News data for {token_id} after multiple retries.")
-
+            services_logger.exception(f"SocialSentimentAgent: Failed to fetch News data for {token_id} after multiple retries.")
+        
+        services_logger.info(f"SocialSentimentAgent: Completed fetch_social_data for token_id: {token_id}. Total records: {len(all_data)}")
         return all_data
 
     async def analyze_sentiment(self, data: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -105,8 +107,9 @@ class SocialSentimentAgent:
         Performs sentiment analysis on the collected data and summarizes community perception.
         Returns a sentiment score (positive, neutral, negative).
         """
+        services_logger.info(f"SocialSentimentAgent: Starting analyze_sentiment. Data items: {len(data)}")
         if not data:
-            logger.warning("No data provided for sentiment analysis.")
+            services_logger.warning("SocialSentimentAgent: No data provided for sentiment analysis. Returning neutral.")
             return {"overall_sentiment": "neutral", "score": 0.0, "details": []}
 
         sentiments = []
@@ -132,6 +135,7 @@ class SocialSentimentAgent:
                     "polarity_score": polarity
                 })
             else:
+                services_logger.debug(f"SocialSentimentAgent: Skipping sentiment analysis for item due to no text: {item.get("source", "unknown")}")
                 details.append({
                     "source": item.get("source", "unknown"),
                     "text": "No text available",
@@ -140,6 +144,7 @@ class SocialSentimentAgent:
                 })
 
         if not sentiments:
+            services_logger.warning("SocialSentimentAgent: No sentiments calculated from provided data. Returning neutral.")
             return {"overall_sentiment": "neutral", "score": 0.0, "details": details}
 
         average_polarity = sum(sentiments) / len(sentiments)
@@ -150,7 +155,7 @@ class SocialSentimentAgent:
         elif average_polarity < -0.1:
             overall_sentiment_label = "negative"
 
-        logger.info(f"Sentiment analysis complete. Overall sentiment: {overall_sentiment_label} (Score: {average_polarity:.2f})")
+        services_logger.info(f"SocialSentimentAgent: Sentiment analysis complete. Overall sentiment: {overall_sentiment_label} (Score: {average_polarity:.2f})")
         return {
             "overall_sentiment": overall_sentiment_label,
             "score": round(average_polarity, 4),

@@ -6,6 +6,14 @@ from backend.app.core.config import settings
 from backend.app.core.logger import services_logger as logger
 from backend.app.security.rate_limiter import rate_limiter
 
+def log_retry_attempt(retry_state):
+    logger.warning(
+        f"OnchainAgent: Retrying {retry_state.fn.__name__} for token_id: {retry_state.args[1]}, "
+        f"attempt {retry_state.attempt_number}, "
+        f"exception: {retry_state.outcome.exception()}, "
+        f"next backoff: {retry_state.next_action.sleep} seconds."
+    )
+
 # Configure httpx timeouts and limits
 HTTP_TIMEOUT = httpx.Timeout(5.0, read=10.0, write=5.0, pool=5.0)
 HTTP_LIMITS = httpx.Limits(max_connections=10, max_keepalive_connections=5)
@@ -37,7 +45,8 @@ class OnchainAgentRateLimitExceeded(OnchainAgentException):
     stop=stop_after_attempt(settings.MAX_RETRIES),
     wait=wait_exponential(multiplier=settings.RETRY_MULTIPLIER, min=settings.MIN_RETRY_DELAY, max=settings.MAX_RETRY_DELAY),
     retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, httpx.TimeoutException, httpx.RequestError)),
-    reraise=True
+    reraise=True,
+    before_sleep=log_retry_attempt
 )
 async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = None) -> dict:
     """
@@ -57,6 +66,7 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
         OnchainAgentHTTPError: If the HTTP response status is not 2xx.
         OnchainAgentException: For other unexpected errors.
     """
+    logger.info(f"OnchainAgent: Starting fetch_onchain_metrics for token_id: {token_id}, URL: {url}")
     if params is None:
         params = {}
 
@@ -74,6 +84,7 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
             output_size = len(response.content)
             logger.info(f"[Token ID: {token_id}] API call to {url} successful. Status: {response.status_code}, Response size: {output_size} bytes")
             await asyncio.sleep(settings.REQUEST_DELAY_SECONDS)
+            logger.info(f"OnchainAgent: Completed fetch_onchain_metrics for token_id: {token_id}, URL: {url}")
             return response_json
         except httpx.TimeoutException as e:
             logger.error(f"[Token ID: {token_id}] Timeout fetching on-chain metrics from {url}: {e}")
@@ -91,7 +102,8 @@ async def fetch_onchain_metrics(url: str, token_id: str, params: dict | None = N
     stop=stop_after_attempt(settings.MAX_RETRIES),
     wait=wait_exponential(multiplier=settings.RETRY_MULTIPLIER, min=settings.MIN_RETRY_DELAY, max=settings.MAX_RETRY_DELAY),
     retry=retry_if_exception_type((OnchainAgentTimeout, OnchainAgentNetworkError, OnchainAgentHTTPError, httpx.TimeoutException, httpx.RequestError)),
-    reraise=True
+    reraise=True,
+    before_sleep=log_retry_attempt
 )
 async def fetch_tokenomics(url: str, token_id: str, params: dict | None = None) -> dict:
     """
@@ -111,6 +123,7 @@ async def fetch_tokenomics(url: str, token_id: str, params: dict | None = None) 
         OnchainAgentHTTPError: If the HTTP response status is not 2xx.
         OnchainAgentException: For other unexpected errors.
     """
+    logger.info(f"OnchainAgent: Starting fetch_tokenomics for token_id: {token_id}, URL: {url}")
     if params is None:
         params = {}
 
@@ -128,6 +141,7 @@ async def fetch_tokenomics(url: str, token_id: str, params: dict | None = None) 
             output_size = len(str(response_json))
             logger.info(f"[Token ID: {token_id}] API call to {url} successful. Status: {response.status_code}, Output size: {output_size} bytes")
             await asyncio.sleep(settings.REQUEST_DELAY_SECONDS)
+            logger.info(f"OnchainAgent: Completed fetch_tokenomics for token_id: {token_id}, URL: {url}")
             return response_json
         except httpx.TimeoutException as e:
             logger.error(f"[Token ID: {token_id}] Timeout fetching tokenomics data from {url}: {e}")

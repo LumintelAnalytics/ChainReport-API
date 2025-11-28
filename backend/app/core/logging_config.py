@@ -43,6 +43,8 @@ def configure_logging(log_dir="logs", max_bytes=10*1024*1024, backup_count=5):
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)  # Set the lowest level to capture all
 
+    if logger.handlers:
+        return
     # Define a custom formatter for JSON output
     class JsonFormatter(logging.Formatter):
         def format(self, record):
@@ -99,9 +101,3 @@ def configure_logging(log_dir="logs", max_bytes=10*1024*1024, backup_count=5):
     console_handler.setFormatter(json_formatter) # Use JSON formatter for console as well
     logger.addHandler(console_handler)
 
-    # Prevent adding multiple handlers if configure_logging is called multiple times
-    if not logger.handlers:
-        logger.addHandler(debug_handler)
-        logger.addHandler(info_handler)
-        logger.addHandler(error_handler)
-        logger.addHandler(console_handler)

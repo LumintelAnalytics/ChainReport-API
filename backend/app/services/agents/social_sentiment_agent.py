@@ -8,8 +8,8 @@ from textblob import TextBlob
 from backend.app.core.logger import services_logger
 from backend.app.security.rate_limiter import rate_limiter
 
-def log_retry_attempt(retry_state):
-    token_id = "unknown"
+def log_retry_attempt(retry_state: Any) -> None:
+    token_id = "unknown"  # noqa: S105
     try:
         if "token_id" in retry_state.kwargs:
             token_id = retry_state.kwargs["token_id"]

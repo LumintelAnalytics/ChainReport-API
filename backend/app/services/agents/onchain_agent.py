@@ -7,8 +7,17 @@ from backend.app.core.logger import services_logger as logger
 from backend.app.security.rate_limiter import rate_limiter
 
 def log_retry_attempt(retry_state):
+    token_id = "unknown"
+    try:
+        if "token_id" in retry_state.kwargs:
+            token_id = retry_state.kwargs["token_id"]
+        elif len(retry_state.args) > 1:
+            token_id = retry_state.args[1]
+    except (IndexError, KeyError):
+        pass # token_id remains "unknown"
+
     logger.warning(
-        f"OnchainAgent: Retrying {retry_state.fn.__name__} for token_id: {retry_state.args[1]}, "
+        f"OnchainAgent: Retrying {retry_state.fn.__name__} for token_id: {token_id}, "
         f"attempt {retry_state.attempt_number}, "
         f"exception: {retry_state.outcome.exception()}, "
         f"next backoff: {retry_state.next_action.sleep} seconds."

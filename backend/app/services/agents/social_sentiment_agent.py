@@ -1,5 +1,11 @@
 import asyncio
-from backend.app.core.services_logger import services_services_logger
+from typing import List, Dict, Any
+import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, RetryError
+from textblob import TextBlob
+
+from backend.app.core.logger import services_logger
+from backend.app.security.rate_limiter import rate_limiter
 
 def log_retry_attempt(retry_state):
     services_logger.warning(
@@ -135,7 +141,7 @@ class SocialSentimentAgent:
                     "polarity_score": polarity
                 })
             else:
-                services_logger.debug(f"SocialSentimentAgent: Skipping sentiment analysis for item due to no text: {item.get("source", "unknown")}")
+                services_logger.debug(f"SocialSentimentAgent: Skipping sentiment analysis for item due to no text: {item.get('source', 'unknown')}")
                 details.append({
                     "source": item.get("source", "unknown"),
                     "text": "No text available",

@@ -11,7 +11,7 @@ from backend.app.db.repositories.report_repository import ReportRepository
 from backend.app.core.error_utils import capture_exception
 from backend.app.db.models.report_state import ReportStatusEnum, ReportState
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.app.db.database import get_db # Added for agent functions
+from backend.app.db.database import get_db, AsyncSessionLocal # Added for agent functions
 
 async def dummy_agent(report_id: str, token_id: str) -> Dict[str, Any]:
     """

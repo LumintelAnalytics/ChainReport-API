@@ -8,7 +8,8 @@ from backend.app.services.agents.team_doc_agent import TeamDocAgent
 from backend.app.services.agents.code_audit_agent import CodeAuditAgent # Import CodeAuditAgent
 from backend.app.core.config import settings
 from backend.app.db.repositories.report_repository import ReportRepository
-from backend.app.db.models.report_state import ReportStatusEnum
+from backend.app.core.error_utils import capture_exception
+from backend.app.db.models.report_state import ReportStatusEnum, ReportState
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.db.database import get_db, AsyncSessionLocal # Added for agent functions
 
@@ -37,8 +38,36 @@ class Orchestrator:
             name: agent_func(report_id, token_id)
             for name, agent_func in self._agents.items()
         }
+        
+        # Execute agents concurrently and capture exceptions
         results = await asyncio.gather(*tasks.values(), return_exceptions=True)
-        return dict(zip(tasks.keys(), results))
+        
+        # Process results, capture exceptions, and update report state
+        processed_results = {}
+        errors_flag: Dict[str, bool] = {}
+        for agent_name, result in zip(tasks.keys(), results):
+            if isinstance(result, Exception):
+                # Capture the exception with additional context
+                orchestrator_logger.exception("Agent %s failed for report %s", agent_name, report_id)
+                capture_exception(result, {"agent_name": agent_name, "report_id": report_id, "token_id": token_id})
+                errors_flag[agent_name] = True
+                processed_results[agent_name] = {"status": "failed", "error": str(result)}
+            else:
+                processed_results[agent_name] = result
+        
+        # Update the report with agent-specific errors if any agent failed
+        if errors_flag:
+            async with AsyncSessionLocal() as session:
+                report_repo = ReportRepository(session)
+                existing_report = await report_repo.get_report_by_id(report_id)
+                if existing_report:
+                    existing_errors = existing_report.errors if existing_report.errors else {}
+                    await report_repo.update_partial(
+                        report_id,
+                        {"status": ReportStatusEnum.AGENTS_FAILED, "errors": {**existing_errors, **errors_flag}}
+                    )
+
+        return processed_results
 
     def aggregate_results(self, agent_results: Dict[str, Any]) -> Dict[str, Any]:
         combined_data = {}

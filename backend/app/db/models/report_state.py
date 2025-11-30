@@ -33,3 +33,4 @@ class ReportState(Base):
     raw_data = Column(JSON, nullable=True)  # Stores raw data collected by agents
     final_report_json = Column(JSON, nullable=True)  # Stores the final generated report JSON
     error_message = Column(String, nullable=True) # New column for error messages
+    errors = Column(JSON, nullable=True) # Stores error flags for agents

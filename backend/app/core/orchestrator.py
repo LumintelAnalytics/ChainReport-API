@@ -65,7 +65,16 @@ class Orchestrator:
                     {"status": ReportStatusEnum.AGENTS_FAILED, "errors": {**existing_errors, **errors_flag}}
                 )
             else:
-                orchestrator_logger.warning("Report %s not found when attempting to update with agent errors.", report_id)
+                raise RuntimeError(f"Report {report_id} not found when attempting to update with agent errors. Errors detected: {errors_flag}")
+        else:
+            existing_report = await self.report_repository.get_report_by_id(report_id)
+            if existing_report:
+                await self.report_repository.update_partial(
+                    report_id,
+                    {"status": ReportStatusEnum.AGENTS_COMPLETED}
+                )
+            else:
+                orchestrator_logger.warning("Report %s not found when attempting to update with AGENTS_COMPLETED status.", report_id)
 
         return processed_results
 

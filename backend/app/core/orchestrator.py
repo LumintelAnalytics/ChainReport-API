@@ -122,9 +122,9 @@ async def create_orchestrator() -> Orchestrator:
             onchain_metrics_result = {}
             tokenomics_result = {}
 
-                try:
-                    onchain_metrics_result, tokenomics_result = await asyncio.gather(
-                        asyncio.wait_for(onchain_metrics_task, timeout=settings.AGENT_TIMEOUT - 1),
+            try:
+                onchain_metrics_result, tokenomics_result = await asyncio.gather(
+                    asyncio.wait_for(onchain_metrics_task, timeout=settings.AGENT_TIMEOUT - 1),
                         asyncio.wait_for(tokenomics_task, timeout=settings.AGENT_TIMEOUT - 1),
                         return_exceptions=True  # This will allow us to handle exceptions for each task individually
                     )
@@ -155,9 +155,9 @@ async def create_orchestrator() -> Orchestrator:
                             "tokenomics": tokenomics_result
                         }
                     }
-                    existing_report = await report_repository.get_report_by_id(report_id)
+                    existing_report = await orch.report_repository.get_report_by_id(report_id)
                     existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
-                    await report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "onchain_data_agent": result}})
+                    await orch.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "onchain_data_agent": result}})
                     return result
                 except asyncio.TimeoutError as e:
                     orchestrator_logger.error("Onchain Data Agent timed out for report %s", report_id)
@@ -173,8 +173,8 @@ async def create_orchestrator() -> Orchestrator:
     async def social_sentiment_agent_func(report_id: str, token_id: str) -> Dict[str, Any]:
         orchestrator_logger.info(f"Calling Social Sentiment Agent for report_id: {report_id}, token_id: {token_id}")
         agent = SocialSentimentAgent()
-            try:
-                social_data = await asyncio.wait_for(agent.fetch_social_data(token_id), timeout=settings.AGENT_TIMEOUT - 1)
+        try:
+            social_data = await asyncio.wait_for(agent.fetch_social_data(token_id), timeout=settings.AGENT_TIMEOUT - 1)
                 sentiment_report = await asyncio.wait_for(agent.analyze_sentiment(social_data), timeout=settings.AGENT_TIMEOUT - 1)
                 orchestrator_logger.info(f"Social Sentiment Agent completed for report {report_id}.")
                 result = {
@@ -187,9 +187,9 @@ async def create_orchestrator() -> Orchestrator:
                         }
                     }
                 }
-                existing_report = await self.report_repository.get_report_by_id(report_id)
+                existing_report = await orch.report_repository.get_report_by_id(report_id)
                 existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
-                await self.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "social_sentiment_agent": result}})
+                await orch.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "social_sentiment_agent": result}})
                 return result
             except asyncio.TimeoutError as e:
                 orchestrator_logger.error("Social Sentiment Agent timed out for report %s", report_id)
@@ -212,9 +212,9 @@ async def create_orchestrator() -> Orchestrator:
             team_profile_urls = settings.TEAM_PROFILE_URLS.get(token_id, [])
             whitepaper_text_source = settings.WHITEPAPER_TEXT_SOURCES.get(token_id, "")
 
-            try:
-                # Scrape team profiles
-                orchestrator_logger.info(f"Scraping team profiles for token {token_id} from URLs: {team_profile_urls}")
+        try:
+            # Scrape team profiles
+            orchestrator_logger.info(f"Scraping team profiles for token {token_id} from URLs: {team_profile_urls}")
                 team_analysis = await asyncio.wait_for(
                     asyncio.to_thread(agent.scrape_team_profiles, team_profile_urls),
                     timeout=settings.AGENT_TIMEOUT - 1
@@ -241,9 +241,9 @@ async def create_orchestrator() -> Orchestrator:
                         }
                     }
                 }
-                existing_report = await self.report_repository.get_report_by_id(report_id)
+                existing_report = await orch.report_repository.get_report_by_id(report_id)
                 existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
-                await self.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "team_documentation_agent": result}})
+                await orch.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "team_documentation_agent": result}})
                 return result
             except asyncio.TimeoutError as e:
                 orchestrator_logger.error("Team and Documentation Agent timed out for report %s", report_id)
@@ -259,7 +259,8 @@ async def create_orchestrator() -> Orchestrator:
             async def code_audit_agent_func(report_id: str, token_id: str) -> Dict[str, Any]:
                 orchestrator_logger.info(f"Calling Code/Audit Agent for report_id: {report_id}, token_id: {token_id}")
                 code_metrics_data = {}
-                audit_summary_data = []                try:
+                audit_summary_data = []
+                try:
                     async with CodeAuditAgent() as agent:
                         # Fetch repo metrics
                         orchestrator_logger.info(f"Fetching repository metrics for {code_audit_repo_url}")
@@ -294,9 +295,9 @@ async def create_orchestrator() -> Orchestrator:
                             }
                         }
                     }
-                    existing_report = await self.report_repository.get_report_by_id(report_id)
+                    existing_report = await orch.report_repository.get_report_by_id(report_id)
                     existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
-                    await self.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "code_audit_agent": result}})
+                    await orch.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "code_audit_agent": result}})
                     return result
                 except asyncio.TimeoutError as e:
                     orchestrator_logger.error("Code/Audit Agent timed out for report %s", report_id)

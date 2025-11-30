@@ -15,7 +15,10 @@ class MockReportState:
 
 @pytest.fixture
 def mock_session_factory():
-    return MagicMock(spec=AsyncSession)
+    # Return a callable mock that, when called, returns a MagicMock(spec=AsyncSession)
+    mock_callable_session = MagicMock()
+    mock_callable_session.return_value = MagicMock(spec=AsyncSession)
+    return mock_callable_session
 
 @pytest.fixture
 def mock_report_repository(mock_session_factory):

@@ -63,7 +63,16 @@ async def process_report(report_id: str, token_id: str, report_repository: Repor
                 "team_data": combined_report_data.get("team_documentation", {})
             }
             scores = summary_engine.generate_scores(scores_input)
-            final_narrative_summary = summary_engine.build_final_summary(nlg_outputs, scores)
+
+            agent_errors = {}
+            for agent_name, result in agent_results.items():
+                if result.get("status") == "failed" and result.get("error"):
+                    agent_errors[agent_name] = {
+                        "timestamp": result.get("timestamp"), # Assuming timestamp is part of the agent result
+                        "error_message": result.get("error")
+                    }
+
+            final_narrative_summary = summary_engine.build_final_summary(nlg_outputs, scores, agent_errors)
             await report_repository.update_report_status(report_id, ReportStatusEnum.SUMMARY_COMPLETED)
         except Exception as e:
             logger.exception("Error generating summary for report %s", report_id)

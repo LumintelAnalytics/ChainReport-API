@@ -61,13 +61,16 @@ def test_build_final_summary_all_strengths(summary_engine):
         "audit_confidence": 7.5,
         "team_credibility": 9.5,
     }
-    summary = summary_engine.build_final_summary(nlg_outputs, scores)
+    agent_errors = {}
+    summary = summary_engine.build_final_summary(nlg_outputs, scores, agent_errors)
 
     assert isinstance(summary, dict)
     assert "overall_summary" in summary
     assert "scores" in summary
     assert "weaknesses" in summary
     assert "strengths" in summary
+    assert "error_report" in summary
+    assert len(summary["error_report"]) == 0
 
     assert len(summary["weaknesses"]) == 0
     assert len(summary["strengths"]) == 5
@@ -89,13 +92,16 @@ def test_build_final_summary_all_weaknesses(summary_engine):
         "audit_confidence": 1.5,
         "team_credibility": 4.5,
     }
-    summary = summary_engine.build_final_summary(nlg_outputs, scores)
+    agent_errors = {}
+    summary = summary_engine.build_final_summary(nlg_outputs, scores, agent_errors)
 
     assert isinstance(summary, dict)
     assert "overall_summary" in summary
     assert "scores" in summary
     assert "weaknesses" in summary
     assert "strengths" in summary
+    assert "error_report" in summary
+    assert len(summary["error_report"]) == 0
 
     assert len(summary["strengths"]) == 0
     assert len(summary["weaknesses"]) == 5
@@ -118,13 +124,16 @@ def test_build_final_summary_mixed_scores(summary_engine):
         "audit_confidence": 2.0,    # Weakness
         "team_credibility": 7.0,    # Strength
     }
-    summary = summary_engine.build_final_summary(nlg_outputs, scores)
+    agent_errors = {}
+    summary = summary_engine.build_final_summary(nlg_outputs, scores, agent_errors)
 
     assert isinstance(summary, dict)
     assert "overall_summary" in summary
     assert "scores" in summary
     assert "weaknesses" in summary
     assert "strengths" in summary
+    assert "error_report" in summary
+    assert len(summary["error_report"]) == 0
 
     assert len(summary["strengths"]) == 2
     assert "Tokenomics Strength" in summary["strengths"]
@@ -162,13 +171,16 @@ def test_build_final_summary_boundary_score_5_0(summary_engine):
         "audit_confidence": 5.0,
         "team_credibility": 5.0,
     }
-    summary = summary_engine.build_final_summary(nlg_outputs, scores)
+    agent_errors = {}
+    summary = summary_engine.build_final_summary(nlg_outputs, scores, agent_errors)
 
     assert isinstance(summary, dict)
     assert "overall_summary" in summary
     assert "scores" in summary
     assert "weaknesses" in summary
     assert "strengths" in summary
+    assert "error_report" in summary
+    assert len(summary["error_report"]) == 0
 
     assert len(summary["strengths"]) == 0
     assert len(summary["weaknesses"]) == 0
@@ -183,3 +195,36 @@ def test_build_final_summary_boundary_score_5_0(summary_engine):
     assert "Audit Confidence" not in summary["weaknesses"]
     assert "Team Credibility" not in summary["strengths"]
     assert "Team Credibility" not in summary["weaknesses"]
+
+def test_build_final_summary_with_errors(summary_engine):
+    nlg_outputs = {
+        "tokenomics": "Tokenomics insights.",
+    }
+    scores = {
+        "tokenomics_strength": 7.0,
+    }
+    agent_errors = {
+        "price_agent": {
+            "timestamp": "2023-10-27T10:00:00Z",
+            "error_message": "Failed to fetch price data."
+        },
+        "social_sentiment_agent": {
+            "timestamp": "2023-10-27T10:05:00Z",
+            "error_message": "Social sentiment analysis failed."
+        }
+    }
+    summary = summary_engine.build_final_summary(nlg_outputs, scores, agent_errors)
+
+    assert isinstance(summary, dict)
+    assert "error_report" in summary
+    assert len(summary["error_report"]) == 2
+    assert summary["error_report"][0] == {
+        "agent_name": "Price Agent",
+        "timestamp": "2023-10-27T10:00:00Z",
+        "error_message": "Failed to fetch price data."
+    }
+    assert summary["error_report"][1] == {
+        "agent_name": "Social Sentiment Agent",
+        "timestamp": "2023-10-27T10:05:00Z",
+        "error_message": "Social sentiment analysis failed."
+    }

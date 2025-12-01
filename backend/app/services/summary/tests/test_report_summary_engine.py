@@ -49,13 +49,24 @@ def test_build_final_summary(summary_engine):
         "code_maturity": 8.9,
         "audit_confidence": 3.0,
     }
-    summary = summary_engine.build_final_summary(nlg_outputs, scores)
+    agent_errors = {
+        "price_agent": {
+            "timestamp": "2023-10-27T10:00:00Z",
+            "error_message": "Failed to fetch price data."
+        },
+        "volume_agent": {
+            "timestamp": "2023-10-27T10:05:00Z",
+            "error_message": "Volume agent timed out."
+        }
+    }
+    summary = summary_engine.build_final_summary(nlg_outputs, scores, agent_errors)
 
     assert isinstance(summary, dict)
     assert "overall_summary" in summary
     assert "scores" in summary
     assert "weaknesses" in summary
     assert "strengths" in summary
+    assert "error_report" in summary
 
     # Verify overall_summary content
     assert "Tokenomics Insights: Tokenomics insights text." in summary["overall_summary"]
@@ -79,3 +90,17 @@ def test_build_final_summary(summary_engine):
     assert "Tokenomics Strength" in summary["strengths"]
     assert "Code Maturity" in summary["strengths"]
     assert len(summary["strengths"]) == 2
+
+    # Verify error_report
+    assert summary["error_report"] == [
+        {
+            "agent_name": "Price Agent",
+            "timestamp": "2023-10-27T10:00:00Z",
+            "error_message": "Failed to fetch price data."
+        },
+        {
+            "agent_name": "Volume Agent",
+            "timestamp": "2023-10-27T10:05:00Z",
+            "error_message": "Volume agent timed out."
+        }
+    ]

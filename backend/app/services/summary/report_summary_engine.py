@@ -45,7 +45,7 @@ class ReportSummaryEngine(SummaryEngine):
 
         return scores
 
-    def build_final_summary(self, nlg_outputs: Dict[str, str], scores: Dict[str, float]) -> Dict[str, Any]:
+    def build_final_summary(self, nlg_outputs: Dict[str, str], scores: Dict[str, float], agent_errors: Dict[str, Any]) -> Dict[str, Any]:
         overall_summary_parts = []
         for agent, output in nlg_outputs.items():
             overall_summary_parts.append(f"{agent.replace('_', ' ').title()} Insights: {output}")
@@ -63,10 +63,19 @@ class ReportSummaryEngine(SummaryEngine):
             if score_value >= 7.0
         ]
 
+        error_report = []
+        for agent_name, error_details in agent_errors.items():
+            error_report.append({
+                "agent_name": agent_name.replace('_', ' ').title(),
+                "timestamp": error_details.get("timestamp"),
+                "error_message": error_details.get("error_message")
+            })
+
         final_summary = {
             "overall_summary": overall_summary,
             "scores": {score_name.replace('_', ' ').title(): round(score_value, 2) for score_name, score_value in scores.items()},
             "weaknesses": weaknesses,
             "strengths": strengths,
+            "error_report": error_report
         }
         return final_summary

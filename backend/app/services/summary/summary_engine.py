@@ -26,7 +26,7 @@ class SummaryEngine(ABC):
         pass
 
     @abstractmethod
-    def build_final_summary(self, nlg_outputs: Dict[str, str], scores: Dict[str, float]) -> str:
+    def build_final_summary(self, nlg_outputs: Dict[str, str], scores: Dict[str, float], agent_errors: Dict[str, Any]) -> str:
         """
         Builds the final summary using NLG outputs and generated scores.
 

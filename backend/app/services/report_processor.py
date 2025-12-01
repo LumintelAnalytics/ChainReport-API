@@ -63,7 +63,16 @@ async def process_report(report_id: str, token_id: str, report_repository: Repor
                 "team_data": combined_report_data.get("team_documentation", {})
             }
             scores = summary_engine.generate_scores(scores_input)
-            final_narrative_summary = summary_engine.build_final_summary(nlg_outputs, scores)
+
+            agent_errors = {}
+            for agent_name, result in agent_results.items():
+                if result.get("status") == ReportStatusEnum.FAILED.value and result.get("error"):
+                    agent_errors[agent_name] = {
+                        "timestamp": result.get("timestamp"), # Assuming timestamp is part of the agent result
+                        "error_message": result.get("error")
+                    }
+
+            final_narrative_summary = summary_engine.build_final_summary(nlg_outputs, scores, agent_errors)
             await report_repository.update_report_status(report_id, ReportStatusEnum.SUMMARY_COMPLETED)
         except Exception as e:
             logger.exception("Error generating summary for report %s", report_id)
@@ -71,10 +80,10 @@ async def process_report(report_id: str, token_id: str, report_repository: Repor
             raise
 
         # Determine overall status based on agent results
-        overall_status = "completed"
-        if any(result["status"] == "failed" for result in agent_results.values()):
-            overall_status = "failed"
-            logger.error(f"Report {report_id} completed with failures from one or more agents.")
+        overall_status = ReportStatusEnum.COMPLETED
+        if any(result.get("status") == ReportStatusEnum.FAILED.value for result in agent_results.values()):
+            overall_status = ReportStatusEnum.FAILED
+            logger.error("Report %s completed with failures from one or more agents.", report_id)
 
         # Combine all into final_report
         final_report_content = {
@@ -89,7 +98,7 @@ async def process_report(report_id: str, token_id: str, report_repository: Repor
 
         await report_repository.update_report_status(report_id, overall_status)
 
-        logger.info("Report %s %s.", report_id, overall_status)
+        logger.info("Report %s %s.", report_id, overall_status.value)
         return True
     except asyncio.CancelledError:
         await report_repository.update_report_status(report_id, ReportStatusEnum.FAILED)

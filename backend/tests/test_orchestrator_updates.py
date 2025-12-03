@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from backend.app.core.orchestrator import Orchestrator
-from backend.app.db.models.report_state import ReportStatusEnum, ReportState
+from backend.app.db.models.report_state import ReportStatusEnum
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.db.repositories.report_repository import ReportRepository
 

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from backend.app.core.orchestrator import Orchestrator
 from backend.app.services.agents.price_agent import run as price_agent_run
 from backend.app.services.agents.trend_agent import run as trend_agent_run
@@ -32,6 +33,7 @@ async def process_report(report_id: str, token_id: str, report_repository: Repor
         raise ValueError(f"Report {report_id} is already being processed")
 
     logger.info("Processing report %s for token %s", report_id, token_id)
+    start_time = time.monotonic()
     try:
         orchestrator = Orchestrator(report_repository.session)
         orchestrator.register_agent("price_agent", price_agent_run)
@@ -96,7 +98,10 @@ async def process_report(report_id: str, token_id: str, report_repository: Repor
         # Then save the final report content
         await report_repository.save_final_report(report_id, final_report_content)
 
-        await report_repository.update_report_status(report_id, overall_status)
+        end_time = time.monotonic()
+        generation_time = end_time - start_time
+
+        await report_repository.update_partial(report_id, {"status": overall_status, "generation_time": generation_time})
 
         logger.info("Report %s %s.", report_id, overall_status.value)
         return True

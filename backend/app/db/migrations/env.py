@@ -2,7 +2,7 @@ import os
 import sys
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy.ext.asyncio import create_async_engine # Import create_async_engine
 
 from alembic import context
 
@@ -19,6 +19,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 sys.path.append(os.getcwd())
 from backend.app.db.base import Base
+from backend.app.core.config import settings # Import settings
 
 target_metadata = Base.metadata
 
@@ -62,11 +63,18 @@ def run_migrations_online() -> None:
     import asyncio
 
     async def process_migrations():
-        connectable = engine_from_config(
-            config.get_section(config.config_ini_section, {}),
-            prefix="sqlalchemy.",
-            poolclass=pool.NullPool,
-        )
+        # Determine the database URL based on environment or settings
+        if os.getenv("TESTING") == "True" and settings.TEST_DB_NAME:
+            db_url = (
+                f"postgresql+asyncpg://{settings.TEST_DB_USER}:{settings.TEST_DB_PASSWORD}@"
+                f"{settings.TEST_DB_HOST}:{settings.TEST_DB_PORT}/{settings.TEST_DB_NAME}"
+            )
+        elif settings.DATABASE_URL.startswith("sqlite"):
+            db_url = settings.DATABASE_URL.replace("sqlite://", "sqlite+aiosqlite://")
+        else:
+            db_url = settings.DATABASE_URL
+
+        connectable = create_async_engine(db_url)
 
         async with connectable.connect() as connection:
             context.configure(

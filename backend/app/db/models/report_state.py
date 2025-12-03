@@ -34,4 +34,5 @@ class ReportState(Base):
     final_report_json = Column(JSON, nullable=True)  # Stores the final generated report JSON
     error_message = Column(String, nullable=True) # New column for error messages
     errors = Column(JSON, nullable=True) # Stores error flags for agents
+    timing_alerts = Column(JSON, nullable=True) # Stores alerts related to processing times
     generation_time = Column(Float, nullable=True) # Stores the total time taken for report generation

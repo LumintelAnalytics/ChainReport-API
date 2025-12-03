@@ -75,6 +75,18 @@ class ReportRepository:
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
 
+    async def update_timing_alerts(self, report_id: str, alerts: Dict[str, Any]) -> ReportState | None:
+        async with await self.session_factory() as session:
+            try:
+                stmt = update(ReportState).where(ReportState.report_id == report_id).values(timing_alerts=alerts).returning(ReportState)
+                result = await session.execute(stmt)
+                updated_report_state = result.scalar_one_or_none()
+                await session.commit()
+                return updated_report_state
+            except Exception:
+                await session.rollback()
+                raise
+
     async def update_partial(self, report_id: str, data: Dict[str, Any]) -> ReportState | None:
         async with await self.session_factory() as session:
             try:

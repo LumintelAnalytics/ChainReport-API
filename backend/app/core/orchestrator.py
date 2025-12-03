@@ -58,7 +58,7 @@ class Orchestrator:
                 existing_errors = existing_report.errors if existing_report.errors else {}
                 await self.report_repository.update_partial(
                     report_id,
-                    {"state": ReportStatusEnum.AGENTS_FAILED, "errors": {**existing_errors, **errors_flag}}
+                    {"status": ReportStatusEnum.AGENTS_FAILED, "errors": {**existing_errors, **errors_flag}}
                 )
             else:
                 raise RuntimeError(f"Report {report_id} not found when attempting to update with agent errors. Errors detected: {errors_flag}")
@@ -67,12 +67,15 @@ class Orchestrator:
             if existing_report:
                 await self.report_repository.update_partial(
                     report_id,
-                    {"state": ReportStatusEnum.AGENTS_COMPLETED}
+                    {"status": ReportStatusEnum.AGENTS_COMPLETED}
                 )
             else:
                 orchestrator_logger.warning("Report %s not found when attempting to update with AGENTS_COMPLETED state.", report_id)
 
         return processed_results
+
+    def get_agents(self) -> Dict[str, Callable]:
+        return self._agents.copy()
 
     def aggregate_results(self, agent_results: Dict[str, Any]) -> Dict[str, Any]:
         combined_data = {}
@@ -96,11 +99,14 @@ def _is_valid_url(url: str | None, url_name: str) -> bool:
         return False
     return True
 
-async def create_orchestrator() -> Orchestrator:
+async def create_orchestrator(session_factory: Callable[..., AsyncSession] = AsyncSessionLocal, register_dummy: bool = False) -> Orchestrator:
     """
     Factory function to create and configure an Orchestrator instance.
     """
-    orch = Orchestrator(AsyncSessionLocal)
+    orch = Orchestrator(session_factory)
+
+    if register_dummy:
+        orch.register_agent("dummy_agent", dummy_agent)
 
     # Configure and register Onchain Data Agent
     onchain_metrics_url = settings.ONCHAIN_METRICS_URL

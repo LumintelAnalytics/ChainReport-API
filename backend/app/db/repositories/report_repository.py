@@ -10,7 +10,7 @@ class ReportRepository:
         self.session_factory = session_factory
 
     async def create_report_entry(self, report_id: str) -> Report:
-        async with self.session_factory() as session:
+        async with await self.session_factory() as session:
             try:
                 report = Report(id=report_id)
                 session.add(report)
@@ -34,7 +34,7 @@ class ReportRepository:
                 raise
 
     async def update_report_status(self, report_id: str, status: ReportStatusEnum) -> ReportState | None:
-        async with self.session_factory() as session:
+        async with await self.session_factory() as session:
             try:
                 stmt = update(ReportState).where(ReportState.report_id == report_id).values(status=status).returning(ReportState)
                 result = await session.execute(stmt)
@@ -46,7 +46,7 @@ class ReportRepository:
                 raise
 
     async def store_partial_report_results(self, report_id: str, partial_data: Dict[str, Any]) -> ReportState | None:
-        async with self.session_factory() as session:
+        async with await self.session_factory() as session:
             try:
                 stmt = update(ReportState).where(ReportState.report_id == report_id).values(partial_agent_output=partial_data).returning(ReportState)
                 result = await session.execute(stmt)
@@ -58,7 +58,7 @@ class ReportRepository:
                 raise
 
     async def save_final_report(self, report_id: str, data: Dict[str, Any]) -> ReportState | None:
-        async with self.session_factory() as session:
+        async with await self.session_factory() as session:
             try:
                 stmt = update(ReportState).where(ReportState.report_id == report_id).values(final_report_json=data, status=ReportStatusEnum.COMPLETED).returning(ReportState)
                 result = await session.execute(stmt)
@@ -70,13 +70,13 @@ class ReportRepository:
                 raise
 
     async def get_report_by_id(self, report_id: str) -> ReportState | None:
-        async with self.session_factory() as session:
+        async with await self.session_factory() as session:
             stmt = select(ReportState).where(ReportState.report_id == report_id)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
 
     async def update_partial(self, report_id: str, data: Dict[str, Any]) -> ReportState | None:
-        async with self.session_factory() as session:
+        async with await self.session_factory() as session:
             try:
                 stmt = update(ReportState).where(ReportState.report_id == report_id).values(**data).returning(ReportState)
                 result = await session.execute(stmt)

@@ -1,5 +1,5 @@
 from enum import Enum as PyEnum
-from sqlalchemy import Column, String, DateTime, JSON, ForeignKey
+from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Float
 from sqlalchemy.sql import func
 from sqlalchemy.types import Enum as SQLEnum
 
@@ -34,3 +34,4 @@ class ReportState(Base):
     final_report_json = Column(JSON, nullable=True)  # Stores the final generated report JSON
     error_message = Column(String, nullable=True) # New column for error messages
     errors = Column(JSON, nullable=True) # Stores error flags for agents
+    generation_time = Column(Float, nullable=True) # Stores the total time taken for report generation

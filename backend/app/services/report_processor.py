@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import time
+from sqlalchemy.ext.asyncio import AsyncSession # Import AsyncSession
 from backend.app.core.orchestrator import Orchestrator
 from backend.app.services.agents.price_agent import run as price_agent_run
 from backend.app.services.agents.trend_agent import run as trend_agent_run

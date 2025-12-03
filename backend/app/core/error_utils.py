@@ -1,6 +1,5 @@
 import logging
 import traceback
-import os
 from typing import Dict, Any
 
 from backend.app.core.config import settings

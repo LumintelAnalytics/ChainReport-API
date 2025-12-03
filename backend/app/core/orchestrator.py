@@ -154,7 +154,7 @@ async def create_orchestrator() -> Orchestrator:
                 existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
                 await orch.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "onchain_data_agent": result}})
                 return result
-            except asyncio.TimeoutError as e:
+            except asyncio.TimeoutError:
                 orchestrator_logger.error("Onchain Data Agent timed out for report %s", report_id)
                 return {"status": "failed", "error": "Agent timed out"}
             except Exception as e:
@@ -186,7 +186,7 @@ async def create_orchestrator() -> Orchestrator:
             existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
             await orch.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "social_sentiment_agent": result}})
             return result
-        except asyncio.TimeoutError as e:
+        except asyncio.TimeoutError:
             orchestrator_logger.error("Social Sentiment Agent timed out for report %s", report_id)
             return {"status": "failed", "error": "Agent timed out"}
         except Exception as e:
@@ -235,7 +235,7 @@ async def create_orchestrator() -> Orchestrator:
             existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
             await orch.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "team_documentation_agent": result}})
             return result
-        except asyncio.TimeoutError as e:
+        except asyncio.TimeoutError:
             orchestrator_logger.error("Team and Documentation Agent timed out for report %s", report_id)
             return {"status": "failed", "error": "Agent timed out"}
         except Exception as e:
@@ -286,7 +286,7 @@ async def create_orchestrator() -> Orchestrator:
                 existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
                 await orch.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "code_audit_agent": result}})
                 return result
-            except asyncio.TimeoutError as e:
+            except asyncio.TimeoutError:
                 orchestrator_logger.error("Code/Audit Agent timed out for report %s", report_id)
                 return {"status": "failed", "error": "Agent timed out"}
             except Exception as e:

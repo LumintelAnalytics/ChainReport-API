@@ -1,7 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
 from backend.main import app
-from backend.app.services.report_service import in_memory_reports
 import pytest_asyncio
 import anyio
 import functools

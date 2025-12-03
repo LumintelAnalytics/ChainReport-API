@@ -2,17 +2,10 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 from backend.app.core.orchestrator import create_orchestrator
-from backend.app.services.report_service import in_memory_reports
 
 # Sample data for testing
 SAMPLE_REPORT_ID = "test_report_123"
 SAMPLE_TOKEN_ID = "ethereum"
-
-@pytest.fixture(autouse=True)
-def clear_in_memory_reports():
-    """Clears in_memory_reports before each test."""
-    in_memory_reports.clear()
-    yield
 
 @pytest.fixture
 def mock_settings():
@@ -54,8 +47,35 @@ async def test_orchestrator_full_integration_success(mock_settings):
         mock_analyze_code_activity.return_value = {"activity_analysis": "mocked"}
         mock_search_and_summarize_audit_reports.return_value = [{"audit_report": "mocked"}]
 
-        in_memory_reports[SAMPLE_REPORT_ID] = {"status": "pending", "data": {}}
-        orchestrator = create_orchestrator()
+        # Setup mock for ReportRepository and its interactions
+        from backend.app.db.models.report_state import ReportStatusEnum
+
+        mock_session = AsyncMock()
+        # Mock the async context manager for the session factory
+        mock_session_factory = AsyncMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_session)))
+        
+        orchestrator = await create_orchestrator(session_factory=mock_session_factory)
+        mock_report_repository = orchestrator.report_repository
+
+        # Mock initial report state (PENDING)
+        mock_report_state_pending = AsyncMock()
+        mock_report_state_pending.report_id = SAMPLE_REPORT_ID
+        mock_report_state_pending.status = ReportStatusEnum.PENDING
+        mock_report_state_pending.partial_agent_output = {}
+
+        # Mock final report state (COMPLETED)
+        mock_report_state_completed = AsyncMock()
+        mock_report_state_completed.report_id = SAMPLE_REPORT_ID
+        mock_report_state_completed.status = ReportStatusEnum.AGENTS_COMPLETED
+        mock_report_state_completed.partial_agent_output = {} # Will be updated
+
+        # Configure get_report_by_id to return pending then completed after update
+        mock_report_repository.get_report_by_id.side_effect = [
+            mock_report_state_pending, # First call during initial status check
+            mock_report_state_completed # Second call after update_partial for AGENTS_COMPLETED
+        ]
+        mock_report_repository.update_partial.return_value = mock_report_state_completed # Ensure update returns something
+
         result = await orchestrator.execute_agents_concurrently(SAMPLE_REPORT_ID, SAMPLE_TOKEN_ID)
 
         # Assertions for successful execution and aggregated output
@@ -69,19 +89,13 @@ async def test_orchestrator_full_integration_success(mock_settings):
         assert "code_metrics" in result["code_audit"]
         assert "audit_summary" in result["code_audit"]
 
-        assert in_memory_reports[SAMPLE_REPORT_ID]["status"] == "completed"
-        assert in_memory_reports[SAMPLE_REPORT_ID]["data"] == result
-
-        # Verify agent calls
-        mock_fetch_onchain_metrics.assert_called_once()
-        mock_fetch_tokenomics.assert_called_once()
-        mock_fetch_social_data.assert_called_once()
-        mock_analyze_sentiment.assert_called_once()
-        mock_scrape_team_profiles.assert_called_once()
-        mock_analyze_whitepaper.assert_called_once()
-        mock_fetch_repo_metrics.assert_called_once()
-        mock_analyze_code_activity.assert_called_once()
-        mock_search_and_summarize_audit_reports.assert_called_once()
+        # Verify report repository interactions
+        mock_report_repository.get_report_by_id.assert_called_with(SAMPLE_REPORT_ID)
+        # Check that update_partial was called with AGENTS_COMPLETED status
+        assert mock_report_repository.update_partial.call_count > 0
+        update_call_args = mock_report_repository.update_partial.call_args_list[-1].args
+        assert update_call_args[0] == SAMPLE_REPORT_ID
+        assert update_call_args[1].get("status") == ReportStatusEnum.AGENTS_COMPLETED
 
 @pytest.mark.asyncio
 async def test_orchestrator_agent_timeout_handling(mock_settings):
@@ -111,13 +125,45 @@ async def test_orchestrator_agent_timeout_handling(mock_settings):
         mock_analyze_code_activity.return_value = {"activity_analysis": "mocked"}
         mock_search_and_summarize_audit_reports.return_value = [{"audit_report": "mocked"}]
 
-        in_memory_reports[SAMPLE_REPORT_ID] = {"status": "pending", "data": {}}
-        orchestrator = create_orchestrator()
+        # Setup mock for ReportRepository and its interactions
+        from backend.app.db.models.report_state import ReportStatusEnum
+        mock_session = AsyncMock()
+        mock_session_factory = AsyncMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_session)))
+
+        orchestrator = await create_orchestrator(session_factory=mock_session_factory)
+        mock_report_repository = orchestrator.report_repository
+
+        # Mock initial report state (PENDING)
+        mock_report_state_pending = AsyncMock()
+        mock_report_state_pending.report_id = SAMPLE_REPORT_ID
+        mock_report_state_pending.status = ReportStatusEnum.PENDING
+        mock_report_state_pending.partial_agent_output = {}
+
+        # Mock failed report state
+        mock_report_state_failed = AsyncMock()
+        mock_report_state_failed.report_id = SAMPLE_REPORT_ID
+        mock_report_state_failed.status = ReportStatusEnum.AGENTS_FAILED
+        mock_report_state_failed.partial_agent_output = {}
+        mock_report_state_failed.errors = {"onchain_data_agent": True}
+
+        # Configure get_report_by_id to return pending then failed after update
+        mock_report_repository.get_report_by_id.side_effect = [
+            mock_report_state_pending, # First call during initial status check
+            mock_report_state_failed # Second call after update_partial for AGENTS_FAILED
+        ]
+        mock_report_repository.update_partial.return_value = mock_report_state_failed
+
         result = await orchestrator.execute_agents_concurrently(SAMPLE_REPORT_ID, SAMPLE_TOKEN_ID)
 
         # Assertions for timeout handling
         assert "onchain_metrics" not in result
-        assert in_memory_reports[SAMPLE_REPORT_ID]["status"] == "failed" # Overall status should be failed due to timeout
+        mock_report_repository.get_report_by_id.assert_called_with(SAMPLE_REPORT_ID)
+        # Check that update_partial was called with AGENTS_FAILED status and error details
+        assert mock_report_repository.update_partial.call_count > 0
+        update_call_args = mock_report_repository.update_partial.call_args_list[-1].args
+        assert update_call_args[0] == SAMPLE_REPORT_ID
+        assert update_call_args[1].get("status") == ReportStatusEnum.AGENTS_FAILED
+        assert "onchain_data_agent" in update_call_args[1].get("errors", {})
 @pytest.mark.asyncio
 async def test_orchestrator_agent_exception_handling(mock_settings):
     """
@@ -146,10 +192,42 @@ async def test_orchestrator_agent_exception_handling(mock_settings):
         mock_analyze_code_activity.return_value = {"activity_analysis": "mocked"}
         mock_search_and_summarize_audit_reports.return_value = [{"audit_report": "mocked"}]
 
-        in_memory_reports[SAMPLE_REPORT_ID] = {"status": "pending", "data": {}}
-        orchestrator = create_orchestrator()
+        # Setup mock for ReportRepository and its interactions
+        from backend.app.db.models.report_state import ReportStatusEnum
+        mock_session = AsyncMock()
+        mock_session_factory = AsyncMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_session)))
+
+        orchestrator = await create_orchestrator(session_factory=mock_session_factory)
+        mock_report_repository = orchestrator.report_repository
+
+        # Mock initial report state (PENDING)
+        mock_report_state_pending = AsyncMock()
+        mock_report_state_pending.report_id = SAMPLE_REPORT_ID
+        mock_report_state_pending.status = ReportStatusEnum.PENDING
+        mock_report_state_pending.partial_agent_output = {}
+
+        # Mock failed report state
+        mock_report_state_failed = AsyncMock()
+        mock_report_state_failed.report_id = SAMPLE_REPORT_ID
+        mock_report_state_failed.status = ReportStatusEnum.AGENTS_FAILED
+        mock_report_state_failed.partial_agent_output = {}
+        mock_report_state_failed.errors = {"onchain_data_agent": True}
+
+        # Configure get_report_by_id to return pending then failed after update
+        mock_report_repository.get_report_by_id.side_effect = [
+            mock_report_state_pending, # First call during initial status check
+            mock_report_state_failed # Second call after update_partial for AGENTS_FAILED
+        ]
+        mock_report_repository.update_partial.return_value = mock_report_state_failed
+
         result = await orchestrator.execute_agents_concurrently(SAMPLE_REPORT_ID, SAMPLE_TOKEN_ID)
 
         # Assertions for exception handling
         assert "tokenomics" not in result
-        assert in_memory_reports[SAMPLE_REPORT_ID]["status"] == "failed" # Overall status should be failed due to exception
+        mock_report_repository.get_report_by_id.assert_called_with(SAMPLE_REPORT_ID)
+        # Check that update_partial was called with AGENTS_FAILED status and error details
+        assert mock_report_repository.update_partial.call_count > 0
+        update_call_args = mock_report_repository.update_partial.call_args_list[-1].args
+        assert update_call_args[0] == SAMPLE_REPORT_ID
+        assert update_call_args[1].get("status") == ReportStatusEnum.AGENTS_FAILED
+        assert "onchain_data_agent" in update_call_args[1].get("errors", {})

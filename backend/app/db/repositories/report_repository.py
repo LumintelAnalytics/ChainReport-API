@@ -6,9 +6,100 @@ from sqlalchemy.exc import IntegrityError
 from backend.app.db.models.report import Report
 from backend.app.db.models.report_state import ReportState, ReportStatusEnum
 
+from typing import Callable, Dict, Any, Optional
 class ReportRepository:
     def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
+
+    async def save_report_initial_state(self, report_id: str) -> ReportState:
+        """
+        Saves the initial state of a new report to the database.
+        The report will be created with a PENDING status.
+        """
+        async with self.session_factory() as session:
+            try:
+                # Ensure a Report entry exists
+                report = Report(id=report_id)
+                session.add(report)
+                
+                # Create the initial ReportState
+                report_state = ReportState(report_id=report_id, status=ReportStatusEnum.PENDING)
+                session.add(report_state)
+                
+                await session.commit()
+                await session.refresh(report_state)
+                return report_state
+            except IntegrityError:
+                await session.rollback()
+                # If a Report or ReportState with this ID already exists, fetch and return its state
+                existing_state = await self.get_report_state(report_id)
+                if existing_state:
+                    return existing_state
+                raise  # Re-raise if not found or other IntegrityError
+            except Exception:
+                await session.rollback()
+                raise
+
+    async def update_report_partial_results(self, report_id: str, partial_data: Dict[str, Any]) -> ReportState | None:
+        """
+        Updates the partial results of a report and sets its status to RUNNING if it's PENDING.
+        """
+        async with self.session_factory() as session:
+            try:
+                # Check current status
+                current_state_result = await session.execute(select(ReportState.status).where(ReportState.report_id == report_id))
+                current_status = current_state_result.scalar_one_or_none()
+
+                values_to_update = {
+                    "partial_agent_output": partial_data,
+                    "updated_at": datetime.now(timezone.utc)
+                }
+
+                if current_status == ReportStatusEnum.PENDING:
+                    values_to_update["status"] = ReportStatusEnum.RUNNING
+                
+                stmt = update(ReportState).where(ReportState.report_id == report_id).values(**values_to_update).returning(ReportState)
+                result = await session.execute(stmt)
+                updated_report_state = result.scalar_one_or_none()
+                await session.commit()
+                return updated_report_state
+            except Exception:
+                await session.rollback()
+                raise
+
+    async def update_report_final_report(
+        self, 
+        report_id: str, 
+        final_report_data: Optional[Dict[str, Any]], 
+        status: ReportStatusEnum, 
+        error_message: Optional[str] = None
+    ) -> ReportState | None:
+        """
+        Updates the final report data, status, and optional error message.
+        """
+        async with self.session_factory() as session:
+            try:
+                values_to_update = {
+                    "status": status,
+                    "final_report_json": final_report_data,
+                    "error_message": error_message,
+                    "updated_at": datetime.now(timezone.utc)
+                }
+                stmt = update(ReportState).where(ReportState.report_id == report_id).values(**values_to_update).returning(ReportState)
+                result = await session.execute(stmt)
+                updated_report_state = result.scalar_one_or_none()
+                await session.commit()
+                return updated_report_state
+            except Exception:
+                await session.rollback()
+                raise
+
+    async def get_report_state(self, report_id: str) -> ReportState | None:
+        """
+        Retrieves the complete state of a report by its ID.
+        """
+        return await self.get_report_by_id(report_id)
+
 
     async def create_report_entry(self, report_id: str) -> Report:
         async with self.session_factory() as session:

@@ -12,7 +12,7 @@
         "projectName": { "type": "string", "description": "Name of the project being reported on." },
         "symbol": { "type": "string", "description": "Token symbol of the project." },
         "reportDate": { "type": "string", "format": "date-time", "description": "Timestamp of when the report was generated." },
-        "status": { "type": "string", "description": "Current status of the report (e.g., 'completed', 'pending', 'failed')." }
+        "status": { "type": "string", "description": "Current status of the report (e.g., 'completed', 'pending', 'failed').", "enum": ["completed", "pending", "failed"] }
       },
       "required": ["reportId", "projectName", "symbol", "reportDate", "status"]
     },
@@ -21,8 +21,8 @@
       "description": "Analysis of the project's tokenomics.",
       "properties": {
         "tokenName": { "type": "string", "description": "Full name of the token." },
-        "totalSupply": { "type": "number", "description": "Total supply of the token." },
-        "circulatingSupply": { "type": "number", "description": "Circulating supply of the token." },
+        "totalSupply": { "type": "number", "description": "Total supply of the token.", "minimum": 0 },
+        "circulatingSupply": { "type": "number", "description": "Circulating supply of the token.", "minimum": 0 },
         "distribution": {
           "type": "array",
           "items": {
@@ -34,7 +34,7 @@
             "required": ["category", "percentage"]
           },
           "description": "Distribution breakdown of the token."
-        },
+        }, "minItems": 1,
         "utility": { "type": "string", "description": "Description of the token's utility." }
       },
       "required": ["tokenName", "totalSupply", "circulatingSupply", "distribution", "utility"]
@@ -43,10 +43,10 @@
       "type": "object",
       "description": "On-chain data analysis.",
       "properties": {
-        "transactions": { "type": "number", "description": "Total number of on-chain transactions." },
-        "activeAddresses": { "type": "number", "description": "Number of unique active addresses." },
-        "dailyVolume": { "type": "number", "description": "Daily trading volume." },
-        "smartContractInteractions": { "type": "number", "description": "Number of smart contract interactions." }
+        "transactions": { "type": "number", "description": "Total number of on-chain transactions.", "minimum": 0 },
+        "activeAddresses": { "type": "number", "description": "Number of unique active addresses.", "minimum": 0 },
+        "dailyVolume": { "type": "number", "description": "Daily trading volume.", "minimum": 0 },
+        "smartContractInteractions": { "type": "number", "description": "Number of smart contract interactions.", "minimum": 0 }
       },
       "required": ["transactions", "activeAddresses", "dailyVolume", "smartContractInteractions"]
     },
@@ -54,8 +54,8 @@
       "type": "object",
       "description": "Social sentiment analysis.",
       "properties": {
-        "overallSentiment": { "type": "string", "description": "Overall sentiment (e.g., 'positive', 'neutral', 'negative')." },
-        "sentimentScore": { "type": "number", "description": "Numerical sentiment score." },
+        "overallSentiment": { "type": "string", "description": "Overall sentiment (e.g., 'positive', 'neutral', 'negative').", "enum": ["positive", "neutral", "negative"] },
+        "sentimentScore": { "type": "number", "description": "Numerical sentiment score.", "minimum": 0 },
         "sourceBreakdown": {
           "type": "array",
           "items": {
@@ -67,7 +67,7 @@
             "required": ["source", "score"]
           },
           "description": "Breakdown of sentiment by source."
-        }
+        }, "minItems": 1
       },
       "required": ["overallSentiment", "sentimentScore", "sourceBreakdown"]
     },
@@ -75,7 +75,7 @@
       "type": "object",
       "description": "Analysis of the project's team.",
       "properties": {
-        "teamSize": { "type": "number", "description": "Number of members in the core team." },
+        "teamSize": { "type": "number", "description": "Number of members in the core team.", "minimum": 0 },
         "experience": { "type": "string", "description": "Description of the team's collective experience." },
         "keyMembers": {
           "type": "array",
@@ -89,7 +89,7 @@
             "required": ["name", "role"]
           },
           "description": "Key members of the team."
-        }
+        }, "minItems": 1
       },
       "required": ["teamSize", "experience", "keyMembers"]
     },
@@ -104,15 +104,15 @@
           "items": {
             "type": "object",
             "properties": {
-              "severity": { "type": "string", "description": "Severity of the finding (e.g., 'critical', 'high', 'medium', 'low')." },
+              "severity": { "type": "string", "description": "Severity of the finding (e.g., 'critical', 'high', 'medium', 'low').", "enum": ["critical", "high", "medium", "low"] },
               "description": { "type": "string", "description": "Description of the finding." },
               "status": { "type": "string", "description": "Status of the finding (e.g., 'resolved', 'open')." }
             },
             "required": ["severity", "description", "status"]
           },
           "description": "List of findings from the code audit."
-        },
-        "overallScore": { "type": "number", "description": "Overall security score or rating." }
+        }, "minItems": 1,
+        "overallScore": { "type": "number", "description": "Overall security score or rating.", "minimum": 0 }
       },
       "required": ["auditFirm", "auditDate", "findings", "overallScore"]
     },

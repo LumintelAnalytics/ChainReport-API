@@ -105,8 +105,15 @@ class ReportRepository:
             try:
                 stalled_threshold = datetime.now(timezone.utc) - timedelta(minutes=timeout_minutes)
                 
+                running_states = [
+                    ReportStatusEnum.RUNNING,
+                    ReportStatusEnum.RUNNING_AGENTS,
+                    ReportStatusEnum.GENERATING_NLG,
+                    ReportStatusEnum.GENERATING_SUMMARY,
+                ]
+
                 stmt = update(ReportState).where(
-                    ReportState.status == ReportStatusEnum.RUNNING,
+                    ReportState.status.in_(running_states),
                     ReportState.updated_at < stalled_threshold
                 ).values(
                     status=ReportStatusEnum.TIMED_OUT,

@@ -34,7 +34,7 @@ async def finish_timer(report_id: str, db: AsyncSession) -> float | None:
         start_time_str = redis_client.get_cache(key)
         if start_time_str:
             redis_client.delete_cache(key)
-            start_time = datetime.fromisoformat(start_time_str.decode('utf-8'))
+            start_time = datetime.fromisoformat(start_time_str.decode('utf-8')).replace(tzinfo=timezone.utc)
             end_time = datetime.now(timezone.utc)
             duration = (end_time - start_time).total_seconds()
             logger.info(f"Timer finished for report_id: {report_id}. Duration: {duration:.2f} seconds.")

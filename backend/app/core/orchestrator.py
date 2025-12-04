@@ -237,7 +237,7 @@ async def create_orchestrator(session_factory: Callable[..., AsyncSession] = Asy
                     }
                 }
             }
-            existing_report = await orch.report_repository.get_report_by_id(report_id)
+            existing_report = orch.report_repository.get_report_by_id(report_id)
             existing_partial_agent_output = existing_report.partial_agent_output if existing_report else {}
             await orch.report_repository.update_partial(report_id, {"partial_agent_output": {**existing_partial_agent_output, "team_documentation_agent": result}})
             return result

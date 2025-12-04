@@ -1,12 +1,10 @@
-from typing import Callable, Dict, Any
+from typing import Callable, Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from backend.app.db.models.report import Report
 from backend.app.db.models.report_state import ReportState, ReportStatusEnum
-
-from typing import Callable, Dict, Any, Optional
 class ReportRepository:
     def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
@@ -49,6 +47,10 @@ class ReportRepository:
                 # Check current status
                 current_state_result = await session.execute(select(ReportState.status).where(ReportState.report_id == report_id))
                 current_status = current_state_result.scalar_one_or_none()
+
+                if current_status in [ReportStatusEnum.COMPLETED, ReportStatusEnum.FAILED]:
+                    # If the report is already in a final state, return its current state without modification
+                    return await self.get_report_by_id(report_id)
 
                 values_to_update = {
                     "partial_agent_output": partial_data,

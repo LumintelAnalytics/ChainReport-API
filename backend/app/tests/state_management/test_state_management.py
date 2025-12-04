@@ -106,6 +106,7 @@ async def test_update_report_final_report_success(report_repository, async_sessi
         db_state_obj = db_state.scalar_one()
         assert db_state_obj.status == ReportStatusEnum.COMPLETED
         assert db_state_obj.final_report_json == final_report_data
+
 @pytest.mark.asyncio
 async def test_update_report_final_report_failure(report_repository, async_session_factory):
     report_id = "test_report_4"
@@ -133,7 +134,7 @@ async def test_update_report_final_report_failure(report_repository, async_sessi
         assert db_state_obj.error_message == error_message
 
 @pytest.mark.asyncio
-async def test_get_report_state(report_repository, async_session_factory):
+async def test_get_report_state(report_repository):
     report_id = "test_report_5"
     await report_repository.save_report_initial_state(report_id)
 
@@ -156,7 +157,7 @@ async def test_get_report_state(report_repository, async_session_factory):
     assert state.final_report_json == final_data
 
 @pytest.mark.asyncio
-async def test_report_state_transitions(report_repository, async_session_factory):
+async def test_report_state_transitions(report_repository):
     report_id = "test_report_6"
 
     # 1. Initial state: PENDING
@@ -185,10 +186,10 @@ async def test_report_state_transitions(report_repository, async_session_factory
     unchanged_state = await report_repository.update_report_partial_results(report_id, {"progress": 100})
     assert unchanged_state.status == ReportStatusEnum.COMPLETED
     assert unchanged_state.final_report_json == final_data
-    assert unchanged_state.updated_at > original_updated_at # updated_at still updates
+    assert unchanged_state.updated_at == original_updated_at # updated_at should not change if no update occurred
 
 @pytest.mark.asyncio
-async def test_report_state_transitions_to_failed(report_repository, async_session_factory):
+async def test_report_state_transitions_to_failed(report_repository):
     report_id = "test_report_7"
 
     # 1. Initial state: PENDING
@@ -216,7 +217,7 @@ async def test_report_state_transitions_to_failed(report_repository, async_sessi
     unchanged_state = await report_repository.update_report_partial_results(report_id, {"progress": 75})
     assert unchanged_state.status == ReportStatusEnum.FAILED
     assert unchanged_state.error_message == error_msg
-    assert unchanged_state.updated_at > original_updated_at # updated_at still updates
+    assert unchanged_state.updated_at == original_updated_at # updated_at should not change if no update occurred
 
 @pytest.mark.asyncio
 async def test_report_not_found(report_repository):

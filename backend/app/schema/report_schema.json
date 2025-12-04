@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ChainReport",
+  "description": "Schema for ChainReport API responses, detailing blockchain project analysis.",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "General metadata about the report.",
+      "properties": {
+        "reportId": { "type": "string", "description": "Unique identifier for the report." },
+        "projectName": { "type": "string", "description": "Name of the project being reported on." },
+        "symbol": { "type": "string", "description": "Token symbol of the project." },
+        "reportDate": { "type": "string", "format": "date-time", "description": "Timestamp of when the report was generated." },
+        "status": { "type": "string", "description": "Current status of the report (e.g., 'completed', 'pending', 'failed').", "enum": ["completed", "pending", "failed"] }
+      },
+      "required": ["reportId", "projectName", "symbol", "reportDate", "status"]
+    },
+    "tokenomics": {
+      "type": "object",
+      "description": "Analysis of the project's tokenomics.",
+      "properties": {
+        "tokenName": { "type": "string", "description": "Full name of the token." },
+        "totalSupply": { "type": "number", "description": "Total supply of the token.", "minimum": 0 },
+        "circulatingSupply": { "type": "number", "description": "Circulating supply of the token.", "minimum": 0 },
+        "distribution": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "category": { "type": "string", "description": "Category of token holders (e.g., 'team', 'investors', 'community')." },
+              "percentage": { "type": "number", "description": "Percentage of total supply held by this category." }
+            },
+            "required": ["category", "percentage"]
+          },
+          "description": "Distribution breakdown of the token."
+        }, "minItems": 1,
+        "utility": { "type": "string", "description": "Description of the token's utility." }
+      },
+      "required": ["tokenName", "totalSupply", "circulatingSupply", "distribution", "utility"]
+    },
+    "onchainData": {
+      "type": "object",
+      "description": "On-chain data analysis.",
+      "properties": {
+        "transactions": { "type": "number", "description": "Total number of on-chain transactions.", "minimum": 0 },
+        "activeAddresses": { "type": "number", "description": "Number of unique active addresses.", "minimum": 0 },
+        "dailyVolume": { "type": "number", "description": "Daily trading volume.", "minimum": 0 },
+        "smartContractInteractions": { "type": "number", "description": "Number of smart contract interactions.", "minimum": 0 }
+      },
+      "required": ["transactions", "activeAddresses", "dailyVolume", "smartContractInteractions"]
+    },
+    "sentiment": {
+      "type": "object",
+      "description": "Social sentiment analysis.",
+      "properties": {
+        "overallSentiment": { "type": "string", "description": "Overall sentiment (e.g., 'positive', 'neutral', 'negative').", "enum": ["positive", "neutral", "negative"] },
+        "sentimentScore": { "type": "number", "description": "Numerical sentiment score.", "minimum": 0 },
+        "sourceBreakdown": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": { "type": "string", "description": "Source of sentiment data (e.g., 'Twitter', 'Reddit', 'News')." },
+              "score": { "type": "number", "description": "Sentiment score from this source." }
+            },
+            "required": ["source", "score"]
+          },
+          "description": "Breakdown of sentiment by source."
+        }, "minItems": 1
+      },
+      "required": ["overallSentiment", "sentimentScore", "sourceBreakdown"]
+    },
+    "teamAnalysis": {
+      "type": "object",
+      "description": "Analysis of the project's team.",
+      "properties": {
+        "teamSize": { "type": "number", "description": "Number of members in the core team.", "minimum": 0 },
+        "experience": { "type": "string", "description": "Description of the team's collective experience." },
+        "keyMembers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "Name of the team member." },
+              "role": { "type": "string", "description": "Role of the team member." },
+              "linkedin": { "type": "string", "format": "uri", "description": "LinkedIn profile URL." }
+            },
+            "required": ["name", "role"]
+          },
+          "description": "Key members of the team."
+        }, "minItems": 1
+      },
+      "required": ["teamSize", "experience", "keyMembers"]
+    },
+    "codeAudit": {
+      "type": "object",
+      "description": "Results of a code audit.",
+      "properties": {
+        "auditFirm": { "type": "string", "description": "Name of the firm that conducted the audit." },
+        "auditDate": { "type": "string", "format": "date", "description": "Date of the code audit." },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "severity": { "type": "string", "description": "Severity of the finding (e.g., 'critical', 'high', 'medium', 'low').", "enum": ["critical", "high", "medium", "low"] },
+              "description": { "type": "string", "description": "Description of the finding." },
+              "status": { "type": "string", "description": "Status of the finding (e.g., 'resolved', 'open')." }
+            },
+            "required": ["severity", "description", "status"]
+          },
+          "description": "List of findings from the code audit."
+        }, "minItems": 1,
+        "overallScore": { "type": "number", "description": "Overall security score or rating.", "minimum": 0 }
+      },
+      "required": ["auditFirm", "auditDate", "findings", "overallScore"]
+    },
+    "documentationReview": {
+      "type": "object",
+      "description": "Review of project documentation.",
+      "properties": {
+        "completeness": { "type": "string", "description": "Assessment of documentation completeness." },
+        "clarity": { "type": "string", "description": "Assessment of documentation clarity." },
+        "accessibility": { "type": "string", "description": "Assessment of documentation accessibility." },
+        "areasForImprovement": { "type": "array", "items": { "type": "string" }, "description": "Areas where documentation could be improved." }
+      },
+      "required": ["completeness", "clarity", "accessibility"]
+    },
+    "summary": {
+      "type": "object",
+      "description": "Overall summary of the report.",
+      "properties": {
+        "executiveSummary": { "type": "string", "description": "A high-level executive summary of the report." },
+        "keyStrengths": { "type": "array", "items": { "type": "string" }, "description": "Key strengths identified in the project." },
+        "keyRisks": { "type": "array", "items": { "type": "string" }, "description": "Key risks identified in the project." },
+        "recommendations": { "type": "array", "items": { "type": "string" }, "description": "Recommendations for the project." }
+      },
+      "required": ["executiveSummary", "keyStrengths", "keyRisks", "recommendations"]
+    }
+  },
+  "required": [
+    "metadata",
+    "tokenomics",
+    "onchainData",
+    "sentiment",
+    "teamAnalysis",
+    "codeAudit",
+    "documentationReview",
+    "summary"
+  ],
+  "additionalProperties": false
+}

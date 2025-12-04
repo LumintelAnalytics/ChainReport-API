@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from backend.app.db.models.report import Report
 from backend.app.db.models.report_state import ReportState, ReportStatusEnum
 class ReportRepository:
+    FINAL_STATUSES = [ReportStatusEnum.COMPLETED, ReportStatusEnum.FAILED, ReportStatusEnum.TIMED_OUT]
     def __init__(self, session_factory: Callable[..., AsyncSession]):
         self.session_factory = session_factory
 
@@ -48,7 +49,8 @@ class ReportRepository:
                 current_state_result = await session.execute(select(ReportState.status).where(ReportState.report_id == report_id))
                 current_status = current_state_result.scalar_one_or_none()
 
-                final_statuses = [ReportStatusEnum.COMPLETED, ReportStatusEnum.FAILED]
+                if current_status in self.FINAL_STATUSES:
+                    return await self.get_report_by_id(report_id)
                 
                 values_to_update = {
                     "partial_agent_output": partial_data,
@@ -60,7 +62,7 @@ class ReportRepository:
                 
                 stmt = update(ReportState).where(
                     ReportState.report_id == report_id,
-                    ReportState.status.notin_(final_statuses)
+                    ReportState.status.notin_(self.FINAL_STATUSES)
                 ).values(**values_to_update).returning(ReportState)
                 result = await session.execute(stmt)
                 updated_report_state = result.scalar_one_or_none()
@@ -88,7 +90,10 @@ class ReportRepository:
                     "error_message": error_message,
                     "updated_at": datetime.now(timezone.utc)
                 }
-                stmt = update(ReportState).where(ReportState.report_id == report_id).values(**values_to_update).returning(ReportState)
+                stmt = update(ReportState).where(
+                    ReportState.report_id == report_id,
+                    ReportState.status.notin_(self.FINAL_STATUSES)
+                ).values(**values_to_update).returning(ReportState)
                 result = await session.execute(stmt)
                 updated_report_state = result.scalar_one_or_none()
                 await session.commit()

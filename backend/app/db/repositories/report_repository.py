@@ -48,10 +48,8 @@ class ReportRepository:
                 current_state_result = await session.execute(select(ReportState.status).where(ReportState.report_id == report_id))
                 current_status = current_state_result.scalar_one_or_none()
 
-                if current_status in [ReportStatusEnum.COMPLETED, ReportStatusEnum.FAILED]:
-                    # If the report is already in a final state, return its current state without modification
-                    return await self.get_report_by_id(report_id)
-
+                final_statuses = [ReportStatusEnum.COMPLETED, ReportStatusEnum.FAILED]
+                
                 values_to_update = {
                     "partial_agent_output": partial_data,
                     "updated_at": datetime.now(timezone.utc)
@@ -60,7 +58,10 @@ class ReportRepository:
                 if current_status == ReportStatusEnum.PENDING:
                     values_to_update["status"] = ReportStatusEnum.RUNNING
                 
-                stmt = update(ReportState).where(ReportState.report_id == report_id).values(**values_to_update).returning(ReportState)
+                stmt = update(ReportState).where(
+                    ReportState.report_id == report_id,
+                    ReportState.status.notin_(final_statuses)
+                ).values(**values_to_update).returning(ReportState)
                 result = await session.execute(stmt)
                 updated_report_state = result.scalar_one_or_none()
                 await session.commit()

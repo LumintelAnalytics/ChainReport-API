@@ -2,6 +2,7 @@ import os
 import sys
 from logging.config import fileConfig
 
+from sqlalchemy import create_engine # Import create_engine for synchronous operations
 from sqlalchemy.ext.asyncio import create_async_engine # Import create_async_engine
 
 from alembic import context
@@ -60,31 +61,43 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    import asyncio
+    # this callback is used to prevent an auto-migration from running with an async connection
+    def do_run_migrations(connection):
+        context.configure(connection=connection, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
 
-    async def process_migrations():
-        # Determine the database URL based on environment or settings
-        if os.getenv("TESTING") == "True" and settings.TEST_DB_NAME:
-            db_url = (
-                f"postgresql+asyncpg://{settings.TEST_DB_USER}:{settings.TEST_DB_PASSWORD}@"
-                f"{settings.TEST_DB_HOST}:{settings.TEST_DB_PORT}/{settings.TEST_DB_NAME}"
-            )
-        elif settings.DATABASE_URL.startswith("sqlite"):
-            db_url = settings.DATABASE_URL.replace("sqlite://", "sqlite+aiosqlite://")
-        else:
-            db_url = settings.DATABASE_URL
+    # Determine the database URL based on environment or settings
+    if os.getenv("TESTING") == "True" and settings.TEST_DB_NAME:
+        db_url = (
+            f"postgresql+asyncpg://{settings.TEST_DB_USER}:{settings.TEST_DB_PASSWORD}@"
+            f"{settings.TEST_DB_HOST}:{settings.TEST_DB_PORT}/{settings.TEST_DB_NAME}"
+        )
+    elif settings.DATABASE_URL.startswith("sqlite"):
+        db_url = settings.DATABASE_URL.replace("sqlite://", "sqlite+aiosqlite://")
+    else:
+        db_url = settings.DATABASE_URL
 
+    if "autogenerate" in sys.argv:
+        # For autogenerate, use a synchronous engine
+        # Convert async driver schemes to their sync equivalents for autogenerate
+        if "+asyncpg" in db_url:
+            db_url = db_url.replace("+asyncpg", "")
+        if "+aiosqlite" in db_url:
+            db_url = db_url.replace("+aiosqlite", "")
+        connectable = create_engine(db_url)
+        with connectable.connect() as connection:
+            do_run_migrations(connection)
+    else:
+        # For regular migrations, use an async engine
+        import asyncio
         connectable = create_async_engine(db_url)
 
-        async with connectable.connect() as connection:
-            context.configure(
-                connection=connection, target_metadata=target_metadata
-            )
+        async def process_migrations():
+            async with connectable.connect() as connection:
+                await connection.run_sync(do_run_migrations)
 
-            async with context.begin_transaction():
-                context.run_migrations()
-
-    asyncio.run(process_migrations())
+        asyncio.run(process_migrations())
 
 
 if context.is_offline_mode():

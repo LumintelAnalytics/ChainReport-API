@@ -1,4 +1,5 @@
 from typing import Callable, Dict, Any
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
@@ -10,7 +11,7 @@ class ReportRepository:
         self.session_factory = session_factory
 
     async def create_report_entry(self, report_id: str) -> Report:
-        async with await self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 report = Report(id=report_id)
                 session.add(report)
@@ -34,7 +35,7 @@ class ReportRepository:
                 raise
 
     async def update_report_status(self, report_id: str, status: ReportStatusEnum) -> ReportState | None:
-        async with await self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 stmt = update(ReportState).where(ReportState.report_id == report_id).values(status=status).returning(ReportState)
                 result = await session.execute(stmt)
@@ -46,7 +47,7 @@ class ReportRepository:
                 raise
 
     async def store_partial_report_results(self, report_id: str, partial_data: Dict[str, Any]) -> ReportState | None:
-        async with await self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 stmt = update(ReportState).where(ReportState.report_id == report_id).values(partial_agent_output=partial_data).returning(ReportState)
                 result = await session.execute(stmt)
@@ -58,7 +59,7 @@ class ReportRepository:
                 raise
 
     async def save_final_report(self, report_id: str, data: Dict[str, Any]) -> ReportState | None:
-        async with await self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 stmt = update(ReportState).where(ReportState.report_id == report_id).values(final_report_json=data, status=ReportStatusEnum.COMPLETED).returning(ReportState)
                 result = await session.execute(stmt)
@@ -70,13 +71,13 @@ class ReportRepository:
                 raise
 
     async def get_report_by_id(self, report_id: str) -> ReportState | None:
-        async with await self.session_factory() as session:
+        async with self.session_factory() as session:
             stmt = select(ReportState).where(ReportState.report_id == report_id)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
 
     async def update_timing_alerts(self, report_id: str, alerts: Dict[str, Any]) -> ReportState | None:
-        async with await self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 stmt = update(ReportState).where(ReportState.report_id == report_id).values(timing_alerts=alerts).returning(ReportState)
                 result = await session.execute(stmt)
@@ -88,7 +89,7 @@ class ReportRepository:
                 raise
 
     async def update_partial(self, report_id: str, data: Dict[str, Any]) -> ReportState | None:
-        async with await self.session_factory() as session:
+        async with self.session_factory() as session:
             try:
                 stmt = update(ReportState).where(ReportState.report_id == report_id).values(**data).returning(ReportState)
                 result = await session.execute(stmt)
@@ -98,3 +99,32 @@ class ReportRepository:
             except Exception:
                 await session.rollback()
                 raise
+
+    async def recover_stalled_reports(self, timeout_minutes: int) -> int:
+        async with self.session_factory() as session:
+            try:
+                stalled_threshold = datetime.now(timezone.utc) - timedelta(minutes=timeout_minutes)
+                
+                running_states = [
+                    ReportStatusEnum.RUNNING,
+                    ReportStatusEnum.RUNNING_AGENTS,
+                    ReportStatusEnum.GENERATING_NLG,
+                    ReportStatusEnum.GENERATING_SUMMARY,
+                ]
+
+                stmt = update(ReportState).where(
+                    ReportState.status.in_(running_states),
+                    ReportState.updated_at < stalled_threshold
+                ).values(
+                    status=ReportStatusEnum.TIMED_OUT,
+                    error_message="Report stalled in running state for too long."
+                ).returning(ReportState.report_id)
+                
+                result = await session.execute(stmt)
+                updated_report_ids = result.scalars().all()
+                await session.commit()
+                return len(updated_report_ids)
+            except Exception:
+                await session.rollback()
+                raise
+

@@ -18,6 +18,7 @@ class ReportStatusEnum(PyEnum):
     NLG_COMPLETED = "nlg_completed"
     GENERATING_SUMMARY = "generating_summary"
     SUMMARY_COMPLETED = "summary_completed"
+    TIMED_OUT = "timed_out"
 
 
 

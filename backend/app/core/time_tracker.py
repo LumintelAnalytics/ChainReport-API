@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.cache.redis_client import redis_client
@@ -15,7 +15,7 @@ def start_timer(report_id: str):
     Records the start timestamp for a given report_id in Redis.
     """
     try:
-        start_time = datetime.now().isoformat()
+        start_time = datetime.now(timezone.utc).isoformat()
         key = f"{REDIS_KEY_PREFIX}{report_id}"
         redis_client.set_cache(key, start_time, ttl=3600 * 24)  # Store for 24 hours
         logger.info(f"Timer started for report_id: {report_id} at {start_time}")
@@ -35,7 +35,7 @@ async def finish_timer(report_id: str, db: AsyncSession) -> float | None:
         if start_time_str:
             redis_client.delete_cache(key)
             start_time = datetime.fromisoformat(start_time_str.decode('utf-8'))
-            end_time = datetime.now()
+            end_time = datetime.now(timezone.utc)
             duration = (end_time - start_time).total_seconds()
             logger.info(f"Timer finished for report_id: {report_id}. Duration: {duration:.2f} seconds.")
 

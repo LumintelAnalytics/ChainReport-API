@@ -88,16 +88,6 @@ async def test_orchestrator_error_capturing(caplog, mock_session_factory, mock_s
     with patch("backend.app.core.error_utils.capture_exception", new_callable=AsyncMock) as mock_capture_exception:
         orchestrator = await create_orchestrator(session_factory=mock_session_factory)
 
-        # Create a mock ReportState for the orchestrator to retrieve
-        mock_report_state_for_error = ReportState(
-            report_id="error_test_report",
-            status=ReportStatusEnum.PENDING,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-            errors={},
-            timing_alerts=[]
-        )
-        orchestrator.report_repository.get_report_by_id = AsyncMock(return_value=mock_report_state_for_error)
         orchestrator.report_repository.update_partial = AsyncMock()
 
         async def failing_agent(report_id: str, token_id: str):
@@ -120,7 +110,8 @@ async def test_orchestrator_error_capturing(caplog, mock_session_factory, mock_s
             assert mock_capture_exception.call_args[0][1]["agent_name"] == "failing_agent"
             assert mock_capture_exception.call_args[0][1]["report_id"] == report_id
 
-            orchestrator.report_repository.update_partial.assert_called_once()
+            orchestrator.report_repository.update_partial.assert_called()
+            assert orchestrator.report_repository.update_partial.call_count == 5
             call_args = orchestrator.report_repository.update_partial.call_args
             assert call_args[0][0] == report_id
             assert call_args[0][1]["status"] == ReportStatusEnum.AGENTS_FAILED
@@ -158,9 +149,8 @@ async def test_time_tracker_slow_operation(caplog, mock_session_factory, mock_re
         time_tracker.start_timer(report_id)
         mock_redis_client.set_cache.assert_called_once_with(
             f"report_timer:{report_id}",
-            datetime.now().isoformat(),
-            ttl=3600 * 24
-        )
+                            datetime.now(timezone.utc).isoformat(),
+                            ttl=3600 * 24        )
 
         # Advance time by more than 5 minutes for the finish_timer call
         with freeze_time("2025-01-01 12:05:01", tick=True): # 5 minutes and 1 second later

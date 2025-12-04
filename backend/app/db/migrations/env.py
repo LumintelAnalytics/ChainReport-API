@@ -80,6 +80,11 @@ def run_migrations_online() -> None:
 
     if "autogenerate" in sys.argv:
         # For autogenerate, use a synchronous engine
+        # Convert async driver schemes to their sync equivalents for autogenerate
+        if "+asyncpg" in db_url:
+            db_url = db_url.replace("+asyncpg", "")
+        if "+aiosqlite" in db_url:
+            db_url = db_url.replace("+aiosqlite", "")
         connectable = create_engine(db_url)
         with connectable.connect() as connection:
             do_run_migrations(connection)

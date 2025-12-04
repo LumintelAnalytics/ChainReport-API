@@ -1,7 +1,6 @@
 import pytest
-import asyncio
 from unittest.mock import AsyncMock, patch
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from freezegun import freeze_time
 
 from backend.app.core.orchestrator import create_orchestrator
@@ -13,11 +12,6 @@ from backend.app.db.models.report_state import ReportState, ReportStatusEnum
 def mock_session_factory():
     mock_session = AsyncMock()
     return lambda: mock_session
-
-@pytest.fixture
-def mock_report_repository():
-    # Return a basic AsyncMock for ReportRepository
-    return AsyncMock()
 
 @pytest.fixture
 def mock_settings():
@@ -131,7 +125,7 @@ async def test_orchestrator_error_capturing(caplog, mock_session_factory, mock_s
             assert call_args[0][0] == report_id
             assert call_args[0][1]["status"] == ReportStatusEnum.AGENTS_FAILED
             assert "failing_agent" in call_args[0][1]["errors"]
-            assert call_args[0][1]["errors"]["failing_agent"] == True
+            assert call_args[0][1]["errors"]["failing_agent"] is True
 
             assert any("Agent failing_agent failed for report error_test_report" in r.message for r in caplog.records)
 
@@ -141,7 +135,6 @@ async def test_time_tracker_slow_operation(caplog, mock_session_factory, mock_re
     from backend.app.core import time_tracker
     
     report_id = "slow_report"
-    token_id = "slow_token"
 
     # Create a mock ReportState for the orchestrator to retrieve
     mock_report_state_for_timer = ReportState(
@@ -153,7 +146,7 @@ async def test_time_tracker_slow_operation(caplog, mock_session_factory, mock_re
         timing_alerts=[]
     )
     # Patch the ReportRepository within the time_tracker.finish_timer scope
-    with patch("backend.app.db.repositories.report_repository.ReportRepository") as MockRepo:
+    with patch("backend.app.core.time_tracker.ReportRepository") as MockRepo:
         mock_repo_instance = MockRepo.return_value
         mock_repo_instance.get_report_by_id = AsyncMock(return_value=mock_report_state_for_timer)
         mock_repo_instance.update_timing_alerts = AsyncMock()

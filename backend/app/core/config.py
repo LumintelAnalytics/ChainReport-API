@@ -50,7 +50,8 @@ class Settings(BaseSettings):
     TEST_DB_PORT: str | None = None
     TEST_DB_NAME: str | None = None
 
-    REPORT_OUTPUT_DIR: str = "./reports_output"
+    BASE_DIR: Path = Path(__file__).parent.parent.parent
+    REPORT_OUTPUT_DIR: Path = BASE_DIR / "reports_output"
 
     model_config = SettingsConfigDict(env_file=".env")
 

@@ -9,8 +9,10 @@ from backend.app.services.report_processor import process_report
 from backend.app.core.logger import api_logger
 from backend.app.core.exceptions import ReportNotFoundException
 from backend.app.db.models.report_state import ReportStatusEnum
+from backend.app.api.v1.report_download import router as download_router
 
 router = APIRouter()
+router.include_router(download_router)
 
 @router.get("/")
 async def read_root():

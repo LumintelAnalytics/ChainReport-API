@@ -8,6 +8,8 @@ from backend.app.core.orchestrator import create_orchestrator, Orchestrator
 
 from dotenv import load_dotenv
 
+import os
+
 load_dotenv()
 
 app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
@@ -65,6 +67,10 @@ async def startup_event():
     global orchestrator_instance
     orchestrator_instance = await create_orchestrator()
     api_logger.info("Orchestrator instance initialized.")
+    
+    # Create the report output directory if it doesn't exist
+    os.makedirs(settings.REPORT_OUTPUT_DIR, exist_ok=True)
+    api_logger.info(f"Report output directory '{settings.REPORT_OUTPUT_DIR}' ensured to exist.")
 
 @app.get("/health")
 async def health_check():

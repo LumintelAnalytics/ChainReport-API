@@ -16,4 +16,4 @@ requests==2.32.5
 beautifulsoup4==4.14.2
 redis==7.1.0
 jsonschema==4.22.0
-WeasyPrint==61.0.0
+WeasyPrint>=61.2

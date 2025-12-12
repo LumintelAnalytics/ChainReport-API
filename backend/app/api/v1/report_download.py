@@ -1,5 +1,7 @@
 import tempfile
-from fastapi import APIRouter, Depends, HTTPException, status
+import os
+import asyncio
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 import re
@@ -13,6 +15,13 @@ from backend.app.db.models.report_state import ReportStatusEnum
 from backend.app.security.dependencies import CurrentUser
 
 router = APIRouter()
+
+def cleanup_file(filepath: str):
+    """
+    Removes the file at the given filepath.
+    """
+    if os.path.exists(filepath):
+        os.remove(filepath)
 
 def render_report_html(report_data: dict) -> str:
     """
@@ -99,6 +108,7 @@ async def get_report_html(
 @router.get("/reports/{report_id}/pdf")
 async def get_report_pdf(
     report_id: str,
+    background_tasks: BackgroundTasks,
     db_session: AsyncSession = Depends(get_db),
     current_user: CurrentUser = Depends(CurrentUser)
 ):
@@ -130,15 +140,34 @@ async def get_report_pdf(
 
     html_content = render_report_html(final_report_json)
 
-    # Convert HTML to PDF using WeasyPrint
-    pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    HTML(string=html_content).write_pdf(pdf_file.name)
-    pdf_file.close()
+    pdf_path = None
+    try:
+        # Offload blocking PDF generation to a thread pool
+        loop = asyncio.get_event_loop()
+        pdf_file = await loop.run_in_executor(
+            None,  # Use default thread pool executor
+            lambda: tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+        )
+        pdf_path = pdf_file.name
+        await loop.run_in_executor(
+            None,
+            lambda: HTML(string=html_content).write_pdf(pdf_path)
+        )
+        pdf_file.close()
 
-    # Return the PDF with appropriate headers
-    return FileResponse(
-        path=pdf_file.name,
-        media_type="application/pdf",
-        filename=f"report_{report_id}.pdf",
-        status_code=status.HTTP_200_OK
-    )
+        # Return the PDF with appropriate headers and add cleanup task
+        response = FileResponse(
+            path=pdf_path,
+            media_type="application/pdf",
+            filename=f"report_{report_id}.pdf",
+            status_code=status.HTTP_200_OK
+        )
+        background_tasks.add_task(cleanup_file, pdf_path)
+        return response
+    except Exception as e:
+        if pdf_path:
+            cleanup_file(pdf_path)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate PDF report: {e}"
+        )

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 import re
+from backend.app.core.logger import logger
 from pathlib import Path
 from weasyprint import HTML
 
@@ -167,7 +168,8 @@ async def get_report_pdf(
     except Exception as e:
         if pdf_path:
             cleanup_file(pdf_path)
+        logger.exception(f"Failed to generate PDF report for report_id: {report_id}", extra={"report_id": report_id})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate PDF report: {e}"
-        )
+            detail="Failed to generate PDF report"
+        ) from e

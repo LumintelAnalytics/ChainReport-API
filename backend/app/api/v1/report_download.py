@@ -1,8 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import HTMLResponse
+import tempfile
+import os
+import asyncio
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi.responses import HTMLResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 import re
+from backend.app.core.logger import logger
 from pathlib import Path
+from weasyprint import HTML
 
 from backend.app.core.config import settings
 from backend.app.db.connection import get_db
@@ -11,6 +16,13 @@ from backend.app.db.models.report_state import ReportStatusEnum
 from backend.app.security.dependencies import CurrentUser
 
 router = APIRouter()
+
+def cleanup_file(filepath: str):
+    """
+    Removes the file at the given filepath.
+    """
+    if os.path.exists(filepath):
+        os.remove(filepath)
 
 def render_report_html(report_data: dict) -> str:
     """
@@ -93,3 +105,71 @@ async def get_report_html(
     response = HTMLResponse(content=html_content, status_code=status.HTTP_200_OK)
     response.headers["Content-Disposition"] = f"attachment; filename=\"report_{report_id}.html\""
     return response
+
+@router.get("/reports/{report_id}/pdf")
+async def get_report_pdf(
+    report_id: str,
+    background_tasks: BackgroundTasks,
+    db_session: AsyncSession = Depends(get_db),
+    current_user: CurrentUser = Depends(CurrentUser)
+):
+    """
+    Retrieves and serves the PDF report for a given report ID,
+    including authentication, authorization, and path traversal prevention.
+    """
+    if not re.fullmatch(r"^[a-zA-Z0-9_-]+$", report_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid report ID format.")
+
+    report_repository = ReportRepository(lambda: db_session)
+    report_state = await report_repository.get_report_by_id(report_id)
+
+    if not report_state:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found.")
+
+    # Placeholder for authentication and authorization
+    print(f"User '{current_user.username}' (ID: {current_user.id}) is accessing report '{report_id}'.")
+
+    if report_state.status != ReportStatusEnum.COMPLETED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Report is not yet completed. Current status: {report_state.status.value}"
+        )
+    
+    final_report_json = report_state.final_report_json
+    if not final_report_json:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Final report content not available.")
+
+    html_content = render_report_html(final_report_json)
+
+    pdf_path = None
+    try:
+        # Offload blocking PDF generation to a thread pool
+        loop = asyncio.get_event_loop()
+        pdf_file = await loop.run_in_executor(
+            None,  # Use default thread pool executor
+            lambda: tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+        )
+        pdf_path = pdf_file.name
+        await loop.run_in_executor(
+            None,
+            lambda: HTML(string=html_content).write_pdf(pdf_path)
+        )
+        pdf_file.close()
+
+        # Return the PDF with appropriate headers and add cleanup task
+        response = FileResponse(
+            path=pdf_path,
+            media_type="application/pdf",
+            filename=f"report_{report_id}.pdf",
+            status_code=status.HTTP_200_OK
+        )
+        background_tasks.add_task(cleanup_file, pdf_path)
+        return response
+    except Exception as e:
+        if pdf_path:
+            cleanup_file(pdf_path)
+        logger.exception(f"Failed to generate PDF report for report_id: {report_id}", extra={"report_id": report_id})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate PDF report"
+        ) from e

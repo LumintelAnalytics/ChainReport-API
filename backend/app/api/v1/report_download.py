@@ -17,13 +17,6 @@ from backend.app.security.dependencies import CurrentUser
 
 router = APIRouter()
 
-def cleanup_file(filepath: str):
-    """
-    Removes the file at the given filepath.
-    """
-    if os.path.exists(filepath):
-        os.remove(filepath)
-
 def render_report_html(report_data: dict) -> str:
     """
     Renders the report JSON data into a basic HTML structure.
@@ -139,35 +132,39 @@ async def get_report_pdf(
     if not final_report_json:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Final report content not available.")
 
-    html_content = render_report_html(final_report_json)
+    report_dir = settings.REPORT_OUTPUT_DIR
+    report_dir.mkdir(parents=True, exist_ok=True)
+    pdf_filepath = report_dir / f"report_{report_id}.pdf"
 
-    pdf_path = None
-    try:
-        # Offload blocking PDF generation to a thread pool
-        loop = asyncio.get_event_loop()
-        pdf_file = await loop.run_in_executor(
-            None,  # Use default thread pool executor
-            lambda: tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-        )
-        pdf_path = pdf_file.name
-        await loop.run_in_executor(
-            None,
-            lambda: HTML(string=html_content).write_pdf(pdf_path)
-        )
-        pdf_file.close()
-
-        # Return the PDF with appropriate headers and add cleanup task
-        response = FileResponse(
-            path=pdf_path,
+    if pdf_filepath.exists():
+        logger.info(f"Serving existing PDF report for report_id: {report_id}")
+        return FileResponse(
+            path=pdf_filepath,
             media_type="application/pdf",
             filename=f"report_{report_id}.pdf",
             status_code=status.HTTP_200_OK
         )
-        background_tasks.add_task(cleanup_file, pdf_path)
+    
+    logger.info(f"Generating new PDF report for report_id: {report_id}")
+    html_content = render_report_html(final_report_json)
+
+    try:
+        # Offload blocking PDF generation to a thread pool
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None,
+            lambda: HTML(string=html_content).write_pdf(pdf_filepath)
+        )
+
+        # Return the newly generated PDF
+        response = FileResponse(
+            path=pdf_filepath,
+            media_type="application/pdf",
+            filename=f"report_{report_id}.pdf",
+            status_code=status.HTTP_200_OK
+        )
         return response
     except Exception as e:
-        if pdf_path:
-            cleanup_file(pdf_path)
         logger.exception(f"Failed to generate PDF report for report_id: {report_id}", extra={"report_id": report_id})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     TEST_DB_NAME: str | None = None
 
     BASE_DIR: Path = Path(__file__).parent.parent.parent
-    REPORT_OUTPUT_DIR: Path = BASE_DIR / "reports_output"
+    REPORT_OUTPUT_DIR: Path = BASE_DIR / "storage" / "reports"
 
     model_config = SettingsConfigDict(env_file=".env")
 

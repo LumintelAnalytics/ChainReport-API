@@ -1,10 +1,11 @@
 import tempfile
 import os
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 import re
+import logging
 from backend.app.core.logger import logger
 from pathlib import Path
 from weasyprint import HTML
@@ -16,6 +17,8 @@ from backend.app.db.models.report_state import ReportStatusEnum
 from backend.app.security.dependencies import CurrentUser
 
 router = APIRouter()
+
+downloads_logger = logging.getLogger("downloads")
 
 def render_report_html(report_data: dict) -> str:
     """
@@ -104,7 +107,8 @@ async def get_report_pdf(
     report_id: str,
     background_tasks: BackgroundTasks,
     db_session: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = Depends(CurrentUser)
+    current_user: CurrentUser = Depends(CurrentUser),
+    request: Request
 ):
     """
     Retrieves and serves the PDF report for a given report ID,
@@ -121,6 +125,11 @@ async def get_report_pdf(
 
     # Placeholder for authentication and authorization
     print(f"User '{current_user.username}' (ID: {current_user.id}) is accessing report '{report_id}'.")
+    downloads_logger.info({
+        "event": "pdf_download",
+        "reportId": report_id,
+        "requester_ip": request.client.host
+    })
 
     if report_state.status != ReportStatusEnum.COMPLETED:
         raise HTTPException(

@@ -101,3 +101,13 @@ def configure_logging(log_dir="logs", max_bytes=10*1024*1024, backup_count=5):
     console_handler.setFormatter(json_formatter) # Use JSON formatter for console as well
     logger.addHandler(console_handler)
 
+    # --- Downloads Log Handler ---
+    downloads_log_path = os.path.join(log_dir, "downloads.log")
+    downloads_handler = RotatingFileHandler(downloads_log_path, maxBytes=max_bytes, backupCount=backup_count)
+    downloads_handler.setLevel(logging.INFO)
+    downloads_handler.setFormatter(json_formatter)
+    # Create a specific logger for downloads
+    downloads_logger = logging.getLogger("downloads")
+    downloads_logger.addHandler(downloads_handler)
+    downloads_logger.propagate = False # Prevent logs from going to the root logger
+

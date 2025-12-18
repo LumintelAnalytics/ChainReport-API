@@ -4,6 +4,11 @@
   "description": "Schema for ChainReport API responses, detailing blockchain project analysis.",
   "type": "object",
   "properties": {
+    "errorMessages": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of error messages from agent failures during report generation."
+    },
     "metadata": {
       "type": "object",
       "description": "General metadata about the report.",
@@ -140,6 +145,7 @@
     }
   },
   "required": [
+    "errorMessages",
     "metadata",
     "tokenomics",
     "onchainData",

@@ -96,7 +96,7 @@
           "description": "Key members of the team."
         }, "minItems": 1
       },
-      "required": ["teamSize", "experience", "keyMembers"]
+      "required": ["teamSize", "experience"]
     },
     "codeAudit": {
       "type": "object",
@@ -141,18 +141,15 @@
         "keyRisks": { "type": "array", "items": { "type": "string" }, "description": "Key risks identified in the project." },
         "recommendations": { "type": "array", "items": { "type": "string" }, "description": "Recommendations for the project." }
       },
-      "required": ["executiveSummary", "keyStrengths", "keyRisks", "recommendations"]
+      "required": ["executiveSummary", "keyStrengths", "keyRisks"]
     }
   },
   "required": [
-    "errorMessages",
     "metadata",
     "tokenomics",
     "onchainData",
     "sentiment",
     "teamAnalysis",
-    "codeAudit",
-    "documentationReview",
     "summary"
   ],
   "additionalProperties": false
